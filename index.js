@@ -1,10 +1,29 @@
 import fs from "node:fs/promises";
-import { buffer } from "node:stream/consumers";
 
+const owner = "Marmoor54321";
+const repo = "UncBoard";
 
-const pkg = await fs.readFile("package.json")
-.then((buffer) => buffer.toString())
-.then((str)=>JSON.parse(str));
+async function getIssues() {
+  try {
+    const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/issues`);
+    if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
 
-console.log(pkg);
-console.log("test");
+    const data = await response.json();
+
+    const issues = data;
+
+    console.log("Issues:", issues);
+    issues.forEach(issue => {
+      console.log(`#${issue.number}: ${issue.title}`);
+    });
+
+    await fs.writeFile("issues.json", JSON.stringify(issues, null, 2));
+    console.log("Zapisano dane do issues.json");
+
+    return issues;
+  } catch (err) {
+    console.error("Błąd:", err);
+  }
+}
+
+const issues = await getIssues();
