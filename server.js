@@ -64,6 +64,28 @@ app.get("/api/github/repos", async (req, res) => {
     res.status(500).send("Failed to fetch repositories");
   }
 });
+app.get("/api/github/issues/:owner/:repo", async (req, res) => {
+  const token = req.session.token;
+  if (!token) return res.status(401).send("Not authenticated");
+
+  const { owner, repo } = req.params;
+
+  try {
+    const response = await axios.get(
+      `https://api.github.com/repos/${owner}/${repo}/issues`,
+      {
+        headers: { Authorization: `token ${token}` },
+      }
+    );
+    res.json(response.data);
+  } catch (err) {
+    console.error("GitHub API error:", err.response?.data || err.message);
+    res.status(500).send("Failed to fetch issues");
+  }
+});
+
+
+
 
 
 
