@@ -1,43 +1,45 @@
-<!--<script setup lang="ts"></script>--> 
-
 <template>
   <div class="container-fluid vh-100 d-flex flex-column p-0" style="background-color: #1d1e20;">
+    <!-- HEADER -->
     <header class="text-white p-3" style="background-color: #303236;">
       <h1 class="m-0 fs-3">uncBoard</h1>
     </header>
 
     <div class="flex-grow-1 d-flex overflow-hidden">
       <!-- LEWY PANEL -->
-      <aside class="border-end p-3" style="background-color: #1d1e20; width: 20%; min-width: 250px; overflow-y: auto;">
+      <aside
+        class="border-end p-3"
+        style="background-color: #1d1e20; width: 20%; min-width: 250px; max-width: 250px; overflow-y: auto; scrollbar-color: #303236 #1d1e20;"
+      >
         <div v-if="!user" class="text-center mt-4 text-white">
           <button class="btn btn-dark" @click="loginWithGithub">
             <i class="bi bi-github me-2"></i> Login with GitHub
           </button>
         </div>
 
-        <div v-else >
+        <div v-else>
           <div class="text-center mb-4 text-white">
             <img :src="user.avatar_url" class="rounded-circle mb-2" width="80" />
             <h5>{{ user.login }}</h5>
           </div>
 
           <h6 class="text-white">Your Repositories</h6>
-           <ul class="list-group custom-list">
-    <li
-      v-for="repo in repos"
-      :key="repo.id"
-      @click="selectRepo(repo)"
-      class="list-group-item list-group-item-action"
-      :class="{ active: selectedRepo && selectedRepo.id === repo.id }"
-    >
-      {{ repo.name }}
-    </li>
-  </ul>
+          <ul class="list-group custom-list">
+            <li
+              v-for="repo in repos"
+              :key="repo.id"
+              @click="selectRepo(repo)"
+              class="list-group-item list-group-item-action"
+              :class="{ active: selectedRepo && selectedRepo.id === repo.id }"
+            >
+              {{ repo.name }}
+            </li>
+          </ul>
         </div>
       </aside>
 
       <!-- PRAWA CZĘŚĆ (KANBAN BOARD) -->
-      <main class="flex-grow-1 p-4 overflow-auto">
+      <main class="flex-grow-1 p-4 overflow-auto" style=" scrollbar-color: #303236 #1d1e20;">
         <div v-if="!selectedRepo" class="text-center text-white mt-5">
           <h4>Select a repository to view its issues</h4>
         </div>
@@ -48,70 +50,139 @@
           </h3>
 
           <!-- KANBAN BOARD -->
-          <div class="row row-cols-1 row-cols-md-4 g-3">
-            <div v-for="status in ['todo', 'in progress', 'in review', 'done']" :key="status" class="col">
-              <div class="card h-100" style="border: 1px solid #aa50e7;">
-                <div class="card-header bg-dark text-white text-uppercase small" >
-                  {{ status }}
-                </div>
-                <div class="card-body rounded-bottom-1" style="background-color: #303236;">
-                  <div
-                    v-for="issue in issuesByStatus(status)"
-                    :key="issue.id"
-                    class="p-2 mb-2 border rounded"
-                  >
-                    <strong>#{{ issue.number }}</strong> {{ issue.title }}
-                  </div>
-                </div>
+           <div class="row row-cols-1 row-cols-md-4 g-3">
+
+    <!-- TODO -->
+    <div class="col">
+      <div class="card h-100" style="border: 1px solid #aa50e7;">
+        <div class="card-header bg-dark text-white text-uppercase small">TODO</div>
+        <div class="card-body rounded-bottom-1" style="background-color: #303236;">
+          <draggable
+            v-model="issuesTODO"
+            :group="groups"
+            item-key="id"
+            animation="200"
+            ghost-class="ghost"
+            chosen-class="chosen"
+            @end="onDragEnd"
+            class="dropzone"
+          >
+            <template #item="{ element }">
+              <div class="issuebox mb-2 p-2 rounded">
+                <div class="issuetitle"><strong>{{ element.title }}</strong></div>
+                <div class="issuebody small">{{ element.body }}</div>
               </div>
-            </div>
-          </div>
+            </template>
+          </draggable>
+        </div>
+      </div>
+    </div>
+
+    <!-- IN PROGRESS -->
+    <div class="col">
+      <div class="card h-100" style="border: 1px solid #aa50e7;">
+        <div class="card-header bg-dark text-white text-uppercase small">IN PROGRESS</div>
+        <div class="card-body rounded-bottom-1" style="background-color: #303236;">
+          <draggable
+            v-model="issuesINPROGRESS"
+            :group="groups"
+            item-key="id"
+            animation="200"
+            ghost-class="ghost"
+            chosen-class="chosen"
+            @end="onDragEnd"
+            class="dropzone"
+          >
+            <template #item="{ element }">
+              <div class="issuebox mb-2 p-2 rounded">
+                <div class="issuetitle"><strong>{{ element.title }}</strong></div>
+                <div class="issuebody small">{{ element.body }}</div>
+              </div>
+            </template>
+          </draggable>
+        </div>
+      </div>
+    </div>
+
+    <!-- IN REVIEW -->
+    <div class="col">
+      <div class="card h-100" style="border: 1px solid #aa50e7;">
+        <div class="card-header bg-dark text-white text-uppercase small">IN REVIEW</div>
+        <div class="card-body rounded-bottom-1" style="background-color: #303236;">
+          <draggable
+            v-model="issuesINREVIEW"
+            :group="groups"
+            item-key="id"
+            animation="200"
+            ghost-class="ghost"
+            chosen-class="chosen"
+            @end="onDragEnd"
+            class="dropzone"
+          >
+            <template #item="{ element }">
+              <div class="issuebox mb-2 p-2 rounded">
+                <div class="issuetitle"><strong>{{ element.title }}</strong></div>
+                <div class="issuebody small">{{ element.body }}</div>
+              </div>
+            </template>
+          </draggable>
+        </div>
+      </div>
+    </div>
+
+    <!-- DONE -->
+    <div class="col">
+      <div class="card h-100" style="border: 1px solid #aa50e7;">
+        <div class="card-header bg-dark text-white text-uppercase small">DONE</div>
+        <div class="card-body rounded-bottom-1" style="background-color: #303236;">
+          <draggable
+            v-model="issuesDONE"
+            :group="groups"
+            item-key="id"
+            animation="200"
+            ghost-class="ghost"
+            chosen-class="chosen"
+            @end="onDragEnd"
+            class="dropzone"
+          >
+            <template #item="{ element }">
+              <div class="issuebox mb-2 p-2 rounded">
+                <div class="issuetitle"><strong>{{ element.title }}</strong></div>
+                <div class="issuebody small">{{ element.body }}</div>
+              </div>
+            </template>
+          </draggable>
+        </div>
+      </div>
+    </div>
+
+  </div>
         </div>
       </main>
     </div>
   </div>
 </template>
 
-
-<style scoped>
-.custom-list .list-group-item {
-  background-color: #303236;
-  color: white;
-  border: none !important;
-  
-}
-
-.custom-list .list-group-item:hover {
-  border: 1px solid #aa50e7 !important; /* obwódka po najechaniu */
-  background-color: #3b3e42 !important;
-  color: white;
-}
-
-.custom-list .list-group-item.active {
-  border: 2px solid #aa50e7 !important; 
-  background-color: #3b3e42 !important;
-}
-</style>
-
-
-
-
-
-
-
 <script setup>
 import axios from "axios";
 import { ref, onMounted } from "vue";
+import draggable from 'vuedraggable';
 
 const user = ref(null);
 const repos = ref([]);
-const issues = ref([]);
 const selectedRepo = ref(null);
 
+const issuesTODO = ref([]);
+const issuesINPROGRESS = ref([{ id: 3, title: 'Testowanie', body: 'Jednostkowe testy' }]);
+const issuesINREVIEW = ref([]);
+const issuesDONE = ref([]);
+
+// GitHub login
 function loginWithGithub() {
   window.location.href = "http://localhost:3000/auth/github";
 }
 
+// Load GitHub user
 async function loadUser() {
   try {
     const res = await axios.get("http://localhost:3000/api/github/user", {
@@ -120,10 +191,22 @@ async function loadUser() {
     user.value = res.data;
     await loadRepos();
   } catch {
-    // not logged in
+    console.log("Not logged in");
   }
 }
+// Ustawienia grupy drag&drop
+const groups = {
+  name: 'issues',
+  pull: true,
+  put: true
+};
 
+// Event po zakończeniu przeciągania (np. update do backendu)
+function onDragEnd(event) {
+  console.log('Przeniesiono issue:', event.item);
+}
+
+// Load repos
 async function loadRepos() {
   const res = await axios.get("http://localhost:3000/api/github/repos", {
     withCredentials: true,
@@ -131,26 +214,76 @@ async function loadRepos() {
   repos.value = res.data;
 }
 
+// Load issues for repo
 async function selectRepo(repo) {
   selectedRepo.value = repo;
-  issues.value = [];
+  issuesTODO.value = [];
   try {
     const res = await axios.get(
       `http://localhost:3000/api/github/issues/${repo.owner.login}/${repo.name}`,
       { withCredentials: true }
     );
-    issues.value = res.data;
+    issuesTODO.value = res.data;
   } catch (err) {
     console.error("Error loading issues:", err);
   }
 }
 
-// przykładowa funkcja do filtrowania po statusie
-function issuesByStatus(status) {
-  return issues.value.filter((i) =>
-    i.labels.some((l) => l.name.toLowerCase() === status)
-  );
-}
-
 onMounted(loadUser);
 </script>
+
+<style scoped>
+.dropzone {
+  min-height: 300px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.5rem;
+}
+
+.issuebox {
+  background-color: #3b3e42;
+  color: white;
+  padding: 10px;
+  margin-bottom: 10px;
+  border-radius: 5px;
+  box-shadow: 0 4px 4px rgba(0, 0, 0, 0.1);
+  cursor: grab;
+}
+.issuebox:hover {
+  background-color: #50545b;
+}
+.chosen {
+  background-color: #aa50e7 !important;
+  transform: scale(1.05);
+}
+.ghost {
+  opacity: 1;
+  
+}
+.issuebody {
+  margin-top: 5px;
+  font-size: 14px;
+  color: #d1d1d1;
+  max-height: 60px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.custom-list .list-group-item {
+  background-color: #303236;
+  color: white;
+  border: none !important;
+}
+
+.custom-list .list-group-item:hover {
+  border: 1px solid #aa50e7 !important;
+  background-color: #3b3e42 !important;
+  color: white;
+}
+
+.custom-list .list-group-item.active {
+  border: 2px solid #aa50e7 !important;
+  background-color: #3b3e42 !important;
+}
+</style>
