@@ -16,7 +16,7 @@ const CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET;
 app.get("/auth/github", (req, res) => {
   const redirectUri = "http://localhost:3000/auth/github/callback";
   res.redirect(
-   `https://github.com/login/oauth/authorize?client_id=${CLIENT_ID}&redirect_uri=${redirectUri}&scope=repo,user,read:project,write:project`
+   `https://github.com/login/oauth/authorize?client_id=${CLIENT_ID}&redirect_uri=${redirectUri}&scope=repo,user,read:project,project`
 
   );
 });
