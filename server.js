@@ -16,7 +16,8 @@ const CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET;
 app.get("/auth/github", (req, res) => {
   const redirectUri = "http://localhost:3000/auth/github/callback";
   res.redirect(
-    `https://github.com/login/oauth/authorize?client_id=${CLIENT_ID}&redirect_uri=${redirectUri}&scope=repo,user`
+   `https://github.com/login/oauth/authorize?client_id=${CLIENT_ID}&redirect_uri=${redirectUri}&scope=repo,user,read:project,write:project`
+
   );
 });
 
@@ -42,7 +43,12 @@ app.get("/auth/github/callback", async (req, res) => {
 app.get("/api/github/user", async (req, res) => {
   const token = req.session.token;
   if (!token) return res.status(401).send("Not authenticated");
-
+  console.log(token);
+  const res2 = await axios.get("https://api.github.com/user", {
+    headers: { Authorization: `token ${token}` },
+  });
+  console.log(res2.headers["x-oauth-scopes"]);
+  
   const userRes = await axios.get("https://api.github.com/user", {
     headers: { Authorization: `token ${token}` },
   });
