@@ -80,132 +80,33 @@
             Issues for <span class="text-primary">{{ selectedRepo.name }}</span>
           </h3>
 
-          <!-- KANBAN BOARD -->
-          <div class="row row-cols-1 row-cols-lg-2 row-cols-xl-4 g-3">
-            <!-- TODO -->
-            <div class="col">
-              <div class="card h-100" style="border: 1px solid #aa50e7">
-                <div class="card-header bg-dark text-white text-uppercase small">TODO</div>
-                <div class="card-body rounded-bottom-1" style="background-color: #303236">
-                  <draggable
-                    v-model="issuesTODO"
-                    :group="groups"
-                    item-key="id"
-                    animation="200"
-                    ghost-class="ghost"
-                    chosen-class="chosen"
-                    @end="onDragEnd"
-                    class="dropzone"
-                    :scroll="scrollContainer"
-                    :scrollSensitivity="100"
-                    :scrollSpeed="15"
-                  >
-                    <template #item="{ element }">
-                      <div class="issuebox mb-2 p-2 rounded">
-                        <div class="issuetitle">
+            <div class="row row-cols-1 row-cols-lg-2 row-cols-xl-4 g-3">
+              <div v-for="col in columns" :key="col" class="col">
+                <div class="card h-100" style="border: 1px solid #aa50e7">
+                  <div class="card-header bg-dark text-white text-uppercase small">
+                    {{ col }}
+                  </div>
+                  <div class="card-body rounded-bottom-1" style="background-color: #303236">
+                    <draggable
+                      v-model="issuesByColumn[col]"
+                      :group="groups"
+                      item-key="id"
+                      animation="200"
+                      @end="onDragEnd"
+                      class="dropzone"
+                    >
+                      <template #item="{ element }">
+                        <div class="issuebox mb-2 p-2 rounded">
                           <strong>{{ element.title }}</strong>
+                          <div class="issuebody small">{{ element.body }}</div>
                         </div>
-                        <div class="issuebody small">{{ element.body }}</div>
-                      </div>
-                    </template>
-                  </draggable>
+                      </template>
+                    </draggable>
+                  </div>
                 </div>
               </div>
             </div>
 
-            <!-- IN PROGRESS -->
-            <div class="col">
-              <div class="card h-100" style="border: 1px solid #aa50e7">
-                <div class="card-header bg-dark text-white text-uppercase small">IN PROGRESS</div>
-                <div class="card-body rounded-bottom-1" style="background-color: #303236">
-                  <draggable
-                    v-model="issuesINPROGRESS"
-                    :group="groups"
-                    item-key="id"
-                    animation="200"
-                    ghost-class="ghost"
-                    chosen-class="chosen"
-                    @end="onDragEnd"
-                    class="dropzone"
-                    :scroll="scrollContainer"
-                    :scrollSensitivity="100"
-                    :scrollSpeed="15"
-                  >
-                    <template #item="{ element }">
-                      <div class="issuebox mb-2 p-2 rounded">
-                        <div class="issuetitle">
-                          <strong>{{ element.title }}</strong>
-                        </div>
-                        <div class="issuebody small">{{ element.body }}</div>
-                      </div>
-                    </template>
-                  </draggable>
-                </div>
-              </div>
-            </div>
-
-            <!-- IN REVIEW -->
-            <div class="col">
-              <div class="card h-100" style="border: 1px solid #aa50e7">
-                <div class="card-header bg-dark text-white text-uppercase small">IN REVIEW</div>
-                <div class="card-body rounded-bottom-1" style="background-color: #303236">
-                  <draggable
-                    v-model="issuesINREVIEW"
-                    :group="groups"
-                    item-key="id"
-                    animation="200"
-                    ghost-class="ghost"
-                    chosen-class="chosen"
-                    @end="onDragEnd"
-                    class="dropzone"
-                    :scroll="scrollContainer"
-                    :scrollSensitivity="100"
-                    :scrollSpeed="15"
-                  >
-                    <template #item="{ element }">
-                      <div class="issuebox mb-2 p-2 rounded">
-                        <div class="issuetitle">
-                          <strong>{{ element.title }}</strong>
-                        </div>
-                        <div class="issuebody small">{{ element.body }}</div>
-                      </div>
-                    </template>
-                  </draggable>
-                </div>
-              </div>
-            </div>
-
-            <!-- DONE -->
-            <div class="col">
-              <div class="card h-100" style="border: 1px solid #aa50e7">
-                <div class="card-header bg-dark text-white text-uppercase small">DONE</div>
-                <div class="card-body rounded-bottom-1" style="background-color: #303236">
-                  <draggable
-                    v-model="issuesDONE"
-                    :group="groups"
-                    item-key="id"
-                    animation="200"
-                    ghost-class="ghost"
-                    chosen-class="chosen"
-                    @end="onDragEnd"
-                    class="dropzone"
-                    :scroll="scrollContainer"
-                    :scrollSensitivity="100"
-                    :scrollSpeed="15"
-                  >
-                    <template #item="{ element }">
-                      <div class="issuebox mb-2 p-2 rounded">
-                        <div class="issuetitle">
-                          <strong>{{ element.title }}</strong>
-                        </div>
-                        <div class="issuebody small">{{ element.body }}</div>
-                      </div>
-                    </template>
-                  </draggable>
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
       </main>
     </div>
@@ -227,7 +128,8 @@ const issuesINPROGRESS = ref([{ id: 3, title: 'Testowanie', body: 'Jednostkowe t
 const issuesINREVIEW = ref([])
 const issuesDONE = ref([])
 
-const columns = ref([])
+const columns = ref([]) // nowe!
+const issuesByColumn = ref({}) // obiekt z tablicami issue
 
 // GitHub login
 function loginWithGithub() {
@@ -266,7 +168,7 @@ async function loadRepos() {
   repos.value = res.data
 }
 
-// Load issues for repo
+// Load issues for repo (with columns)
 async function selectRepo(repo) {
   selectedRepo.value = repo;
 
@@ -275,24 +177,39 @@ async function selectRepo(repo) {
     { withCredentials: true }
   );
 
-  const items = res.data.data.repository.projectsV2.nodes[0].items.nodes;
+  const project = res.data.data.repository.projectsV2.nodes[0];
+  const fields = project.fields.nodes;
 
-  issuesTODO.value = items.filter(i =>
-    i.fieldValues.nodes.some(v => v.name === "Todo")
-  ).map(i => i.content);
+  columns.value = [];
+  const fieldOptionMap = {};
 
-  issuesINPROGRESS.value = items.filter(i =>
-    i.fieldValues.nodes.some(v => v.name === "In Progress")
-  ).map(i => i.content);
+  fields.forEach(f => {
+    if (f.options && f.options.length) {
+      f.options.forEach(opt => {
+        columns.value.push(opt.name);
+        fieldOptionMap[opt.name] = f.name;
+      });
+    }
+  });
 
-  issuesINREVIEW.value = items.filter(i =>
-    i.fieldValues.nodes.some(v => v.name === "In Review")
-  ).map(i => i.content);
+  // "no status" column for unassigned issues
+  if (!columns.value.includes("No Status")) {
+    columns.value.unshift("No Status");
+  }
 
-  issuesDONE.value = items.filter(i =>
-    i.fieldValues.nodes.some(v => v.name === "Done")
-  ).map(i => i.content);
+  issuesByColumn.value = {};
+  columns.value.forEach(col => (issuesByColumn.value[col] = []));
+
+  project.items.nodes.forEach(item => {
+    const statusNode = item.fieldValues.nodes.find(v => v.name && columns.value.includes(v.name));
+    if (statusNode) {
+      issuesByColumn.value[statusNode.name].push(item.content);
+    } else {
+      issuesByColumn.value["No Status"].push(item.content);
+    }
+  });
 }
+
 
 onMounted(loadUser)
 </script>

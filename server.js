@@ -91,6 +91,7 @@ app.get("/api/github/issues/:owner/:repo", async (req, res) => {
   }
 });
 
+// get project items and columns 
 app.get("/api/github/project-items/:owner/:repo", async (req, res) => {
   const token = req.session.token;
   if (!token) return res.status(401).send("Not authenticated");
@@ -98,27 +99,45 @@ app.get("/api/github/project-items/:owner/:repo", async (req, res) => {
   const { owner, repo } = req.params;
 
   const query = `
-  query {
-    repository(owner: "${owner}", name: "${repo}") {
-      projectsV2(first: 1) {
-        nodes {
-          id
-          title
-          items(first: 50) {
-            nodes {
-              id
-              content {
-                ... on Issue {
+    query {
+      repository(owner: "${owner}", name: "${repo}") {
+        projectsV2(first: 1) {
+          nodes {
+            id
+            title
+            fields(first: 20) {
+              nodes {
+                ... on ProjectV2SingleSelectField {
                   id
-                  number
-                  title
-                  body
+                  name
+                  options {
+                    id
+                    name
+                  }
                 }
               }
-              fieldValues(first: 10) {
-                nodes {
-                  ... on ProjectV2ItemFieldSingleSelectValue {
-                    name
+            }
+            items(first: 100) {
+              nodes {
+                id
+                content {
+                  ... on Issue {
+                    id
+                    number
+                    title
+                    body
+                  }
+                }
+                fieldValues(first: 20) {
+                  nodes {
+                    ... on ProjectV2ItemFieldSingleSelectValue {
+                      field {
+                        ... on ProjectV2SingleSelectField {
+                          name
+                        }
+                      }
+                      name
+                    }
                   }
                 }
               }
@@ -127,8 +146,7 @@ app.get("/api/github/project-items/:owner/:repo", async (req, res) => {
         }
       }
     }
-  }
-  `;
+    `;
 
   try {
     const response = await axios.post(
@@ -137,6 +155,7 @@ app.get("/api/github/project-items/:owner/:repo", async (req, res) => {
       { headers: { Authorization: `bearer ${token}` } }
     );
 
+    //console.log(JSON.stringify(response.data, null, 2));
     res.json(response.data);
   } catch (err) {
     console.error(err.response?.data || err.message);
