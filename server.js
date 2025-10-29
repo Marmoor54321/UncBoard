@@ -8,6 +8,7 @@ dotenv.config();
 const app = express();
 app.use(cors({ origin: "http://localhost:5173", credentials: true }));
 app.use(session({ secret: "secret", resave: false, saveUninitialized: true }));
+app.use(express.json());
 
 const CLIENT_ID = process.env.GITHUB_CLIENT_ID;
 const CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET;
@@ -78,7 +79,7 @@ app.get("/api/github/issues/:owner/:repo", async (req, res) => {
 
   try {
     const response = await axios.get(
-      `https://api.github.com/repos/${owner}/${repo}/issues`,
+      `https://api.github.com/repos/${owner}/${repo}/issues?state=all&per_page=100`,
       {
         headers: { Authorization: `token ${token}` },
       }
@@ -90,7 +91,58 @@ app.get("/api/github/issues/:owner/:repo", async (req, res) => {
   }
 });
 
+app.get("/api/github/project-items/:owner/:repo", async (req, res) => {
+  const token = req.session.token;
+  if (!token) return res.status(401).send("Not authenticated");
 
+  const { owner, repo } = req.params;
+
+  const query = `
+  query {
+    repository(owner: "${owner}", name: "${repo}") {
+      projectsV2(first: 1) {
+        nodes {
+          id
+          title
+          items(first: 50) {
+            nodes {
+              id
+              content {
+                ... on Issue {
+                  id
+                  number
+                  title
+                  body
+                }
+              }
+              fieldValues(first: 10) {
+                nodes {
+                  ... on ProjectV2ItemFieldSingleSelectValue {
+                    name
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  `;
+
+  try {
+    const response = await axios.post(
+      "https://api.github.com/graphql",
+      { query },
+      { headers: { Authorization: `bearer ${token}` } }
+    );
+
+    res.json(response.data);
+  } catch (err) {
+    console.error(err.response?.data || err.message);
+    res.status(500).send("Error fetching project items");
+  }
+});
 
 
 

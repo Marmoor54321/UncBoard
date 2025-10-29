@@ -227,6 +227,8 @@ const issuesINPROGRESS = ref([{ id: 3, title: 'Testowanie', body: 'Jednostkowe t
 const issuesINREVIEW = ref([])
 const issuesDONE = ref([])
 
+const columns = ref([])
+
 // GitHub login
 function loginWithGithub() {
   window.location.href = 'http://localhost:3000/auth/github'
@@ -266,17 +268,30 @@ async function loadRepos() {
 
 // Load issues for repo
 async function selectRepo(repo) {
-  selectedRepo.value = repo
-  issuesTODO.value = []
-  try {
-    const res = await axios.get(
-      `http://localhost:3000/api/github/issues/${repo.owner.login}/${repo.name}`,
-      { withCredentials: true },
-    )
-    issuesTODO.value = res.data
-  } catch (err) {
-    console.error('Error loading issues:', err)
-  }
+  selectedRepo.value = repo;
+
+  const res = await axios.get(
+    `http://localhost:3000/api/github/project-items/${repo.owner.login}/${repo.name}`,
+    { withCredentials: true }
+  );
+
+  const items = res.data.data.repository.projectsV2.nodes[0].items.nodes;
+
+  issuesTODO.value = items.filter(i =>
+    i.fieldValues.nodes.some(v => v.name === "Todo")
+  ).map(i => i.content);
+
+  issuesINPROGRESS.value = items.filter(i =>
+    i.fieldValues.nodes.some(v => v.name === "In Progress")
+  ).map(i => i.content);
+
+  issuesINREVIEW.value = items.filter(i =>
+    i.fieldValues.nodes.some(v => v.name === "In Review")
+  ).map(i => i.content);
+
+  issuesDONE.value = items.filter(i =>
+    i.fieldValues.nodes.some(v => v.name === "Done")
+  ).map(i => i.content);
 }
 
 onMounted(loadUser)
