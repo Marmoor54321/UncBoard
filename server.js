@@ -165,14 +165,12 @@ app.get("/api/github/project-items/:owner/:repo", async (req, res) => {
   }
 });
 
-
+// update project field value
 app.post("/api/github/update-item", async (req, res) => {
   const token = req.session.token;
   if (!token) return res.status(401).send("Not authenticated");
 
   const { projectId, itemId, fieldId, optionId } = req.body;
-
-  console.log("Received update-item request:", req.body);
 
   const query = `
     mutation {
@@ -199,6 +197,41 @@ app.post("/api/github/update-item", async (req, res) => {
   } catch (err) {
     console.error("GitHub mutation error:", err.response?.data || err.message);
     res.status(500).send("Error updating item field value");
+  }
+});
+
+
+// clear a project field value (for "No Status")
+app.post("/api/github/clear-item-field", async (req, res) => {
+  const token = req.session.token;
+  if (!token) return res.status(401).send("Not authenticated");
+
+  const { projectId, itemId, fieldId } = req.body;
+
+  const query = `
+    mutation {
+      clearProjectV2ItemFieldValue(
+        input: {
+          projectId: "${projectId}",
+          itemId: "${itemId}",
+          fieldId: "${fieldId}"
+        }
+      ) {
+        clientMutationId
+      }
+    }
+  `;
+
+  try {
+    const response = await axios.post(
+      "https://api.github.com/graphql",
+      { query },
+      { headers: { Authorization: `bearer ${token}` } }
+    );
+    res.json(response.data);
+  } catch (err) {
+    console.error("GitHub clear mutation error:", err.response?.data || err.message);
+    res.status(500).send("Error clearing item field value");
   }
 });
 

@@ -92,15 +92,22 @@
                       :group="groups"
                       item-key="id"
                       animation="200"
+                      ghost-class="ghost"
+                      chosen-class="chosen"
                       @end="onDragEnd"
                       class="dropzone"
+                      :scroll="scrollContainer"
+                      :scrollSensitivity="100"
+                      :scrollSpeed="15"
                     >
                       <template #item="{ element }">
                         <div
                           class="issuebox mb-2 p-2 rounded"
                           :data-item-id="element.projectItemId"
                         >
-                          <strong>{{ element.title }}</strong>
+                          <div class="issuetitle">
+                            <strong>{{ element.title }}</strong>
+                          </div>
                           <div class="issuebody small">{{ element.body }}</div>
                         </div>
                       </template>
@@ -165,34 +172,49 @@ const groups = {
 
 // Event po zakończeniu przeciągania (np. update do backendu)
 async function onDragEnd(event) {
-  const movedIssue = event.item;
-  const newColumn = event.to?.closest('.card')?.querySelector('.card-header')?.innerText.trim();
+  const domItem = event.item;
+  const itemId = domItem?.dataset?.itemId;
+  const newColumnHeader = event.to?.closest('.card')?.querySelector('.card-header')?.innerText?.trim();
 
-  const normalizedColumn = newColumn.toLowerCase().trim().replaceAll("_", " ");
-  const optionId = fieldOptionsMap.value[normalizedColumn];
-
-
-  if (!optionId) {
-    console.error("Missing optionId for column", newColumn);
+  if (!itemId || !newColumnHeader) {
+    console.error("Missing itemId or new column header", { itemId, newColumnHeader });
     return;
   }
 
+  const normalizedColumn = newColumnHeader.toLowerCase().trim().replaceAll("_", " ");
+  const optionId = fieldOptionsMap.value[normalizedColumn];
+
   try {
-    const itemId = movedIssue.dataset.itemId;
-
-    const res = await axios.post(
-      "http://localhost:3000/api/github/update-item",
-      {
-        projectId: currentProjectId.value,
-        itemId,
-        fieldId: statusFieldId.value,
-        optionId,
-      },
-      { withCredentials: true }
-    );
-
+    if (normalizedColumn === "no status") {
+      // call clear endpoint
+      await axios.post(
+        "http://localhost:3000/api/github/clear-item-field",
+        {
+          projectId: currentProjectId.value,
+          itemId,
+          fieldId: statusFieldId.value,
+        },
+        { withCredentials: true }
+      );
+    } else {
+      if (!optionId) {
+        console.error("No optionId found for column", newColumnHeader, normalizedColumn);
+        return;
+      }
+      // call update endpoiny
+      await axios.post(
+        "http://localhost:3000/api/github/update-item",
+        {
+          projectId: currentProjectId.value,
+          itemId,
+          fieldId: statusFieldId.value,
+          optionId,
+        },
+        { withCredentials: true }
+      );
+    }
   } catch (err) {
-    console.error("GitHub update failed:", err.response?.data || err.message);
+    console.error("GitHub update/clear failed:", err.response?.data || err.message);
   }
 }
 
