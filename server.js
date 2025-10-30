@@ -71,6 +71,8 @@ app.get("/api/github/repos", async (req, res) => {
     res.status(500).send("Failed to fetch repositories");
   }
 });
+
+// Get repository issues
 app.get("/api/github/issues/:owner/:repo", async (req, res) => {
   const token = req.session.token;
   if (!token) return res.status(401).send("Not authenticated");
@@ -163,6 +165,42 @@ app.get("/api/github/project-items/:owner/:repo", async (req, res) => {
   }
 });
 
+
+app.post("/api/github/update-item", async (req, res) => {
+  const token = req.session.token;
+  if (!token) return res.status(401).send("Not authenticated");
+
+  const { projectId, itemId, fieldId, optionId } = req.body;
+
+  console.log("Received update-item request:", req.body);
+
+  const query = `
+    mutation {
+      updateProjectV2ItemFieldValue(
+        input: {
+          projectId: "${projectId}",
+          itemId: "${itemId}",
+          fieldId: "${fieldId}",
+          value: { singleSelectOptionId: "${optionId}" }
+        }
+      ) {
+        clientMutationId
+      }
+    }
+  `;
+
+  try {
+    const response = await axios.post(
+      "https://api.github.com/graphql",
+      { query },
+      { headers: { Authorization: `bearer ${token}` } }
+    );
+    res.json(response.data);
+  } catch (err) {
+    console.error("GitHub mutation error:", err.response?.data || err.message);
+    res.status(500).send("Error updating item field value");
+  }
+});
 
 
 

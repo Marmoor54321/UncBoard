@@ -79,7 +79,7 @@
           <h3 class="mb-4 text-white">
             Issues for <span class="text-primary">{{ selectedRepo.name }}</span>
           </h3>
-
+            <!--Kanban board-->
             <div class="row row-cols-1 row-cols-lg-2 row-cols-xl-4 g-3">
               <div v-for="col in columns" :key="col" class="col">
                 <div class="card h-100" style="border: 1px solid #aa50e7">
@@ -96,7 +96,10 @@
                       class="dropzone"
                     >
                       <template #item="{ element }">
-                        <div class="issuebox mb-2 p-2 rounded">
+                        <div
+                          class="issuebox mb-2 p-2 rounded"
+                          :data-item-id="element.projectItemId"
+                        >
                           <strong>{{ element.title }}</strong>
                           <div class="issuebody small">{{ element.body }}</div>
                         </div>
@@ -122,14 +125,18 @@ const user = ref(null)
 const repos = ref([])
 const selectedRepo = ref(null)
 const scrollContainer = ref(null)
+const currentProjectId = ref(null);
+const fieldOptionsMap = ref({});
+const statusFieldId = ref(null);
 
-const issuesTODO = ref([])
-const issuesINPROGRESS = ref([{ id: 3, title: 'Testowanie', body: 'Jednostkowe testy' }])
-const issuesINREVIEW = ref([])
-const issuesDONE = ref([])
 
-const columns = ref([]) // nowe!
-const issuesByColumn = ref({}) // obiekt z tablicami issue
+// const issuesTODO = ref([])
+// const issuesINPROGRESS = ref([{ id: 3, title: 'Testowanie', body: 'Jednostkowe testy' }])
+// const issuesINREVIEW = ref([])
+// const issuesDONE = ref([])
+
+const columns = ref([])
+const issuesByColumn = ref({})
 
 // GitHub login
 function loginWithGithub() {
@@ -148,6 +155,7 @@ async function loadUser() {
     console.log('Not logged in')
   }
 }
+
 // Ustawienia grupy drag&drop
 const groups = {
   name: 'issues',
@@ -156,9 +164,38 @@ const groups = {
 }
 
 // Event po zakończeniu przeciągania (np. update do backendu)
-function onDragEnd(event) {
-  console.log('Przeniesiono issue:', event.item)
+async function onDragEnd(event) {
+  const movedIssue = event.item;
+  const newColumn = event.to?.closest('.card')?.querySelector('.card-header')?.innerText.trim();
+
+  const normalizedColumn = newColumn.toLowerCase().trim().replaceAll("_", " ");
+  const optionId = fieldOptionsMap.value[normalizedColumn];
+
+
+  if (!optionId) {
+    console.error("Missing optionId for column", newColumn);
+    return;
+  }
+
+  try {
+    const itemId = movedIssue.dataset.itemId;
+
+    const res = await axios.post(
+      "http://localhost:3000/api/github/update-item",
+      {
+        projectId: currentProjectId.value,
+        itemId,
+        fieldId: statusFieldId.value,
+        optionId,
+      },
+      { withCredentials: true }
+    );
+
+  } catch (err) {
+    console.error("GitHub update failed:", err.response?.data || err.message);
+  }
 }
+
 
 // Load repos
 async function loadRepos() {
@@ -167,6 +204,11 @@ async function loadRepos() {
   })
   repos.value = res.data
 }
+
+
+// const currentProject = ref(null);
+// const statusField = ref(null);
+// const fieldOptionsMap = ref({});
 
 // Load issues for repo (with columns)
 async function selectRepo(repo) {
@@ -178,19 +220,23 @@ async function selectRepo(repo) {
   );
 
   const project = res.data.data.repository.projectsV2.nodes[0];
+  currentProjectId.value = project.id;
+
   const fields = project.fields.nodes;
 
-  columns.value = [];
-  const fieldOptionMap = {};
+  const statusField = fields.find(f => f.options && f.options.length);
+  statusFieldId.value = statusField?.id;
 
-  fields.forEach(f => {
-    if (f.options && f.options.length) {
-      f.options.forEach(opt => {
-        columns.value.push(opt.name);
-        fieldOptionMap[opt.name] = f.name;
-      });
-    }
-  });
+  fieldOptionsMap.value = {};
+  columns.value = [];
+
+  if (statusField) {
+    statusField.options.forEach(o => {
+      const normalized = o.name.toLowerCase().trim().replaceAll("_", " ");
+      fieldOptionsMap.value[normalized] = o.id;
+      columns.value.push(o.name);
+    });
+  }
 
   // "no status" column for unassigned issues
   if (!columns.value.includes("No Status")) {
@@ -201,14 +247,19 @@ async function selectRepo(repo) {
   columns.value.forEach(col => (issuesByColumn.value[col] = []));
 
   project.items.nodes.forEach(item => {
-    const statusNode = item.fieldValues.nodes.find(v => v.name && columns.value.includes(v.name));
-    if (statusNode) {
-      issuesByColumn.value[statusNode.name].push(item.content);
-    } else {
-      issuesByColumn.value["No Status"].push(item.content);
+    const issue = item.content;
+    if (issue) {
+      issue.projectItemId = item.id;
+      const statusNode = item.fieldValues.nodes.find(v => v.name && columns.value.includes(v.name));
+      if (statusNode) {
+        issuesByColumn.value[statusNode.name].push(issue);
+      } else {
+        issuesByColumn.value["No Status"].push(issue);
+      }
     }
   });
 }
+
 
 
 onMounted(loadUser)
