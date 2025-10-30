@@ -8,6 +8,7 @@ dotenv.config();
 const app = express();
 app.use(cors({ origin: "http://localhost:5173", credentials: true }));
 app.use(session({ secret: "secret", resave: false, saveUninitialized: true }));
+app.use(express.json());
 
 const CLIENT_ID = process.env.GITHUB_CLIENT_ID;
 const CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET;
@@ -70,6 +71,8 @@ app.get("/api/github/repos", async (req, res) => {
     res.status(500).send("Failed to fetch repositories");
   }
 });
+
+// Get repository issues
 app.get("/api/github/issues/:owner/:repo", async (req, res) => {
   const token = req.session.token;
   if (!token) return res.status(401).send("Not authenticated");
@@ -78,7 +81,7 @@ app.get("/api/github/issues/:owner/:repo", async (req, res) => {
 
   try {
     const response = await axios.get(
-      `https://api.github.com/repos/${owner}/${repo}/issues`,
+      `https://api.github.com/repos/${owner}/${repo}/issues?state=all&per_page=100`,
       {
         headers: { Authorization: `token ${token}` },
       }
@@ -90,8 +93,147 @@ app.get("/api/github/issues/:owner/:repo", async (req, res) => {
   }
 });
 
+// get project items and columns 
+app.get("/api/github/project-items/:owner/:repo", async (req, res) => {
+  const token = req.session.token;
+  if (!token) return res.status(401).send("Not authenticated");
+
+  const { owner, repo } = req.params;
+
+  const query = `
+    query {
+      repository(owner: "${owner}", name: "${repo}") {
+        projectsV2(first: 1) {
+          nodes {
+            id
+            title
+            fields(first: 20) {
+              nodes {
+                ... on ProjectV2SingleSelectField {
+                  id
+                  name
+                  options {
+                    id
+                    name
+                  }
+                }
+              }
+            }
+            items(first: 100) {
+              nodes {
+                id
+                content {
+                  ... on Issue {
+                    id
+                    number
+                    title
+                    body
+                  }
+                }
+                fieldValues(first: 20) {
+                  nodes {
+                    ... on ProjectV2ItemFieldSingleSelectValue {
+                      field {
+                        ... on ProjectV2SingleSelectField {
+                          name
+                        }
+                      }
+                      name
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    `;
+
+  try {
+    const response = await axios.post(
+      "https://api.github.com/graphql",
+      { query },
+      { headers: { Authorization: `bearer ${token}` } }
+    );
+
+    //console.log(JSON.stringify(response.data, null, 2));
+    res.json(response.data);
+  } catch (err) {
+    console.error(err.response?.data || err.message);
+    res.status(500).send("Error fetching project items");
+  }
+});
+
+// update project field value
+app.post("/api/github/update-item", async (req, res) => {
+  const token = req.session.token;
+  if (!token) return res.status(401).send("Not authenticated");
+
+  const { projectId, itemId, fieldId, optionId } = req.body;
+
+  const query = `
+    mutation {
+      updateProjectV2ItemFieldValue(
+        input: {
+          projectId: "${projectId}",
+          itemId: "${itemId}",
+          fieldId: "${fieldId}",
+          value: { singleSelectOptionId: "${optionId}" }
+        }
+      ) {
+        clientMutationId
+      }
+    }
+  `;
+
+  try {
+    const response = await axios.post(
+      "https://api.github.com/graphql",
+      { query },
+      { headers: { Authorization: `bearer ${token}` } }
+    );
+    res.json(response.data);
+  } catch (err) {
+    console.error("GitHub mutation error:", err.response?.data || err.message);
+    res.status(500).send("Error updating item field value");
+  }
+});
 
 
+// clear a project field value (for "No Status")
+app.post("/api/github/clear-item-field", async (req, res) => {
+  const token = req.session.token;
+  if (!token) return res.status(401).send("Not authenticated");
+
+  const { projectId, itemId, fieldId } = req.body;
+
+  const query = `
+    mutation {
+      clearProjectV2ItemFieldValue(
+        input: {
+          projectId: "${projectId}",
+          itemId: "${itemId}",
+          fieldId: "${fieldId}"
+        }
+      ) {
+        clientMutationId
+      }
+    }
+  `;
+
+  try {
+    const response = await axios.post(
+      "https://api.github.com/graphql",
+      { query },
+      { headers: { Authorization: `bearer ${token}` } }
+    );
+    res.json(response.data);
+  } catch (err) {
+    console.error("GitHub clear mutation error:", err.response?.data || err.message);
+    res.status(500).send("Error clearing item field value");
+  }
+});
 
 
 

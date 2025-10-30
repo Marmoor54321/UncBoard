@@ -79,133 +79,44 @@
           <h3 class="mb-4 text-white">
             Issues for <span class="text-primary">{{ selectedRepo.name }}</span>
           </h3>
-
-          <!-- KANBAN BOARD -->
-          <div class="row row-cols-1 row-cols-lg-2 row-cols-xl-4 g-3">
-            <!-- TODO -->
-            <div class="col">
-              <div class="card h-100" style="border: 1px solid #aa50e7">
-                <div class="card-header bg-dark text-white text-uppercase small">TODO</div>
-                <div class="card-body rounded-bottom-1" style="background-color: #303236">
-                  <draggable
-                    v-model="issuesTODO"
-                    :group="groups"
-                    item-key="id"
-                    animation="200"
-                    ghost-class="ghost"
-                    chosen-class="chosen"
-                    @end="onDragEnd"
-                    class="dropzone"
-                    :scroll="scrollContainer"
-                    :scrollSensitivity="100"
-                    :scrollSpeed="15"
-                  >
-                    <template #item="{ element }">
-                      <div class="issuebox mb-2 p-2 rounded">
-                        <div class="issuetitle">
-                          <strong>{{ element.title }}</strong>
+            <!--Kanban board-->
+            <div class="row row-cols-1 row-cols-lg-2 row-cols-xl-4 g-3">
+              <div v-for="col in columns" :key="col" class="col">
+                <div class="card h-100" style="border: 1px solid #aa50e7">
+                  <div class="card-header bg-dark text-white text-uppercase small">
+                    {{ col }}
+                  </div>
+                  <div class="card-body rounded-bottom-1" style="background-color: #303236">
+                    <draggable
+                      v-model="issuesByColumn[col]"
+                      :group="groups"
+                      item-key="id"
+                      animation="200"
+                      ghost-class="ghost"
+                      chosen-class="chosen"
+                      @end="onDragEnd"
+                      class="dropzone"
+                      :scroll="scrollContainer"
+                      :scrollSensitivity="100"
+                      :scrollSpeed="15"
+                    >
+                      <template #item="{ element }">
+                        <div
+                          class="issuebox mb-2 p-2 rounded"
+                          :data-item-id="element.projectItemId"
+                        >
+                          <div class="issuetitle">
+                            <strong>{{ element.title }}</strong>
+                          </div>
+                          <div class="issuebody small">{{ element.body }}</div>
                         </div>
-                        <div class="issuebody small">{{ element.body }}</div>
-                      </div>
-                    </template>
-                  </draggable>
+                      </template>
+                    </draggable>
+                  </div>
                 </div>
               </div>
             </div>
 
-            <!-- IN PROGRESS -->
-            <div class="col">
-              <div class="card h-100" style="border: 1px solid #aa50e7">
-                <div class="card-header bg-dark text-white text-uppercase small">IN PROGRESS</div>
-                <div class="card-body rounded-bottom-1" style="background-color: #303236">
-                  <draggable
-                    v-model="issuesINPROGRESS"
-                    :group="groups"
-                    item-key="id"
-                    animation="200"
-                    ghost-class="ghost"
-                    chosen-class="chosen"
-                    @end="onDragEnd"
-                    class="dropzone"
-                    :scroll="scrollContainer"
-                    :scrollSensitivity="100"
-                    :scrollSpeed="15"
-                  >
-                    <template #item="{ element }">
-                      <div class="issuebox mb-2 p-2 rounded">
-                        <div class="issuetitle">
-                          <strong>{{ element.title }}</strong>
-                        </div>
-                        <div class="issuebody small">{{ element.body }}</div>
-                      </div>
-                    </template>
-                  </draggable>
-                </div>
-              </div>
-            </div>
-
-            <!-- IN REVIEW -->
-            <div class="col">
-              <div class="card h-100" style="border: 1px solid #aa50e7">
-                <div class="card-header bg-dark text-white text-uppercase small">IN REVIEW</div>
-                <div class="card-body rounded-bottom-1" style="background-color: #303236">
-                  <draggable
-                    v-model="issuesINREVIEW"
-                    :group="groups"
-                    item-key="id"
-                    animation="200"
-                    ghost-class="ghost"
-                    chosen-class="chosen"
-                    @end="onDragEnd"
-                    class="dropzone"
-                    :scroll="scrollContainer"
-                    :scrollSensitivity="100"
-                    :scrollSpeed="15"
-                  >
-                    <template #item="{ element }">
-                      <div class="issuebox mb-2 p-2 rounded">
-                        <div class="issuetitle">
-                          <strong>{{ element.title }}</strong>
-                        </div>
-                        <div class="issuebody small">{{ element.body }}</div>
-                      </div>
-                    </template>
-                  </draggable>
-                </div>
-              </div>
-            </div>
-
-            <!-- DONE -->
-            <div class="col">
-              <div class="card h-100" style="border: 1px solid #aa50e7">
-                <div class="card-header bg-dark text-white text-uppercase small">DONE</div>
-                <div class="card-body rounded-bottom-1" style="background-color: #303236">
-                  <draggable
-                    v-model="issuesDONE"
-                    :group="groups"
-                    item-key="id"
-                    animation="200"
-                    ghost-class="ghost"
-                    chosen-class="chosen"
-                    @end="onDragEnd"
-                    class="dropzone"
-                    :scroll="scrollContainer"
-                    :scrollSensitivity="100"
-                    :scrollSpeed="15"
-                  >
-                    <template #item="{ element }">
-                      <div class="issuebox mb-2 p-2 rounded">
-                        <div class="issuetitle">
-                          <strong>{{ element.title }}</strong>
-                        </div>
-                        <div class="issuebody small">{{ element.body }}</div>
-                      </div>
-                    </template>
-                  </draggable>
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
       </main>
     </div>
@@ -221,11 +132,18 @@ const user = ref(null)
 const repos = ref([])
 const selectedRepo = ref(null)
 const scrollContainer = ref(null)
+const currentProjectId = ref(null);
+const fieldOptionsMap = ref({});
+const statusFieldId = ref(null);
 
-const issuesTODO = ref([])
-const issuesINPROGRESS = ref([{ id: 3, title: 'Testowanie', body: 'Jednostkowe testy' }])
-const issuesINREVIEW = ref([])
-const issuesDONE = ref([])
+
+// const issuesTODO = ref([])
+// const issuesINPROGRESS = ref([{ id: 3, title: 'Testowanie', body: 'Jednostkowe testy' }])
+// const issuesINREVIEW = ref([])
+// const issuesDONE = ref([])
+
+const columns = ref([])
+const issuesByColumn = ref({})
 
 // GitHub login
 function loginWithGithub() {
@@ -244,6 +162,7 @@ async function loadUser() {
     console.log('Not logged in')
   }
 }
+
 // Ustawienia grupy drag&drop
 const groups = {
   name: 'issues',
@@ -252,9 +171,53 @@ const groups = {
 }
 
 // Event po zakończeniu przeciągania (np. update do backendu)
-function onDragEnd(event) {
-  console.log('Przeniesiono issue:', event.item)
+async function onDragEnd(event) {
+  const domItem = event.item;
+  const itemId = domItem?.dataset?.itemId;
+  const newColumnHeader = event.to?.closest('.card')?.querySelector('.card-header')?.innerText?.trim();
+
+  if (!itemId || !newColumnHeader) {
+    console.error("Missing itemId or new column header", { itemId, newColumnHeader });
+    return;
+  }
+
+  const normalizedColumn = newColumnHeader.toLowerCase().trim().replaceAll("_", " ");
+  const optionId = fieldOptionsMap.value[normalizedColumn];
+
+  try {
+    if (normalizedColumn === "no status") {
+      // call clear endpoint
+      await axios.post(
+        "http://localhost:3000/api/github/clear-item-field",
+        {
+          projectId: currentProjectId.value,
+          itemId,
+          fieldId: statusFieldId.value,
+        },
+        { withCredentials: true }
+      );
+    } else {
+      if (!optionId) {
+        console.error("No optionId found for column", newColumnHeader, normalizedColumn);
+        return;
+      }
+      // call update endpoiny
+      await axios.post(
+        "http://localhost:3000/api/github/update-item",
+        {
+          projectId: currentProjectId.value,
+          itemId,
+          fieldId: statusFieldId.value,
+          optionId,
+        },
+        { withCredentials: true }
+      );
+    }
+  } catch (err) {
+    console.error("GitHub update/clear failed:", err.response?.data || err.message);
+  }
 }
+
 
 // Load repos
 async function loadRepos() {
@@ -264,20 +227,62 @@ async function loadRepos() {
   repos.value = res.data
 }
 
-// Load issues for repo
+
+// const currentProject = ref(null);
+// const statusField = ref(null);
+// const fieldOptionsMap = ref({});
+
+// Load issues for repo (with columns)
 async function selectRepo(repo) {
-  selectedRepo.value = repo
-  issuesTODO.value = []
-  try {
-    const res = await axios.get(
-      `http://localhost:3000/api/github/issues/${repo.owner.login}/${repo.name}`,
-      { withCredentials: true },
-    )
-    issuesTODO.value = res.data
-  } catch (err) {
-    console.error('Error loading issues:', err)
+  selectedRepo.value = repo;
+
+  const res = await axios.get(
+    `http://localhost:3000/api/github/project-items/${repo.owner.login}/${repo.name}`,
+    { withCredentials: true }
+  );
+
+  const project = res.data.data.repository.projectsV2.nodes[0];
+  currentProjectId.value = project.id;
+
+  const fields = project.fields.nodes;
+
+  const statusField = fields.find(f => f.options && f.options.length);
+  statusFieldId.value = statusField?.id;
+
+  fieldOptionsMap.value = {};
+  columns.value = [];
+
+  if (statusField) {
+    statusField.options.forEach(o => {
+      const normalized = o.name.toLowerCase().trim().replaceAll("_", " ");
+      fieldOptionsMap.value[normalized] = o.id;
+      columns.value.push(o.name);
+    });
   }
+
+  // "no status" column for unassigned issues
+  if (!columns.value.includes("No Status")) {
+    columns.value.unshift("No Status");
+  }
+
+  issuesByColumn.value = {};
+  columns.value.forEach(col => (issuesByColumn.value[col] = []));
+
+  project.items.nodes.forEach(item => {
+    const issue = item.content;
+    if (issue) {
+      issue.projectItemId = item.id;
+      const statusNode = item.fieldValues.nodes.find(v => v.name && columns.value.includes(v.name));
+      if (statusNode) {
+        issuesByColumn.value[statusNode.name].push(issue);
+      } else {
+        issuesByColumn.value["No Status"].push(issue);
+      }
+    }
+  });
 }
+
+
 
 onMounted(loadUser)
 </script>
