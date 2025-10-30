@@ -101,45 +101,134 @@ app.get("/api/github/project-items/:owner/:repo", async (req, res) => {
   const { owner, repo } = req.params;
 
   const query = `
-    query {
-      repository(owner: "${owner}", name: "${repo}") {
-        projectsV2(first: 1) {
-          nodes {
-            id
-            title
-            fields(first: 20) {
-              nodes {
-                ... on ProjectV2SingleSelectField {
+  query {
+    repository(owner: "${owner}", name: "${repo}") {
+      projectsV2(first: 1) {
+        nodes {
+          id
+          title
+          fields(first: 20) {
+            nodes {
+              ... on ProjectV2SingleSelectField {
+                id
+                name
+                options {
                   id
                   name
-                  options {
-                    id
-                    name
-                  }
                 }
               }
             }
-            items(first: 100) {
-              nodes {
-                id
-                content {
-                  ... on Issue {
-                    id
-                    number
-                    title
-                    body
+          }
+          items(first: 100) {
+            nodes {
+              id
+              content {
+                ... on Issue {
+                  id
+                  number
+                  title
+                  body
+                  createdAt
+                  author {
+                    login
+                    avatarUrl
+                    url
                   }
-                }
-                fieldValues(first: 20) {
-                  nodes {
-                    ... on ProjectV2ItemFieldSingleSelectValue {
-                      field {
-                        ... on ProjectV2SingleSelectField {
+                  assignees(first: 10) {
+                    nodes {
+                      login
+                      avatarUrl
+                      url
+                    }
+                  }
+                  labels(first: 10) {
+                    nodes {
+                      name
+                      color
+                    }
+                  }
+                  comments(first: 20, orderBy: {field: UPDATED_AT, direction: DESC}) {
+                    nodes {
+                      id
+                      body
+                      createdAt
+                      author {
+                        login
+                        avatarUrl
+                        url
+                      }
+                    }
+                  }
+                  timelineItems(first: 20, itemTypes: [LABELED_EVENT, UNLABELED_EVENT, ASSIGNED_EVENT, UNASSIGNED_EVENT, CLOSED_EVENT, REOPENED_EVENT]) {
+                    nodes {
+                      __typename
+                      ... on LabeledEvent {
+                        createdAt
+                        label {
                           name
+                          color
+                        }
+                        actor {
+                          login
                         }
                       }
-                      name
+                      ... on UnlabeledEvent {
+                        createdAt
+                        label {
+                          name
+                          color
+                        }
+                        actor {
+                          login
+                        }
+                      }
+                      ... on AssignedEvent {
+                        createdAt
+                        actor {
+                          login
+                        }
+                        assignee {
+                          ... on User {
+                            login
+                          }
+                        }
+                      }
+                      ... on UnassignedEvent {
+                        createdAt
+                        actor {
+                          login
+                        }
+                        assignee {
+                          ... on User {
+                            login
+                          }
+                        }
+                      }
+                      ... on ClosedEvent {
+                        createdAt
+                        actor {
+                          login
+                        }
+                      }
+                      ... on ReopenedEvent {
+                        createdAt
+                        actor {
+                          login
+                        }
+                      }
                     }
+                  }
+                }
+              }
+              fieldValues(first: 20) {
+                nodes {
+                  ... on ProjectV2ItemFieldSingleSelectValue {
+                    field {
+                      ... on ProjectV2SingleSelectField {
+                        name
+                      }
+                    }
+                    name
                   }
                 }
               }
@@ -148,7 +237,12 @@ app.get("/api/github/project-items/:owner/:repo", async (req, res) => {
         }
       }
     }
-    `;
+  }
+`;
+
+
+
+
 
   try {
     const response = await axios.post(
@@ -164,6 +258,8 @@ app.get("/api/github/project-items/:owner/:repo", async (req, res) => {
     res.status(500).send("Error fetching project items");
   }
 });
+
+
 
 // update project field value
 app.post("/api/github/update-item", async (req, res) => {
