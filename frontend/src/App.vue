@@ -100,7 +100,7 @@
                       <template #item="{ element }">
                         <div
                           class="issuebox mb-2 p-2 rounded "
-                          :data-item-id="element.projectItemId"
+                          :data-item-id="element.id"
                           @click="openIssue(element)"
                         >
                           <div class="issuetitle"
