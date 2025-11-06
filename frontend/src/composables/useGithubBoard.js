@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue'
 import axios from 'axios'
 
+
 export function useGithubBoard() {
   const user = ref(null)
   const repos = ref([])
@@ -18,6 +19,7 @@ export function useGithubBoard() {
   function loginWithGithub() {
     window.location.href = 'http://localhost:3000/auth/github'
   }
+  
 
   async function loadUser() {
     try {
@@ -35,19 +37,40 @@ export function useGithubBoard() {
   }
 
   async function selectRepo(repo) {
-    selectedRepo.value = repo
+  try {
+    // Utwórz domyślne statusy
+    const res = await axios.post("http://localhost:3000/api/statuses/default", {
+      repo_id: repo.id,
+    }, { withCredentials: true });
 
-  
-    const res = await axios.get(
+    console.log(res.data.message);
+
+    // Pobierz statusy repo
+    const statuses = await axios.get(`http://localhost:3000/api/statuses/${repo.id}`, {
+      withCredentials: true
+    });
+
+    console.log("📋 Repo statuses:", statuses.data);
+
+    // Pobierz issue z GitHuba
+    const issuesRes = await axios.get(
       `http://localhost:3000/api/github/issues/${repo.owner.login}/${repo.name}`,
       { withCredentials: true }
-    )
+    );
 
-    const issues = res.data
+    const issues = issuesRes.data;
+    columns.value = [...statuses.data];
+    issuesByColumn.value = {}
 
-    
-    columns.value = ["All Issues"]
-    issuesByColumn.value = { "All Issues": issues }
+columns.value.forEach(col => {
+  issuesByColumn.value[col.name] = []
+})
+
+    selectedRepo.value = repo;
+
+  } catch (error) {
+    console.error("❌ Error selecting repo:", error.response?.data || error.message);
+  }
 }
 
 

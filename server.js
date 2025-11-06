@@ -5,6 +5,9 @@ import session from "express-session";
 import dotenv from "dotenv";
 import cors from "cors";
 import createGitHubRoutes from "./routes/githubAuth.js";
+import Status from "./models/Status.js";
+
+
 
 
 dotenv.config();
@@ -44,6 +47,32 @@ mongoose.connect('mongodb://localhost:27017/uncboard', {
       res.status(500).send("Failed to fetch repositories");
     }
   });
+  
+app.post("/api/statuses/default", async (req, res) => {
+  try {
+    const { repo_id } = req.body;
+    if (!repo_id) return res.status(400).json({ message: "repo_id is required" });
+
+    const existing = await Status.find({ repo_id });
+    if (existing.length > 0) {
+      return res.status(200).json({ message: "Default statuses already exist" });
+    }
+
+    const defaults = [
+      { name: "TO DO", is_default: true, order: 1 },
+      { name: "IN PROGRESS", is_default: true, order: 2 },
+      { name: "IN REVIEW", is_default: true, order: 3 },
+      { name: "DONE", is_default: true, order: 4 },
+    ];
+
+    const created = await Status.insertMany(defaults.map(s => ({ ...s, repo_id })));
+    res.status(201).json({ message: "Default statuses created successfully", statuses: created });
+
+  } catch (err) {
+    console.error("Error creating default statuses:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
 
 // Get repository issues
 app.get("/api/github/issues/:owner/:repo", async (req, res) => {
@@ -51,7 +80,7 @@ app.get("/api/github/issues/:owner/:repo", async (req, res) => {
   if (!token) return res.status(401).send("Not authenticated");
 
   const { owner, repo } = req.params;
-
+  
   try {
     const response = await axios.get(
       `https://api.github.com/repos/${owner}/${repo}/issues?state=all&per_page=100`,
@@ -64,6 +93,45 @@ app.get("/api/github/issues/:owner/:repo", async (req, res) => {
     console.error("GitHub API error:", err.response?.data || err.message);
     res.status(500).send("Failed to fetch issues");
   }
+});
+
+
+//endpoints dla statusów
+
+//pobieranie statusów dla repozytorium
+app.get("/api/statuses/:repoId", async (req, res) => {
+  const statuses = await Status.find({ repo_id: req.params.repoId }).sort({ order: 1 });
+  res.json(statuses);
+});
+
+//dodawanie nowego statusu
+app.post("/api/statuses", async (req, res) => {
+  const { repo_id, name, user_id } = req.body;
+
+  const count = await Status.countDocuments({ repo_id });
+
+  const status = await Status.create({
+    repo_id,
+    name,
+    created_by: user_id,
+    order: count + 1
+  });
+
+  res.json(status);
+});
+
+//usuwanie statusu
+app.delete("/api/statuses/:statusId", async (req, res) => {
+  const status = await Status.findById(req.params.statusId);
+
+  if (!status) return res.status(404).send("Status not found");
+
+  if (status.is_default)
+    return res.status(400).send("Cannot delete default status");
+
+  await status.deleteOne();
+
+  res.sendStatus(200);
 });
 
 
