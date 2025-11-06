@@ -81,7 +81,7 @@
               <div v-for="col in columns" :key="col._id" class="col">
                 <div class="card h-100" style="border: 1px solid #aa50e7">
                   <div class="card-header bg-dark text-white text-uppercase small">
-                    {{ col.name }}
+                    {{ col }}
                   </div>
                   <div class="card-body rounded-bottom-1" style="background-color: #303236">
                     <draggable

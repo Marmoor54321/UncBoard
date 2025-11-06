@@ -39,11 +39,9 @@ export function useGithubBoard() {
   async function selectRepo(repo) {
   try {
     // Utwórz domyślne statusy
-    const res = await axios.post("http://localhost:3000/api/statuses/default", {
+    await axios.post("http://localhost:3000/api/statuses/default", {
       repo_id: repo.id,
     }, { withCredentials: true });
-
-    console.log(res.data.message);
 
     // Pobierz statusy repo
     const statuses = await axios.get(`http://localhost:3000/api/statuses/${repo.id}`, {
@@ -52,26 +50,31 @@ export function useGithubBoard() {
 
     console.log("📋 Repo statuses:", statuses.data);
 
-    // Pobierz issue z GitHuba
+    // Pobierz issue (z przypisanymi statusami)
     const issuesRes = await axios.get(
-      `http://localhost:3000/api/github/issues/${repo.owner.login}/${repo.name}`,
+      `http://localhost:3000/api/github/issues/${repo.owner.login}/${repo.name}?repo_id=${repo.id}`,
       { withCredentials: true }
     );
 
     const issues = issuesRes.data;
-    columns.value = [...statuses.data];
-    issuesByColumn.value = {}
 
-columns.value.forEach(col => {
-  issuesByColumn.value[col.name] = []
-})
+    // Utwórz kolumny (nazwy statusów)
+    columns.value = statuses.data.map(s => s.name);
+    issuesByColumn.value = {};
+
+    columns.value.forEach(col => {
+      issuesByColumn.value[col] = issues.filter(issue => issue.status === col);
+    });
 
     selectedRepo.value = repo;
+
+    console.log("✅ Issues by column:", issuesByColumn.value);
 
   } catch (error) {
     console.error("❌ Error selecting repo:", error.response?.data || error.message);
   }
 }
+
 
 
   async function onDragEnd(event) {

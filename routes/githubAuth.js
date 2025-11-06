@@ -36,7 +36,7 @@ export default function createGitHubRoutes(CLIENT_ID, CLIENT_SECRET) {
 router.get("/api/github/user", async (req, res) => {
   const token = req.session.token;
   if (!token) return res.status(401).send("Not authenticated");
-
+  console.log( token);
   try {
     const response = await axios.get("https://api.github.com/user", {
       headers: { Authorization: `token ${token}` },

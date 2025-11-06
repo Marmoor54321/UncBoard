@@ -6,6 +6,7 @@ import dotenv from "dotenv";
 import cors from "cors";
 import createGitHubRoutes from "./routes/githubAuth.js";
 import Status from "./models/Status.js";
+import IssueStatus from "./models/IssueStatus.js";
 
 
 
@@ -80,20 +81,62 @@ app.get("/api/github/issues/:owner/:repo", async (req, res) => {
   if (!token) return res.status(401).send("Not authenticated");
 
   const { owner, repo } = req.params;
-  
+  const repo_id = req.query.repo_id; // frontend powinien przekazać id repo
+
   try {
+    // 1. Pobierz issue z GitHuba
     const response = await axios.get(
       `https://api.github.com/repos/${owner}/${repo}/issues?state=all&per_page=100`,
-      {
-        headers: { Authorization: `token ${token}` },
-      }
+      { headers: { Authorization: `token ${token}` } }
     );
-    res.json(response.data);
+
+    const githubIssues = response.data;
+
+    // 2. Pobierz wszystkie statusy repo
+    const statuses = await Status.find({ repo_id });
+    const todoStatus = statuses.find(s => s.name === "TO DO");
+
+    // 3. Pobierz powiązania z IssueStatus
+    const existing = await IssueStatus.find({ repo_id });
+
+    // 4. Utwórz brakujące wpisy w IssueStatus
+    const newStatuses = [];
+    for (const issue of githubIssues) {
+      const already = existing.find(e => e.issue_id === issue.id);
+      if (!already) {
+        newStatuses.push({
+          repo_id,
+          issue_id: issue.id,
+          status_id: todoStatus._id, // domyślny status TO DO
+        });
+      }
+    }
+
+    if (newStatuses.length > 0) {
+      await IssueStatus.insertMany(newStatuses);
+      console.log(`✅ Added ${newStatuses.length} new issue-status records.`);
+    }
+
+    // 5. Pobierz aktualne przypisania (po ewentualnym dodaniu)
+    const issueStatuses = await IssueStatus.find({ repo_id }).populate("status_id");
+
+    // 6. Dołącz statusy do issue
+    const issuesWithStatus = githubIssues.map(issue => {
+      const status = issueStatuses.find(s => s.issue_id === issue.id);
+      return {
+        ...issue,
+        status: status ? status.status_id.name : "TO DO",
+      };
+    });
+
+    res.json(issuesWithStatus);
+
   } catch (err) {
     console.error("GitHub API error:", err.response?.data || err.message);
     res.status(500).send("Failed to fetch issues");
   }
 });
+
 
 
 //endpoints dla statusów
