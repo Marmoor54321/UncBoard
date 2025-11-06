@@ -1,6 +1,8 @@
 // routes/githubAuth.js
 import express from "express";
 import axios from "axios";
+import User from "../models/User.js";
+
 
 const router = express.Router();
 
@@ -31,34 +33,39 @@ export default function createGitHubRoutes(CLIENT_ID, CLIENT_SECRET) {
   });
 
   // GitHub user info
-  router.get("/api/github/user", async (req, res) => {
-    const token = req.session.token;
-    if (!token) return res.status(401).send("Not authenticated");
+router.get("/api/github/user", async (req, res) => {
+  const token = req.session.token;
+  if (!token) return res.status(401).send("Not authenticated");
 
-    try {
-      const response = await axios.get("https://api.github.com/user", {
-        headers: { Authorization: `token ${token}` },
-      });
-      res.json(response.data);
-    } catch (err) {
-      res.status(500).send("Failed to fetch user");
-    }
-  });
+  try {
+    const response = await axios.get("https://api.github.com/user", {
+      headers: { Authorization: `token ${token}` },
+    });
 
-  // User repos
-  router.get("/api/github/repos", async (req, res) => {
-    const token = req.session.token;
-    if (!token) return res.status(401).send("Not authenticated");
+    const gh = response.data;
 
-    try {
-      const response = await axios.get("https://api.github.com/user/repos", {
-        headers: { Authorization: `token ${token}` },
-      });
-      res.json(response.data);
-    } catch (err) {
-      res.status(500).send("Failed to fetch repositories");
-    }
-  });
+    //zapis do MongoDB
+    const user = await User.findOneAndUpdate(
+      { github_id: gh.id },
+      {
+        github_id: gh.id,
+        login: gh.login,
+        avatar_url: gh.avatar_url,
+        html_url: gh.html_url,
+        last_login: new Date()
+      },
+      { upsert: true, new: true }
+    );
+
+    res.json(user);
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Failed to fetch user");
+  }
+});
+
+  
 
   return router;
 }

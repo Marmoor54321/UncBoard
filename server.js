@@ -30,7 +30,20 @@ mongoose.connect('mongodb://localhost:27017/uncboard', {
 .then(() => console.log("✅ Połączono z MongoDB"))
 .catch(err => console.log(err));
 
+// User repos
+  app.get("/api/github/repos", async (req, res) => {
+    const token = req.session.token;
+    if (!token) return res.status(401).send("Not authenticated");
 
+    try {
+      const response = await axios.get("https://api.github.com/user/repos", {
+        headers: { Authorization: `token ${token}` },
+      });
+      res.json(response.data);
+    } catch (err) {
+      res.status(500).send("Failed to fetch repositories");
+    }
+  });
 
 // Get repository issues
 app.get("/api/github/issues/:owner/:repo", async (req, res) => {

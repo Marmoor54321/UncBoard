@@ -35,19 +35,19 @@ export function useGithubBoard() {
   }
 
   async function selectRepo(repo) {
-  selectedRepo.value = repo
+    selectedRepo.value = repo
 
-  // 🔵 Pobierz issues z backendu (REST)
-  const res = await axios.get(
-    `http://localhost:3000/api/github/issues/${repo.owner.login}/${repo.name}`,
-    { withCredentials: true }
-  )
+  
+    const res = await axios.get(
+      `http://localhost:3000/api/github/issues/${repo.owner.login}/${repo.name}`,
+      { withCredentials: true }
+    )
 
-  const issues = res.data
+    const issues = res.data
 
-  // 🔵 Kanban: jedna kolumna = wszystkie issues
-  columns.value = ["All Issues"]
-  issuesByColumn.value = { "All Issues": issues }
+    
+    columns.value = ["All Issues"]
+    issuesByColumn.value = { "All Issues": issues }
 }
 
 
