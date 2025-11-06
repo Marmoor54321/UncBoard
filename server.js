@@ -81,10 +81,10 @@ app.get("/api/github/issues/:owner/:repo", async (req, res) => {
   if (!token) return res.status(401).send("Not authenticated");
 
   const { owner, repo } = req.params;
-  const repo_id = req.query.repo_id; // frontend powinien przekazać id repo
+  const repo_id = req.query.repo_id; 
 
   try {
-    // 1. Pobierz issue z GitHuba
+    // issue z GitHuba
     const response = await axios.get(
       `https://api.github.com/repos/${owner}/${repo}/issues?state=all&per_page=100`,
       { headers: { Authorization: `token ${token}` } }
@@ -92,14 +92,14 @@ app.get("/api/github/issues/:owner/:repo", async (req, res) => {
 
     const githubIssues = response.data;
 
-    // 2. Pobierz wszystkie statusy repo
+    // wszystkie statusy repo
     const statuses = await Status.find({ repo_id });
     const todoStatus = statuses.find(s => s.name === "TO DO");
 
-    // 3. Pobierz powiązania z IssueStatus
+    // powiązania z IssueStatus
     const existing = await IssueStatus.find({ repo_id });
 
-    // 4. Utwórz brakujące wpisy w IssueStatus
+    //  brakujące wpisy w IssueStatus
     const newStatuses = [];
     for (const issue of githubIssues) {
       const already = existing.find(e => e.issue_id === issue.id);
@@ -114,13 +114,13 @@ app.get("/api/github/issues/:owner/:repo", async (req, res) => {
 
     if (newStatuses.length > 0) {
       await IssueStatus.insertMany(newStatuses);
-      console.log(`✅ Added ${newStatuses.length} new issue-status records.`);
+      console.log(`Added ${newStatuses.length} new issue-status records.`);
     }
 
-    // 5. Pobierz aktualne przypisania (po ewentualnym dodaniu)
+    // aktualne przypisania (po ewentualnym dodaniu)
     const issueStatuses = await IssueStatus.find({ repo_id }).populate("status_id");
 
-    // 6. Dołącz statusy do issue
+    // statusy do issue
     const issuesWithStatus = githubIssues.map(issue => {
       const status = issueStatuses.find(s => s.issue_id === issue.id);
       return {
@@ -137,6 +137,27 @@ app.get("/api/github/issues/:owner/:repo", async (req, res) => {
   }
 });
 
+app.put("/api/issue-status", async (req, res) => {
+  try {
+    const { issue_id, repo_id, status_id } = req.body
+    if (!issue_id || !repo_id || !status_id)
+      return res.status(400).json({ message: "Missing fields" })
+
+    let issueStatus = await IssueStatus.findOne({ issue_id, repo_id })
+    if (issueStatus) {
+      issueStatus.status_id = status_id
+      issueStatus.updated_at = new Date()
+      await issueStatus.save()
+    } else {
+      issueStatus = await IssueStatus.create({ issue_id, repo_id, status_id })
+    }
+
+    res.json({ message: "Issue status updated", issueStatus })
+  } catch (err) {
+    console.error("Error updating issue status:", err)
+    res.status(500).json({ message: "Server error" })
+  }
+})
 
 
 //endpoints dla statusów

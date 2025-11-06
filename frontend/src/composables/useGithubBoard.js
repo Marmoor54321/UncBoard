@@ -48,7 +48,7 @@ export function useGithubBoard() {
       withCredentials: true
     });
 
-    console.log("📋 Repo statuses:", statuses.data);
+    console.log("Repo statuses:", statuses.data);
 
     // Pobierz issue (z przypisanymi statusami)
     const issuesRes = await axios.get(
@@ -59,27 +59,54 @@ export function useGithubBoard() {
     const issues = issuesRes.data;
 
     // Utwórz kolumny (nazwy statusów)
-    columns.value = statuses.data.map(s => s.name);
+    console.log("Issues with statuses:", statuses.data);
+    columns.value = statuses.data.map(s => ({
+      id: s._id,
+      name:s.name
+    }));
     issuesByColumn.value = {};
 
     columns.value.forEach(col => {
-      issuesByColumn.value[col] = issues.filter(issue => issue.status === col);
+      issuesByColumn.value[col.name] = issues.filter(issue => issue.status === col.name);
     });
 
     selectedRepo.value = repo;
 
-    console.log("✅ Issues by column:", issuesByColumn.value);
+    console.log("Issues by column:", issuesByColumn.value);
 
   } catch (error) {
-    console.error("❌ Error selecting repo:", error.response?.data || error.message);
+    console.error("Error selecting repo:", error.response?.data || error.message);
   }
 }
 
 
 
   async function onDragEnd(event) {
-    //
+  const { item, to } = event
+  const issueId = item.dataset.itemId
+  const newStatusName = to.closest(".card").querySelector(".card-header").textContent.trim()
+  console.log( "dragend", issueId, newStatusName, typeof(newStatusName));
+
+  try {
+    const newStatus = columns.value.find(c => c.name === newStatusName)
+    console.log( newStatus);
+    if (!newStatus) return
+    console.log("🔹 Found new status:", newStatus)
+    console.log(issueId, typeof(issueId));
+    console.log(selectedRepo.value.id, typeof(selectedRepo.value.id));
+    console.log(newStatus.id, typeof(newStatus.id));
+
+    await axios.put("http://localhost:3000/api/issue-status", {
+      issue_id: parseInt(issueId),
+      repo_id: selectedRepo.value.id,
+      status_id: newStatus.id
+    }, { withCredentials: true })
+
+    console.log(`Updated issue ${issueId} → ${newStatus.name}`)
+  } catch (err) {
+    console.error("Error updating issue status:", err.response?.data || err.message)
   }
+}
 
   onMounted(loadUser)
 

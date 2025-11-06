@@ -35,8 +35,7 @@
           <p v-else class="text-light">
             This issue has <strong>{{ issue.comments }}</strong> comments.
             <br />
-            (Fetching full comment list requires a second API call –
-            mogę dodać! ✅)
+            (to do)
           </p>
         </div>
       </div>
