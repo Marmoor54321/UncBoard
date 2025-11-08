@@ -23,17 +23,22 @@ export function useGithubBoard() {
 
   async function loadUser() {
     try {
-      const res = await axios.get('http://localhost:3000/api/github/user', { withCredentials: true })
-      user.value = res.data
+      const res = await axios.get('http://localhost:3000/api/github/user', { withCredentials: true, timeout: 5000 })
+      user.value = res.data ?? null
       await loadRepos()
-    } catch {
-      console.log('Not logged in')
+    } catch(e) {
+      console.log('Not logged in',e)
     }
   }
 
   async function loadRepos() {
-    const res = await axios.get('http://localhost:3000/api/github/repos', { withCredentials: true })
-    repos.value = res.data
+    try{
+    const res = await axios.get('http://localhost:3000/api/github/repos', { withCredentials: true, timeout: 5000 })
+    repos.value = res?.data ?? null
+    }
+    catch(e){
+      console.error('Error loading repos:', e)
+    }
   }
 
   async function selectRepo(repo) {
