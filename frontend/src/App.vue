@@ -1,67 +1,16 @@
 <template>
   <div class="container-fluid vh-100 d-flex flex-column p-0" style="background-color: #1d1e20">
-    <!-- HEADER -->
-    <header
-      class="text-white p-3 d-flex justify-content-between align-items-center"
-      style="background-color: #303236"
-    >
-      <button
-        class="btn btn-dark d-lg-none"
-        type="button"
-        data-bs-toggle="offcanvas"
-        data-bs-target="#sidebarOffcanvas"
-        aria-controls="sidebarOffcanvas"
-      >
-        <i class="bi bi-list"></i>
-      </button>
-
-      <h1 class="m-0 fs-3">uncBoard</h1>
-
-    </header>
-
+    <Header />
     <div class="flex-grow-1 d-flex overflow-hidden">
       <!-- LEWY PANEL -->
-      <aside
-        class="border-end p-3 offcanvas-lg offcanvas-start"
-        style="
-          background-color: #1d1e20;
-          width: 20%;
-          min-width: 250px;
-          max-width: 350px;
-          overflow-y: auto;
-          scrollbar-color: #303236 #1d1e20;
-        "
-        tabindex="-1"
-        id="sidebarOffcanvas"
-        aria-labelledby="sidebarOffcanvasLabel"
-      >
-        <div v-if="!user" class="text-center mt-4 text-white">
-          <button class="btn btn-dark" @click="loginWithGithub">
-            <i class="bi bi-github me-2"></i> Login with GitHub
-          </button>
-        </div>
-
-        <div v-else>
-          <div class="text-center mb-4 text-white">
-            <img :src="user.avatar_url" class="rounded-circle mb-2" width="80" />
-            <h5>{{ user.login }}</h5>
-          </div>
-
-          <h6 class="text-white">Your Repositories</h6>
-          <ul class="list-group custom-list">
-            <li
-              v-for="repo in repos"
-              :key="repo.id"
-              @click="selectRepo(repo)"
-              class="list-group-item list-group-item-action"
-              :class="{ active: selectedRepo && selectedRepo.id === repo.id }"
-            >
-              {{ repo.name }}
-            </li>
-          </ul>
-        </div>
-      </aside>
-
+      
+      <Sidebar
+        :user="user"
+        :repos="repos"
+        :selectedRepo="selectedRepo"
+        :loginWithGithub="loginWithGithub"
+        :selectRepo="selectRepo"
+      />
       <!-- PRAWA CZĘŚĆ (KANBAN BOARD) -->
       <main
         ref="scrollContainer"
@@ -137,6 +86,8 @@
 import draggable from 'vuedraggable'
 import { useGithubBoard } from '@/composables/useGithubBoard.js'
 import IssueDetails from '@/components/IssueDetails.vue'
+import Header from '@/components/Header.vue'
+import Sidebar from '@/components/Sidebar.vue'
 import { ref } from 'vue'
 
 const {
@@ -219,26 +170,5 @@ function openIssue(issue) {
   overflow: hidden;
   text-overflow: ellipsis;
   overflow-wrap: break-word;
-}
-
-.custom-list .list-group-item {
-  background-color: #303236;
-  color: white;
-  border: none !important;
-
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.custom-list .list-group-item:hover {
-  border: 1px solid #aa50e7 !important;
-  background-color: #3b3e42 !important;
-  color: white;
-}
-
-.custom-list .list-group-item.active {
-  border: 2px solid #aa50e7 !important;
-  background-color: #3b3e42 !important;
 }
 </style>
