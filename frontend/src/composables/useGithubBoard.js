@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue'
 import axios from 'axios'
 
+
 export function useGithubBoard() {
   const user = ref(null)
   const repos = ref([])
@@ -18,6 +19,7 @@ export function useGithubBoard() {
   function loginWithGithub() {
     window.location.href = 'http://localhost:3000/auth/github'
   }
+  
 
   async function loadUser() {
     try {
@@ -41,98 +43,75 @@ export function useGithubBoard() {
 
   async function selectRepo(repo) {
   try {
-    selectedRepo.value = repo;
+    // Utwórz domyślne statusy
+    await axios.post("http://localhost:3000/api/statuses/default", {
+      repo_id: repo.id,
+    }, { withCredentials: true });
 
-    const res = await axios.get(
-      `http://localhost:3000/api/github/project-items/${repo.owner.login}/${repo.name}`,
-      { withCredentials: true, timeout: 5000 }
-    );
-
-    if (!res?.data?.data?.repository?.projectsV2?.nodes?.length) {
-      throw new Error("Brak danych projektu w odpowiedzi API");
-    }
-
-    const project = res.data.data.repository.projectsV2.nodes[0];
-    if (!project?.id) {
-      throw new Error("Nie udało się pobrać ID projektu");
-    }
-
-    currentProjectId.value = project.id;
-
-    const fields = project?.fields?.nodes || [];
-    const statusField = fields.find(f => f.options && f.options.length);
-    statusFieldId.value = statusField?.id || null;
-
-    fieldOptionsMap.value = {};
-    columns.value = [];
-
-    if (statusField?.options) {
-      statusField.options.forEach(o => {
-        const normalized = o.name?.toLowerCase().trim().replaceAll('_', ' ') || '';
-        fieldOptionsMap.value[normalized] = o.id;
-        columns.value.push(o.name);
-      });
-    }
-
-    if (!columns.value.includes("No Status")) {
-      columns.value.unshift("No Status");
-    }
-
-    issuesByColumn.value = {};
-    columns.value.forEach(col => (issuesByColumn.value[col] = []));
-
-    const items = project?.items?.nodes || [];
-    items.forEach(item => {
-      if (!item?.content) return;
-
-      const issue = item.content;
-      issue.projectItemId = item.id;
-
-      const statusNode = item.fieldValues?.nodes?.find(
-        v => v.name && columns.value.includes(v.name)
-      );
-
-      if (statusNode) {
-        issuesByColumn.value[statusNode.name].push(issue);
-      } else {
-        issuesByColumn.value["No Status"].push(issue);
-      }
+    // Pobierz statusy repo
+    const statuses = await axios.get(`http://localhost:3000/api/statuses/${repo.id}`, {
+      withCredentials: true
     });
 
-  } catch (e) {
-    console.error("Błąd podczas ładowania projektu:", e?.message || e);
+    console.log("Repo statuses:", statuses.data);
+
+    // Pobierz issue (z przypisanymi statusami)
+    const issuesRes = await axios.get(
+      `http://localhost:3000/api/github/issues/${repo.owner.login}/${repo.name}?repo_id=${repo.id}`,
+      { withCredentials: true }
+    );
+
+    const issues = issuesRes.data;
+
+    // Utwórz kolumny (nazwy statusów)
+    console.log("Issues with statuses:", statuses.data);
+    columns.value = statuses.data.map(s => ({
+      id: s._id,
+      name:s.name
+    }));
+    issuesByColumn.value = {};
+
+    columns.value.forEach(col => {
+      issuesByColumn.value[col.name] = issues.filter(issue => issue.status === col.name);
+    });
+
+    selectedRepo.value = repo;
+
+    console.log("Issues by column:", issuesByColumn.value);
+
+  } catch (error) {
+    console.error("Error selecting repo:", error.response?.data || error.message);
   }
 }
 
+
+
   async function onDragEnd(event) {
-    const domItem = event.item
-    const itemId = domItem?.dataset?.itemId
-    const newColumnHeader = event.to?.closest('.card')?.querySelector('.card-header')?.innerText?.trim()
+  const { item, to } = event
+  const issueId = item.dataset.itemId
+  const newStatusName = to.closest(".card").querySelector(".card-header").textContent.trim()
+  console.log( "dragend", issueId, newStatusName, typeof(newStatusName));
 
-    if (!itemId || !newColumnHeader) return
+  try {
+    const newStatus = columns.value.find(c => c.name === newStatusName)
+    console.log( newStatus);
+    if (!newStatus) return
+    console.log("🔹 Found new status:", newStatus)
+    console.log(issueId, typeof(issueId));
+    console.log(selectedRepo.value.id, typeof(selectedRepo.value.id));
+    console.log(newStatus.id, typeof(newStatus.id));
 
-    const normalizedColumn = newColumnHeader.toLowerCase().trim().replaceAll('_', ' ')
-    const optionId = fieldOptionsMap.value[normalizedColumn]
+    await axios.put("http://localhost:3000/api/issue-status", {
+      issue_id: parseInt(issueId),
+      repo_id: selectedRepo.value.id,
+      status_id: newStatus.id
+    }, { withCredentials: true })
 
-    try {
-      if (normalizedColumn === 'no status') {
-        await axios.post(
-          'http://localhost:3000/api/github/clear-item-field',
-          { projectId: currentProjectId.value, itemId, fieldId: statusFieldId.value },
-          { withCredentials: true, timeout: 5000 }
-        )
-      } else {
-        if (!optionId) return
-        await axios.post(
-          'http://localhost:3000/api/github/update-item',
-          { projectId: currentProjectId.value, itemId, fieldId: statusFieldId.value, optionId },
-          { withCredentials: true, timeout: 5000 }
-        )
-      }
-    } catch (err) {
-      console.error('GitHub update/clear failed:', err.response?.data || err.message)
-    }
+    console.log(`Updated issue ${issueId} → ${newStatus.name}`)
+  } catch (err) {
+    console.error("Error updating issue status:", err.response?.data || err.message)
   }
+}
 
   onMounted(loadUser)
 

@@ -78,14 +78,14 @@
           </h3>
             <!--Kanban board-->
             <div class="row row-cols-1 row-cols-lg-2 row-cols-xl-4 g-3">
-              <div v-for="col in columns" :key="col" class="col">
+              <div v-for="col in columns" :key="col._id" class="col">
                 <div class="card h-100" style="border: 1px solid #aa50e7">
                   <div class="card-header bg-dark text-white text-uppercase small">
-                    {{ col }}
+                    {{ col.name }}
                   </div>
                   <div class="card-body rounded-bottom-1" style="background-color: #303236">
                     <draggable
-                      v-model="issuesByColumn[col]"
+                      v-model="issuesByColumn[col.name]"
                       :group="groups"
                       item-key="id"
                       animation="200"
@@ -100,7 +100,7 @@
                       <template #item="{ element }">
                         <div
                           class="issuebox mb-2 p-2 rounded "
-                          :data-item-id="element.projectItemId"
+                          :data-item-id="element.id"
                           @click="openIssue(element)"
                         >
                           <div class="issuetitle"
@@ -156,6 +156,9 @@ const selectedIssue = ref(null)
 function openIssue(issue) {
   selectedIssue.value = issue
 }
+
+
+
 </script>
 
 <style scoped>

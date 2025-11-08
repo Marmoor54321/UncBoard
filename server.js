@@ -1,11 +1,19 @@
 import express from "express";
+import mongoose from "mongoose";
 import axios from "axios";
 import session from "express-session";
 import dotenv from "dotenv";
 import cors from "cors";
+import createGitHubRoutes from "./routes/githubAuth.js";
+import Status from "./models/Status.js";
+import IssueStatus from "./models/IssueStatus.js";
+
+
+
 
 dotenv.config();
 const app = express();
+
 app.use(cors({ origin: "http://localhost:5173", credentials: true }));
 app.use(session({ secret: "secret", resave: false, saveUninitialized: true }));
 app.use(express.json());
@@ -13,62 +21,57 @@ app.use(express.json());
 const CLIENT_ID = process.env.GITHUB_CLIENT_ID;
 const CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET;
 
-//Redirect to GitHub
-app.get("/auth/github", (req, res) => {
-  const redirectUri = "http://localhost:3000/auth/github/callback";
-  res.redirect(
-   `https://github.com/login/oauth/authorize?client_id=${CLIENT_ID}&redirect_uri=${redirectUri}&scope=repo,user,read:project,project`
+app.use(
+  createGitHubRoutes(CLIENT_ID, CLIENT_SECRET)
+);
 
-  );
-});
 
-//Handle callback + exchange for access token
-app.get("/auth/github/callback", async (req, res) => {
-  const code = req.query.code;
-  const tokenRes = await axios.post(
-    `https://github.com/login/oauth/access_token`,
-    {
-      client_id: CLIENT_ID,
-      client_secret: CLIENT_SECRET,
-      code,
-    },
-    { headers: { Accept: "application/json" } }
-  );
+// Połącz z MongoDB
+mongoose.connect('mongodb://localhost:27017/uncboard', {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+})
+.then(() => console.log("✅ Połączono z MongoDB"))
+.catch(err => console.log(err));
 
-  const accessToken = tokenRes.data.access_token;
-  req.session.token = accessToken;
-  res.redirect("http://localhost:5173/dashboard");
-});
+// User repos
+  app.get("/api/github/repos", async (req, res) => {
+    const token = req.session.token;
+    if (!token) return res.status(401).send("Not authenticated");
 
-// Get GitHub user info
-app.get("/api/github/user", async (req, res) => {
-  const token = req.session.token;
-  if (!token) return res.status(401).send("Not authenticated");
-  console.log(token);
-  const res2 = await axios.get("https://api.github.com/user", {
-    headers: { Authorization: `token ${token}` },
+    try {
+      const response = await axios.get("https://api.github.com/user/repos", {
+        headers: { Authorization: `token ${token}` },
+      });
+      res.json(response.data);
+    } catch (err) {
+      res.status(500).send("Failed to fetch repositories");
+    }
   });
-  console.log(res2.headers["x-oauth-scopes"]);
   
-  const userRes = await axios.get("https://api.github.com/user", {
-    headers: { Authorization: `token ${token}` },
-  });
-  res.json(userRes.data);
-});
-
-// Get user repos
-app.get("/api/github/repos", async (req, res) => {
-  const token = req.session.token;
-  if (!token) return res.status(401).send("Not authenticated");
-
+app.post("/api/statuses/default", async (req, res) => {
   try {
-    const response = await axios.get("https://api.github.com/user/repos", {
-      headers: { Authorization: `token ${token}` },
-    });
-    res.json(response.data);
+    const { repo_id } = req.body;
+    if (!repo_id) return res.status(400).json({ message: "repo_id is required" });
+
+    const existing = await Status.find({ repo_id });
+    if (existing.length > 0) {
+      return res.status(200).json({ message: "Default statuses already exist" });
+    }
+
+    const defaults = [
+      { name: "TO DO", is_default: true, order: 1 },
+      { name: "IN PROGRESS", is_default: true, order: 2 },
+      { name: "IN REVIEW", is_default: true, order: 3 },
+      { name: "DONE", is_default: true, order: 4 },
+    ];
+
+    const created = await Status.insertMany(defaults.map(s => ({ ...s, repo_id })));
+    res.status(201).json({ message: "Default statuses created successfully", statuses: created });
+
   } catch (err) {
-    console.error("GitHub API error:", err.response?.data || err.message);
-    res.status(500).send("Failed to fetch repositories");
+    console.error("Error creating default statuses:", err);
+    res.status(500).json({ message: "Server error" });
   }
 });
 
@@ -78,257 +81,121 @@ app.get("/api/github/issues/:owner/:repo", async (req, res) => {
   if (!token) return res.status(401).send("Not authenticated");
 
   const { owner, repo } = req.params;
+  const repo_id = req.query.repo_id; 
 
   try {
+    // issue z GitHuba
     const response = await axios.get(
       `https://api.github.com/repos/${owner}/${repo}/issues?state=all&per_page=100`,
-      {
-        headers: { Authorization: `token ${token}` },
-      }
+      { headers: { Authorization: `token ${token}` } }
     );
-    res.json(response.data);
+
+    const githubIssues = response.data;
+
+    // wszystkie statusy repo
+    const statuses = await Status.find({ repo_id });
+    const todoStatus = statuses.find(s => s.name === "TO DO");
+
+    // powiązania z IssueStatus
+    const existing = await IssueStatus.find({ repo_id });
+
+    //  brakujące wpisy w IssueStatus
+    const newStatuses = [];
+    for (const issue of githubIssues) {
+      const already = existing.find(e => e.issue_id === issue.id);
+      if (!already) {
+        newStatuses.push({
+          repo_id,
+          issue_id: issue.id,
+          status_id: todoStatus._id, // domyślny status TO DO
+        });
+      }
+    }
+
+    if (newStatuses.length > 0) {
+      await IssueStatus.insertMany(newStatuses);
+      console.log(`Added ${newStatuses.length} new issue-status records.`);
+    }
+
+    // aktualne przypisania (po ewentualnym dodaniu)
+    const issueStatuses = await IssueStatus.find({ repo_id }).populate("status_id");
+
+    // statusy do issue
+    const issuesWithStatus = githubIssues.map(issue => {
+      const status = issueStatuses.find(s => s.issue_id === issue.id);
+      return {
+        ...issue,
+        status: status ? status.status_id.name : "TO DO",
+      };
+    });
+
+    res.json(issuesWithStatus);
+
   } catch (err) {
     console.error("GitHub API error:", err.response?.data || err.message);
     res.status(500).send("Failed to fetch issues");
   }
 });
 
-// get project items and columns 
-app.get("/api/github/project-items/:owner/:repo", async (req, res) => {
-  const token = req.session.token;
-  if (!token) return res.status(401).send("Not authenticated");
-
-  const { owner, repo } = req.params;
-
-  const query = `
-  query {
-    repository(owner: "${owner}", name: "${repo}") {
-      projectsV2(first: 1) {
-        nodes {
-          id
-          title
-          fields(first: 20) {
-            nodes {
-              ... on ProjectV2SingleSelectField {
-                id
-                name
-                options {
-                  id
-                  name
-                }
-              }
-            }
-          }
-          items(first: 100) {
-            nodes {
-              id
-              content {
-                ... on Issue {
-                  id
-                  number
-                  title
-                  body
-                  createdAt
-                  author {
-                    login
-                    avatarUrl
-                    url
-                  }
-                  assignees(first: 10) {
-                    nodes {
-                      login
-                      avatarUrl
-                      url
-                    }
-                  }
-                  labels(first: 10) {
-                    nodes {
-                      name
-                      color
-                    }
-                  }
-                  comments(first: 20, orderBy: {field: UPDATED_AT, direction: DESC}) {
-                    nodes {
-                      id
-                      body
-                      createdAt
-                      author {
-                        login
-                        avatarUrl
-                        url
-                      }
-                    }
-                  }
-                  timelineItems(first: 20, itemTypes: [LABELED_EVENT, UNLABELED_EVENT, ASSIGNED_EVENT, UNASSIGNED_EVENT, CLOSED_EVENT, REOPENED_EVENT]) {
-                    nodes {
-                      __typename
-                      ... on LabeledEvent {
-                        createdAt
-                        label {
-                          name
-                          color
-                        }
-                        actor {
-                          login
-                        }
-                      }
-                      ... on UnlabeledEvent {
-                        createdAt
-                        label {
-                          name
-                          color
-                        }
-                        actor {
-                          login
-                        }
-                      }
-                      ... on AssignedEvent {
-                        createdAt
-                        actor {
-                          login
-                        }
-                        assignee {
-                          ... on User {
-                            login
-                          }
-                        }
-                      }
-                      ... on UnassignedEvent {
-                        createdAt
-                        actor {
-                          login
-                        }
-                        assignee {
-                          ... on User {
-                            login
-                          }
-                        }
-                      }
-                      ... on ClosedEvent {
-                        createdAt
-                        actor {
-                          login
-                        }
-                      }
-                      ... on ReopenedEvent {
-                        createdAt
-                        actor {
-                          login
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-              fieldValues(first: 20) {
-                nodes {
-                  ... on ProjectV2ItemFieldSingleSelectValue {
-                    field {
-                      ... on ProjectV2SingleSelectField {
-                        name
-                      }
-                    }
-                    name
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-`;
-
-
-
-
-
+app.put("/api/issue-status", async (req, res) => {
   try {
-    const response = await axios.post(
-      "https://api.github.com/graphql",
-      { query },
-      { headers: { Authorization: `bearer ${token}` } }
-    );
+    const { issue_id, repo_id, status_id } = req.body
+    if (!issue_id || !repo_id || !status_id)
+      return res.status(400).json({ message: "Missing fields" })
 
-    //console.log(JSON.stringify(response.data, null, 2));
-    res.json(response.data);
+    let issueStatus = await IssueStatus.findOne({ issue_id, repo_id })
+    if (issueStatus) {
+      issueStatus.status_id = status_id
+      issueStatus.updated_at = new Date()
+      await issueStatus.save()
+    } else {
+      issueStatus = await IssueStatus.create({ issue_id, repo_id, status_id })
+    }
+
+    res.json({ message: "Issue status updated", issueStatus })
   } catch (err) {
-    console.error(err.response?.data || err.message);
-    res.status(500).send("Error fetching project items");
+    console.error("Error updating issue status:", err)
+    res.status(500).json({ message: "Server error" })
   }
+})
+
+
+//endpoints dla statusów
+
+//pobieranie statusów dla repozytorium
+app.get("/api/statuses/:repoId", async (req, res) => {
+  const statuses = await Status.find({ repo_id: req.params.repoId }).sort({ order: 1 });
+  res.json(statuses);
 });
 
+//dodawanie nowego statusu
+app.post("/api/statuses", async (req, res) => {
+  const { repo_id, name, user_id } = req.body;
 
+  const count = await Status.countDocuments({ repo_id });
 
-// update project field value
-app.post("/api/github/update-item", async (req, res) => {
-  const token = req.session.token;
-  if (!token) return res.status(401).send("Not authenticated");
+  const status = await Status.create({
+    repo_id,
+    name,
+    created_by: user_id,
+    order: count + 1
+  });
 
-  const { projectId, itemId, fieldId, optionId } = req.body;
-
-  const query = `
-    mutation {
-      updateProjectV2ItemFieldValue(
-        input: {
-          projectId: "${projectId}",
-          itemId: "${itemId}",
-          fieldId: "${fieldId}",
-          value: { singleSelectOptionId: "${optionId}" }
-        }
-      ) {
-        clientMutationId
-      }
-    }
-  `;
-
-  try {
-    const response = await axios.post(
-      "https://api.github.com/graphql",
-      { query },
-      { headers: { Authorization: `bearer ${token}` } }
-    );
-    res.json(response.data);
-  } catch (err) {
-    console.error("GitHub mutation error:", err.response?.data || err.message);
-    res.status(500).send("Error updating item field value");
-  }
+  res.json(status);
 });
 
+//usuwanie statusu
+app.delete("/api/statuses/:statusId", async (req, res) => {
+  const status = await Status.findById(req.params.statusId);
 
-// clear a project field value (for "No Status")
-app.post("/api/github/clear-item-field", async (req, res) => {
-  const token = req.session.token;
-  if (!token) return res.status(401).send("Not authenticated");
+  if (!status) return res.status(404).send("Status not found");
 
-  const { projectId, itemId, fieldId } = req.body;
+  if (status.is_default)
+    return res.status(400).send("Cannot delete default status");
 
-  const query = `
-    mutation {
-      clearProjectV2ItemFieldValue(
-        input: {
-          projectId: "${projectId}",
-          itemId: "${itemId}",
-          fieldId: "${fieldId}"
-        }
-      ) {
-        clientMutationId
-      }
-    }
-  `;
+  await status.deleteOne();
 
-  try {
-    const response = await axios.post(
-      "https://api.github.com/graphql",
-      { query },
-      { headers: { Authorization: `bearer ${token}` } }
-    );
-    res.json(response.data);
-  } catch (err) {
-    console.error("GitHub clear mutation error:", err.response?.data || err.message);
-    res.status(500).send("Error clearing item field value");
-  }
+  res.sendStatus(200);
 });
 
 
