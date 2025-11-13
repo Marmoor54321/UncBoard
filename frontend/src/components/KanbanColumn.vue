@@ -1,45 +1,63 @@
 <template>
-    <div  class="col">
-                <div class="card h-100" style="border: 1px solid #aa50e7">
-                  <div class="card-header bg-dark text-white text-uppercase small">
-                    {{ column.name }}
-                  </div>
-                  <div class="card-body rounded-bottom-1" style="background-color: #303236">
-                    <draggable
-                      v-model="issuesByColumn[column.name]"
-                      :group="groups"
-                      item-key="id"
-                      animation="200"
-                      ghost-class="ghost"
-                      chosen-class="chosen"
-                      @end="onDragEnd"
-                      class="dropzone"
-                      :scroll="scrollContainer"
-                      :scrollSensitivity="100"
-                      :scrollSpeed="15"
-                    >
-                      <template #item="{ element }">
-                        <div
-                          class="issuebox mb-2 p-2 rounded "
-                          :data-item-id="element.id"
-                          @click="openIssue(element)"
-                        >
-                          <div class="issuetitle"
-                            >
-                            <strong>{{ element.title }}</strong>
-                          </div>
-                          <div class="issuebody small">{{ element.body }}</div>
-                        </div>
-                      </template>
-                    </draggable>
-                  </div>
-                </div>
+  <div class="col">
+    <div class="card h-100" style="border: 1px solid #aa50e7">
+      <div class="card-header bg-dark text-white text-uppercase small d-flex justify-content-between align-items-center">
+        <span>{{ column.name }}</span>
+
+        <div class="dropdown position-relative">
+          <button
+            class="btn btn-sm text-white"
+            @click="toggleMenu"
+            style="background: transparent; border: none;"
+          >
+            ⋮
+          </button>
+
+          <div v-if="showMenu" class="menu shadow">
+            <button class="menu-item" @click="onMoveLeft(column)">Move left</button>
+            <button class="menu-item" @click="onMoveRight(column)">Move right</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card-body rounded-bottom-1" style="background-color: #303236">
+        <draggable
+          v-model="issuesByColumn[column.name]"
+          :group="groups"
+          item-key="id"
+          animation="200"
+          ghost-class="ghost"
+          chosen-class="chosen"
+          @end="onDragEnd"
+          class="dropzone"
+          :scroll="scrollContainer"
+          :scrollSensitivity="100"
+          :scrollSpeed="15"
+          :on-move-left="onMoveLeft"
+          :on-move-right="onMoveRight"
+
+        >
+          <template #item="{ element }">
+            <div
+              class="issuebox mb-2 p-2 rounded"
+              :data-item-id="element.id"
+              @click="openIssue(element)"
+            >
+              <div class="issuetitle">
+                <strong>{{ element.title }}</strong>
               </div>
+              <div class="issuebody small">{{ element.body }}</div>
+            </div>
+          </template>
+        </draggable>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup>
-
-import draggable from 'vuedraggable'
+import { ref, onMounted, onBeforeUnmount } from "vue"
+import draggable from "vuedraggable"
 
 const props = defineProps({
   column: Object,
@@ -47,8 +65,28 @@ const props = defineProps({
   scrollContainer: Object,
   groups: Object,
   onDragEnd: Function,
-  openIssue: Function
+  openIssue: Function,
+  onMoveLeft: Function,  
+  onMoveRight: Function
 })
+
+
+
+const showMenu = ref(false)
+function toggleMenu() {
+  showMenu.value = !showMenu.value
+}
+
+function handleClickOutside(e) {
+  if (!e.target.closest(".dropdown")) {
+    showMenu.value = false
+  }
+}
+
+onMounted(() => document.addEventListener("click", handleClickOutside))
+onBeforeUnmount(() => document.removeEventListener("click", handleClickOutside))
+
+
 </script>
 
 <style scoped>
@@ -87,5 +125,32 @@ const props = defineProps({
   overflow: hidden;
   text-overflow: ellipsis;
   overflow-wrap: break-word;
+}
+
+.menu {
+  position: absolute;
+  right: 0;
+  top: 1.5rem;
+  background: #2b2d31;
+  border-radius: 6px;
+  padding: 0.25rem 0;
+  display: flex;
+  flex-direction: column;
+  min-width: 120px;
+  z-index: 10;
+}
+
+.menu-item {
+  background: transparent;
+  color: #e0e0e0;
+  border: none;
+  text-align: left;
+  padding: 8px 12px;
+  font-size: 14px;
+  cursor: pointer;
+}
+.menu-item:hover {
+  background-color: #3b3e42;
+  color: white;
 }
 </style>

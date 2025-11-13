@@ -18,6 +18,8 @@
                 :groups="groups"
                 :on-drag-end="onDragEnd"
                 :open-issue="openIssue" 
+                :on-move-left="onMoveLeft"
+                :on-move-right="onMoveRight"
                 />
             </div>
 
@@ -28,6 +30,8 @@
 // import KanbanColumn from './KanbanColumn.vue'
 import KanbanColumn from './KanbanColumn.vue'
 
+
+
 defineProps({
   selectedRepo: Object,
   columns: Array,
@@ -35,6 +39,9 @@ defineProps({
   scrollContainer: Object,
   groups: Object,
   onDragEnd: Function,
-  openIssue: Function
+  openIssue: Function,
+  onMoveLeft: Function,  
+  onMoveRight: Function
 })
+
 </script>
