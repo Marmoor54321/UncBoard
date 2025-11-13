@@ -49,6 +49,8 @@ mongoose.connect('mongodb://localhost:27017/uncboard', {
     }
   });
   
+
+
 app.post("/api/statuses/default", async (req, res) => {
   try {
     const { repo_id } = req.body;
@@ -167,6 +169,66 @@ app.get("/api/statuses/:repoId", async (req, res) => {
   const statuses = await Status.find({ repo_id: req.params.repoId }).sort({ order: 1 });
   res.json(statuses);
 });
+
+//zmiana kolejności statusów
+app.put("/api/statuses/:repoId/:statusId/move", async (req, res) => {
+  const { direction } = req.body; // 'left' 'right'
+  const { repoId, statusId } = req.params;
+
+  if (!["left", "right"].includes(direction)) {
+    return res.status(400).json({ message: "Invalid direction. Use 'left' or 'right'." });
+  }
+
+  try {
+    const status = await Status.findById(statusId);
+    if (!status) {
+      return res.status(404).json({ message: "Status not found" });
+    }
+
+    const statuses = await Status.find({ repo_id: repoId }).sort({ order: 1 });
+
+    const minOrder = statuses[0]?.order ?? 0;
+    const maxOrder = statuses[statuses.length - 1]?.order ?? 0;
+
+    if (direction === "left") {
+      if (status.order === minOrder) {
+        return res.status(400).json({ message: "Cannot move left. Already at the first position." });
+      }
+
+      const target = statuses.find(s => s.order === status.order - 1);
+      if (target) {
+        target.order += 1;
+        await target.save();
+      }
+
+      status.order -= 1;
+      await status.save();
+
+      return res.json({ message: "Moved left successfully", status });
+    }
+
+    if (direction === "right") {
+      if (status.order === maxOrder) {
+        return res.status(400).json({ message: "Cannot move right. Already at the last position." });
+      }
+
+      const target = statuses.find(s => s.order === status.order + 1);
+      if (target) {
+        target.order -= 1;
+        await target.save();
+      }
+
+      status.order += 1;
+      await status.save();
+
+      return res.json({ message: "Moved right successfully", status });
+    }
+  } catch (err) {
+    console.error("Error updating status order:", err);
+    return res.status(500).json({ message: "Server error" });
+  }
+});
+
 
 //dodawanie nowego statusu
 app.post("/api/statuses", async (req, res) => {
