@@ -14,8 +14,8 @@
           </button>
 
           <div v-if="showMenu" class="menu shadow">
-            <button class="menu-item" @click="onMoveLeft(column)">Move left</button>
-            <button class="menu-item" @click="onMoveRight(column)">Move right</button>
+            <button class="menu-item" @click="onMoveLeft(column), toggleMenu()">Move left</button>
+            <button class="menu-item" @click="onMoveRight(column), toggleMenu()">Move right</button>
           </div>
         </div>
       </div>
