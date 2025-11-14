@@ -248,17 +248,49 @@ app.post("/api/statuses", async (req, res) => {
 
 //usuwanie statusu
 app.delete("/api/statuses/:statusId", async (req, res) => {
-  const status = await Status.findById(req.params.statusId);
+  try {
+    console.log(res.body);
+    const { repo_id } = req.body;
+    const { statusId } = req.params;
 
-  if (!status) return res.status(404).send("Status not found");
+    const status = await Status.findById(statusId);
+    if (!status) return res.status(404).send("Status not found");
 
-  if (status.is_default)
-    return res.status(400).send("Cannot delete default status");
+    const firstStatus = await Status
+      .findOne({ repo_id })
+      .sort({ order: 1 }); // najmniejszy order
 
-  await status.deleteOne();
+    if (!firstStatus)
+      return res.status(400).send("No available status to assign issues to");
 
-  res.sendStatus(200);
+    //Zavezpieczneie jesli usuwany status jest pierwszy
+    let targetStatus = firstStatus;
+    if (String(firstStatus._id) === String(statusId)) {
+      targetStatus = await Status
+        .findOne({ repo_id, _id: { $ne: statusId } }) //$ne not equal żeby pominął samego siebie
+        .sort({ order: 1 });
+
+      if (!targetStatus)
+        return res.status(400).send("Cannot delete the only status in repo");
+    }
+
+    await IssueStatus.updateMany(
+      { status_id: statusId },
+      { $set: { status_id: targetStatus._id } } //Przypisanie nowego status id dla issues
+    );
+    const deletedOrder = status.order;
+    await status.deleteOne();
+    await Status.updateMany(
+      { repo_id, order: { $gt: deletedOrder } },
+      { $inc: { order: -1 } }
+    );
+    res.json({ targetStatusId: targetStatus._id });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Server error");
+  }
 });
+
 
 
 

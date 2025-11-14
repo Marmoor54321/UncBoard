@@ -16,6 +16,8 @@
           <div v-if="showMenu" class="menu shadow">
             <button class="menu-item" @click="onMoveLeft(column), toggleMenu()">Move left</button>
             <button class="menu-item" @click="onMoveRight(column), toggleMenu()">Move right</button>
+            <button class="menu-item" @click="deleteColumn(column), toggleMenu()">Delete</button>
+
           </div>
         </div>
       </div>
@@ -35,6 +37,7 @@
           :scrollSpeed="15"
           :on-move-left="onMoveLeft"
           :on-move-right="onMoveRight"
+          :delete-column="deleteColumn"
 
         >
           <template #item="{ element }">
@@ -67,7 +70,8 @@ const props = defineProps({
   onDragEnd: Function,
   openIssue: Function,
   onMoveLeft: Function,  
-  onMoveRight: Function
+  onMoveRight: Function,
+  deleteColumn: Function
 })
 
 

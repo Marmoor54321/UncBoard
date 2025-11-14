@@ -119,7 +119,7 @@ async function moveColumn(repoId, statusId, direction) {
     const res = await axios.put(
       `http://localhost:3000/api/statuses/${repoId}/${statusId}/move`,
       { direction },
-      { withCredentials: true }
+      { withCredentials: true },
     );
 
     console.log(`Column moved ${direction}:`, res.data);
@@ -143,6 +143,42 @@ function onMoveRight(column) {
   moveColumn(column.repo_id, column.id, "right");
 
 }
+async function deleteColumn(column){
+  console.log(column)
+  try{
+    const res = await axios.delete(
+      `http://localhost:3000/api/statuses/${column.id}`,
+      {
+        data: { repo_id: column.repo_id },   
+        withCredentials: true      
+      }
+    );
+    columns.value = columns.value.filter(c => c.id !== column.id);
+    const { targetStatusId } = res.data;
+    console.log(res.data);
+    
+    const fromColName = column.name;
+    const targetCol = columns.value.find(c => c.id === targetStatusId);
+    console.log(targetCol);
+    const targetColName = targetCol.name;
+
+    // przenieś całą zawartość kolumny do nowej kolumny
+    const movedIssues = issuesByColumn.value[fromColName];
+
+    if (!issuesByColumn.value[targetColName]) {
+      issuesByColumn.value[targetColName] = [];
+    }
+
+    issuesByColumn.value[targetColName].push(...movedIssues);
+
+    // usuń starą kolumnę
+    delete issuesByColumn.value[fromColName];
+
+  }
+  catch (err) {
+    console.error("Error deleting column:",err.response?.data || err.message);
+  }
+}
 
 
 
@@ -160,6 +196,7 @@ function onMoveRight(column) {
     onDragEnd,
     groups,
     onMoveLeft,
-    onMoveRight
+    onMoveRight,
+    deleteColumn
   }
 }

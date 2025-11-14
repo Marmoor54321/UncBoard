@@ -20,6 +20,7 @@
                 :open-issue="openIssue" 
                 :on-move-left="onMoveLeft"
                 :on-move-right="onMoveRight"
+                :delete-column="deleteColumn"
                 />
             </div>
 
@@ -41,7 +42,8 @@ defineProps({
   onDragEnd: Function,
   openIssue: Function,
   onMoveLeft: Function,  
-  onMoveRight: Function
+  onMoveRight: Function,
+  deleteColumn: Function
 })
 
 </script>
