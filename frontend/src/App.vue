@@ -23,6 +23,8 @@
           :groups="groups"
           :onDragEnd="onDragEnd"
           :openIssue="openIssue"
+          :onMoveLeft="onMoveLeft"
+          :onMoveRight="onMoveRight"
         />
         <!-- PANEL SZCZEGÓŁÓW -->
         <transition name="slide">
@@ -56,7 +58,9 @@ const {
   loginWithGithub,
   selectRepo,
   onDragEnd,
-  groups
+  groups,
+  onMoveLeft,      
+  onMoveRight
 } = useGithubBoard()
 
 const selectedIssue = ref(null)

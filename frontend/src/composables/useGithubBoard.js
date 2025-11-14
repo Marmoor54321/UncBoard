@@ -67,7 +67,8 @@ export function useGithubBoard() {
     console.log("Issues with statuses:", statuses.data);
     columns.value = statuses.data.map(s => ({
       id: s._id,
-      name:s.name
+      name:s.name,
+      repo_id: repo.id
     }));
     issuesByColumn.value = {};
 
@@ -89,7 +90,7 @@ export function useGithubBoard() {
   async function onDragEnd(event) {
   const { item, to } = event
   const issueId = item.dataset.itemId
-  const newStatusName = to.closest(".card").querySelector(".card-header").textContent.trim()
+  const newStatusName = to.closest(".card").querySelector(".card-header span").textContent.trim();
   console.log( "dragend", issueId, newStatusName, typeof(newStatusName));
 
   try {
@@ -113,6 +114,38 @@ export function useGithubBoard() {
   }
 }
 
+async function moveColumn(repoId, statusId, direction) {
+  try {
+    const res = await axios.put(
+      `http://localhost:3000/api/statuses/${repoId}/${statusId}/move`,
+      { direction },
+      { withCredentials: true }
+    );
+
+    console.log(`Column moved ${direction}:`, res.data);
+
+    if (selectedRepo.value) {
+      await selectRepo(selectedRepo.value);
+    }
+
+  } catch (err) {
+    console.error("Error moving column:", err.response?.data || err.message);
+    alert(err.response?.data?.message || "Error moving column");
+  }
+}
+
+function onMoveLeft(column) {
+  moveColumn(column.repo_id, column.id, "left");
+
+}
+
+function onMoveRight(column) {
+  moveColumn(column.repo_id, column.id, "right");
+
+}
+
+
+
   onMounted(loadUser)
 
   return {
@@ -125,6 +158,8 @@ export function useGithubBoard() {
     loginWithGithub,
     selectRepo,
     onDragEnd,
-    groups
+    groups,
+    onMoveLeft,
+    onMoveRight
   }
 }
