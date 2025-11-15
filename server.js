@@ -280,10 +280,11 @@ app.post("/api/group/create", async (req, res) => {
 });
 
 //pobieranie grup użytkownika
-app.get("/api/groups", async (req, res) => {
+app.get("/api/groups/:ownerId", async (req, res) => {
   try { 
-    const groups = await Group.find({ created_by: req.body.created_by });
+    const groups = await Group.find({ created_by: req.params.ownerId });
     res.json(groups);
+    
   } catch (err) {
     res.status(500).json({ error: err.message });
   } 

@@ -26,10 +26,35 @@ export function useGithubBoard() {
       const res = await axios.get('http://localhost:3000/api/github/user', { withCredentials: true, timeout: 5000 })
       user.value = res.data ?? null
       await loadRepos()
+      await loadGroups();
     } catch(e) {
       console.log('Not logged in',e)
     }
   }
+
+  const groupsList = ref([]);
+  const expandedGroups = ref({}); // do rozwijania/zamykania dropdownów
+  function getRepoById(id) {
+  return repos.value.find(r => r.id === id);
+}
+
+  async function loadGroups() {
+    if (!user.value) return;
+
+    try {
+      const res = await axios.get(
+        `http://localhost:3000/api/groups/${user.value._id}`,
+        { withCredentials: true }
+      );
+
+      groupsList.value = res.data;
+
+    } catch (e) {
+      console.error("Error loading groups:", e);
+    }
+  }
+
+
 
   async function loadRepos() {
     try{
@@ -160,6 +185,9 @@ function onMoveRight(column) {
     onDragEnd,
     groups,
     onMoveLeft,
-    onMoveRight
+    onMoveRight,
+    groupsList,
+    expandedGroups,
+    getRepoById
   }
 }

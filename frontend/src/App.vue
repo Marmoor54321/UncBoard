@@ -8,6 +8,10 @@
         :selectedRepo="selectedRepo"
         :loginWithGithub="loginWithGithub"
         :selectRepo="selectRepo"
+        :groupsList="groupsList"
+        :expandedGroups="expandedGroups"
+        :getRepoById="getRepoById"
+      
       />
       <!-- PRAWA CZĘŚĆ (KANBAN BOARD) -->
       <main
@@ -60,7 +64,10 @@ const {
   onDragEnd,
   groups,
   onMoveLeft,      
-  onMoveRight
+  onMoveRight,
+  groupsList,
+  expandedGroups,
+  getRepoById
 } = useGithubBoard()
 
 const selectedIssue = ref(null)

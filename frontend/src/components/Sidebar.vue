@@ -16,7 +16,37 @@
             <img :src="user.avatar_url" class="rounded-circle mb-2" width="80" />
             <h5>{{ user.login }}</h5>
           </div>
+          <h6 class="text-white mt-4">Your Groups</h6>
+          <ul class="list-group custom-list">
 
+            <li 
+              v-for="group in groupsList"
+              :key="group._id"
+              class="list-group-item"
+              @click="expandedGroups[group._id] = !expandedGroups[group._id]"
+            >
+              <div class="d-flex justify-content-between align-items-center">
+                {{ group.name }}
+                <i class="bi" :class="expandedGroups[group._id] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+              </div>
+
+              <!-- rozwinięta lista repozytoriów -->
+              <ul 
+                v-if="expandedGroups[group._id]"
+                class="list-group nested-repo-list"
+              >
+                <li
+                  v-for="repoId in group.repo_ids"
+                  :key="repoId"
+                  class="list-group-item nested-item"
+                  @click.stop="selectRepo(getRepoById(repoId))"
+                >
+                  {{ getRepoById(repoId)?.name || 'Unknown repo' }}
+                </li>
+              </ul>
+            </li>
+
+          </ul>
           <h6 class="text-white">Your Repositories</h6>
           <ul class="list-group custom-list">
             <li
@@ -39,7 +69,10 @@ defineProps({
   repos: Array,
   selectedRepo: Object,
   loginWithGithub: Function,
-  selectRepo: Function
+  selectRepo: Function,
+  groupsList: Array,
+  expandedGroups: Object,
+  getRepoById: Function
 })
 </script>
 
