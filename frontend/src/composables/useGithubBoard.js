@@ -181,6 +181,18 @@ async function handleAddRepoToGroup({ repoId, groupId }) {
   await loadGroups();
 }
 
+async function handleDeleteRepoFromGroup({ repoId, groupId }) {
+  console.log("Deleting repo", repoId, "from group", groupId);
+  await fetch(`http://localhost:3000/api/group/${groupId}/remove-repo`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ repo_id: repoId })
+  });
+
+  // odśwież grupy
+  await loadGroups();
+}
+
   onMounted(loadUser)
 
   return {
@@ -199,6 +211,7 @@ async function handleAddRepoToGroup({ repoId, groupId }) {
     groupsList,
     expandedGroups,
     getRepoById,
-    handleAddRepoToGroup
+    handleAddRepoToGroup,
+    handleDeleteRepoFromGroup
   }
 }

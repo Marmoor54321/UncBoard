@@ -46,49 +46,60 @@
   </span>
 
   <!-- wrapper -->
-  <div 
-    class="group-dropdown-wrapper"
+<div 
+  class="group-dropdown-wrapper"
+>
+  <!-- menu ⋮ -->
+  <div
+    v-if="groupMenuOpenRepoId === repoId + '_' + group._id"
+    class="group-dropdown-menu-custom"
+  >
+    <!-- Add to group (HOVER – otwiera picker) -->
+    <div 
+      class="dropdown-item-custom"
+      @mouseenter="groupShowPickerForRepo = repoId + '_' + group._id"
+    >
+      Add to group
+    </div>
+
+    <!-- Delete from group -->
+    <div 
+      class="dropdown-item-custom"
+      @click="
+        emit('deleteRepoFromGroup', { repoId: repoId, groupId: group._id });
+        groupMenuOpenRepoId = null;
+        groupShowPickerForRepo = null;
+      "
+    >
+      Delete 
+    </div>
+  </div>
+
+  <!-- picker grup (Tylko dla Add to group) -->
+  <div
+    v-if="groupShowPickerForRepo === repoId + '_' + group._id"
+    class="group-picker-menu"
     @mouseenter="groupShowPickerForRepo = repoId + '_' + group._id"
     @mouseleave="groupShowPickerForRepo = null"
   >
-    <!-- menu ⋮ -->
-    <div
-      v-if="groupMenuOpenRepoId === repoId + '_' + group._id"
-      class="group-dropdown-menu-custom"
-    >
-      <div 
-        class="dropdown-item-custom"
-        @mouseenter="groupShowPickerForRepo = repoId + '_' + group._id"
+    <h6 class="text-white mb-2">Add to group</h6>
+    <ul class="list-group">
+      <li
+        v-for="g in groupsList"
+        :key="g._id"
+        class="list-group-item list-group-item-action"
+        @click="
+          emit('addRepoToGroup', { repoId: repoId, groupId: g._id });
+          groupShowPickerForRepo = null;
+          groupMenuOpenRepoId = null;
+        "
       >
-        Add to group
-      </div>
-    </div>
-
-    <!-- picker grup -->
-    <div
-      v-if="groupShowPickerForRepo === repoId + '_' + group._id"
-      class="group-picker-menu"
-      @mouseenter="groupShowPickerForRepo = repoId + '_' + group._id"
-      @mouseleave="groupShowPickerForRepo = null"
-    >
-      <h6 class="text-white mb-2">Add to group</h6>
-
-      <ul class="list-group">
-        <li
-          v-for="g in groupsList"
-          :key="g._id"
-          class="list-group-item list-group-item-action"
-          @click="
-            emit('addRepoToGroup', { repoId: repoId, groupId: g._id });
-            groupShowPickerForRepo = null;
-            groupMenuOpenRepoId = null;
-          "
-        >
-          {{ g.name }}
-        </li>
-      </ul>
-    </div>
+        {{ g.name }}
+      </li>
+    </ul>
   </div>
+</div>
+
 
   <!-- ⋮ button -->
   <i
@@ -192,7 +203,8 @@ const groupMenuOpenRepoId = ref(null);
 const groupShowPickerForRepo = ref(null);
 
 
-const emit = defineEmits(["addRepoToGroup"]);
+const emit = defineEmits(["addRepoToGroup","deleteRepoFromGroup"]);
+
 
 defineProps({
   user: Object,
@@ -203,7 +215,8 @@ defineProps({
   groupsList: Array,
   expandedGroups: Object,
   getRepoById: Function,
-  handleAddRepoToGroup: Function
+  handleAddRepoToGroup: Function,
+  handleDeleteRepoFromGroup: Function
 })
 
 
