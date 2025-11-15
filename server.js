@@ -300,5 +300,34 @@ app.delete("/api/group/:groupId", async (req, res) => {
   } 
 });
 
+//dodawanie repozytorium do grupy
+app.post("/api/group/:groupId/add-repo", async (req, res) => {
+  try {
+    const group = await Group.findById(req.params.groupId);
+    if (!group) return res.status(404).json({ message: "Group not found" });
+    group.repo_ids.push(req.body.repo_id);
+    await group.save();
+    res.json(group);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+//usuwanie repozytorium z grupy
+app.post("/api/group/:groupId/remove-repo", async (req, res) => {
+  try {
+    const group = await Group.findById(req.params.groupId);
+    if (!group) return res.status(404).json({ message: "Group not found" });
+    const before = group.repo_ids.length;
+    group.repo_ids = group.repo_ids.filter(id => id !== Number(req.body.repo_id));
+     if (group.repo_ids.length === before) {
+      return res.status(400).json({ message: "Repo not found in group" });
+    }
+    await group.save();
+    res.json(group);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  } 
+});
 
 app.listen(3000, () => console.log("Server running on http://localhost:3000"));
