@@ -40,10 +40,12 @@
   v-for="repoId in group.repo_ids"
   :key="repoId + '_' + group._id"
   class="list-group-item nested-item group-repo-item d-flex justify-content-between align-items-center"
+  @click="selectRepo(getRepoById(repoId))"
 >
-  <span @click.stop="selectRepo(getRepoById(repoId))">
-    {{ getRepoById(repoId)?.name || 'Unknown repo' }}
-  </span>
+
+  <span>
+  {{ getRepoById(repoId)?.name || 'Unknown repo' }}
+</span>
 
   <!-- wrapper -->
 <div 
@@ -135,10 +137,11 @@
     :key="repo.id"
     class="list-group-item list-group-item-action d-flex justify-content-between align-items-center repo-item"
     :class="{ active: selectedRepo && selectedRepo.id === repo.id }"
+    @click="selectRepo(repo)"
 
     
   >
-    <span @click="selectRepo(repo)">
+    <span >
       {{ repo.name }}
     </span>
 
@@ -272,9 +275,9 @@ onBeforeUnmount(() => {
 .sidebar-container {
   background-color: #1d1e20;
   width: 20%;
+   height: 100vh;
   min-width: 250px;
   max-width: 350px;
-  overflow-y: visible; /* zmienione z auto */
   scrollbar-color: #303236 #1d1e20;
   position: relative;
 }
