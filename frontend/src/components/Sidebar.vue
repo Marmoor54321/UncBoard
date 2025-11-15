@@ -59,47 +59,50 @@
       {{ repo.name }}
     </span>
 
-    <!-- ⋮ button -->
-    <i 
-      class="bi bi-three-dots-vertical text-white ms-2"
-      @click.stop="menuOpenRepoId = menuOpenRepoId === repo.id ? null : repo.id"
-      style="cursor: pointer;"
-    ></i>
-
-    <!-- menu po kliknięciu ⋮ -->
-    <div
-      v-if="menuOpenRepoId === repo.id"
-      class="dropdown-menu-custom"
-    >
-      <div class="dropdown-item-custom" @click="showGroupPickerForRepo = repo.id">
-        ➕ Add to group
-      </div>
+<div 
+  class="dropdown-wrapper" 
+  @mouseenter="showGroupPickerForRepo = repo.id" 
+  @mouseleave="handleMouseLeave"
+  
+>
+  <!-- menu po kliknięciu ⋮ -->
+  <div
+    v-if="menuOpenRepoId === repo.id"
+    class="dropdown-menu-custom"
+  >
+    <div class="dropdown-item-custom" @mouseenter="showGroupPickerForRepo = repo.id">
+      Add to group
     </div>
+  </div>
 
-    <!-- popup z wyborem grup -->
-    <div 
-      v-if="showGroupPickerForRepo === repo.id"
-      class="group-picker-menu"
-    >
-      <h6 class="text-white mb-2">Add to group</h6>
+  <!-- popup z wyborem grup -->
+  <div 
+    v-if="showGroupPickerForRepo === repo.id"
+    class="group-picker-menu"
+    @mouseenter="showGroupPickerForRepo = repo.id"
+    @mouseleave="showGroupPickerForRepo = null"
+  >
+    <h6 class="text-white mb-2">Add to group</h6>
 
-      <ul class="list-group">
-        <li 
-          v-for="group in groupsList"
-          :key="group._id"
-          class="list-group-item list-group-item-action"
-          @click="emit('addRepoToGroup', { repoId: repo.id, groupId: group._id }); showGroupPickerForRepo = null; menuOpenRepoId = null;"
-        >
-          {{ group.name }}
-        </li>
-      </ul>
+    <ul class="list-group">
+      <li 
+        v-for="group in groupsList"
+        :key="group._id"
+        class="list-group-item list-group-item-action"
+        @click="emit('addRepoToGroup', { repoId: repo.id, groupId: group._id }); showGroupPickerForRepo = null; menuOpenRepoId = null;"
+      >
+        {{ group.name }}
+      </li>
+    </ul>
+  </div>
+</div>
+  <!-- ⋮ button -->
+  <i 
+    class="bi bi-three-dots-vertical text-white ms-2"
+    @click.stop="menuOpenRepoId = menuOpenRepoId === repo.id ? null : repo.id"
+    style="cursor: pointer;"
+  ></i>
 
-      <div class="text-end mt-2">
-        <button class="btn btn-sm btn-secondary" @click="showGroupPickerForRepo = null">
-          Cancel
-        </button>
-      </div>
-    </div>
 
   </li>
 </ul>
@@ -109,17 +112,12 @@
 </template>
 
 <script setup>
-import { ref } from "vue";
-
+import { ref, onMounted, onBeforeUnmount } from 'vue';
 
 const menuOpenRepoId = ref(null);
-
-
 const showGroupPickerForRepo = ref(null);
 
-
 const emit = defineEmits(["addRepoToGroup"]);
-
 
 defineProps({
   user: Object,
@@ -132,7 +130,27 @@ defineProps({
   getRepoById: Function,
   handleAddRepoToGroup: Function
 })
+
+// Funkcja do zamykania menu po kliknięciu poza nimi
+function handleClickOutside(event) {
+  // sprawdzamy, czy kliknięcie jest w li lub menu
+  if (!event.target.closest('.repo-item') &&
+      !event.target.closest('.dropdown-menu-custom') &&
+      !event.target.closest('.group-picker-menu')) {
+    menuOpenRepoId.value = null;
+    showGroupPickerForRepo.value = null;
+  }
+}
+
+onMounted(() => {
+  document.addEventListener('click', handleClickOutside);
+});
+
+onBeforeUnmount(() => {
+  document.removeEventListener('click', handleClickOutside);
+});
 </script>
+
 
 <style scoped>
 .custom-list .list-group-item {
@@ -188,6 +206,7 @@ defineProps({
   color: white;
   padding: 6px 10px;
   cursor: pointer;
+  
 }
 
 .dropdown-item-custom:hover {
