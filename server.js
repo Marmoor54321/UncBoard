@@ -7,7 +7,7 @@ import cors from "cors";
 import createGitHubRoutes from "./routes/githubAuth.js";
 import Status from "./models/Status.js";
 import IssueStatus from "./models/IssueStatus.js";
-
+import Group from "./models/Group.js";
 
 
 
@@ -260,6 +260,44 @@ app.delete("/api/statuses/:statusId", async (req, res) => {
   res.sendStatus(200);
 });
 
+
+
+//CRUD dla grup
+//tworzenie grupy
+app.post("/api/group/create", async (req, res) => {
+  try {
+    const group = new Group({
+      name: req.body.name,
+      repo_ids: req.body.repo_ids,
+      created_by: req.body.created_by
+    });
+
+    await group.save();
+    res.status(201).json(group);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+//pobieranie grup użytkownika
+app.get("/api/groups", async (req, res) => {
+  try { 
+    const groups = await Group.find({ created_by: req.body.created_by });
+    res.json(groups);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  } 
+});
+
+//usuwanie grupy
+app.delete("/api/group/:groupId", async (req, res) => { 
+  try {
+    await Group.findByIdAndDelete(req.params.groupId);
+    res.sendStatus(200);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  } 
+});
 
 
 app.listen(3000, () => console.log("Server running on http://localhost:3000"));
