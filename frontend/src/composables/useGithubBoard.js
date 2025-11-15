@@ -169,7 +169,17 @@ function onMoveRight(column) {
 
 }
 
+async function handleAddRepoToGroup({ repoId, groupId }) {
+  console.log("Adding repo", repoId, "to group", groupId);
+  await fetch(`http://localhost:3000/api/group/${groupId}/add-repo`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ repo_id: repoId })
+  });
 
+  // odśwież grupy
+  await loadGroups();
+}
 
   onMounted(loadUser)
 
@@ -188,6 +198,7 @@ function onMoveRight(column) {
     onMoveRight,
     groupsList,
     expandedGroups,
-    getRepoById
+    getRepoById,
+    handleAddRepoToGroup
   }
 }

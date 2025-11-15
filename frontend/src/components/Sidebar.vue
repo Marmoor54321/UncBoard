@@ -49,21 +49,78 @@
           </ul>
           <h6 class="text-white">Your Repositories</h6>
           <ul class="list-group custom-list">
-            <li
-              v-for="repo in repos"
-              :key="repo.id"
-              @click="selectRepo(repo)"
-              class="list-group-item list-group-item-action"
-              :class="{ active: selectedRepo && selectedRepo.id === repo.id }"
-            >
-              {{ repo.name }}
-            </li>
-          </ul>
+  <li
+    v-for="repo in repos"
+    :key="repo.id"
+    class="list-group-item list-group-item-action d-flex justify-content-between align-items-center repo-item"
+    :class="{ active: selectedRepo && selectedRepo.id === repo.id }"
+  >
+    <span @click="selectRepo(repo)">
+      {{ repo.name }}
+    </span>
+
+    <!-- ⋮ button -->
+    <i 
+      class="bi bi-three-dots-vertical text-white ms-2"
+      @click.stop="menuOpenRepoId = menuOpenRepoId === repo.id ? null : repo.id"
+      style="cursor: pointer;"
+    ></i>
+
+    <!-- menu po kliknięciu ⋮ -->
+    <div
+      v-if="menuOpenRepoId === repo.id"
+      class="dropdown-menu-custom"
+    >
+      <div class="dropdown-item-custom" @click="showGroupPickerForRepo = repo.id">
+        ➕ Add to group
+      </div>
+    </div>
+
+    <!-- popup z wyborem grup -->
+    <div 
+      v-if="showGroupPickerForRepo === repo.id"
+      class="group-picker-menu"
+    >
+      <h6 class="text-white mb-2">Add to group</h6>
+
+      <ul class="list-group">
+        <li 
+          v-for="group in groupsList"
+          :key="group._id"
+          class="list-group-item list-group-item-action"
+          @click="emit('addRepoToGroup', { repoId: repo.id, groupId: group._id }); showGroupPickerForRepo = null; menuOpenRepoId = null;"
+        >
+          {{ group.name }}
+        </li>
+      </ul>
+
+      <div class="text-end mt-2">
+        <button class="btn btn-sm btn-secondary" @click="showGroupPickerForRepo = null">
+          Cancel
+        </button>
+      </div>
+    </div>
+
+  </li>
+</ul>
+
         </div>
       </aside>
 </template>
 
 <script setup>
+import { ref } from "vue";
+
+
+const menuOpenRepoId = ref(null);
+
+
+const showGroupPickerForRepo = ref(null);
+
+
+const emit = defineEmits(["addRepoToGroup"]);
+
+
 defineProps({
   user: Object,
   repos: Array,
@@ -72,7 +129,8 @@ defineProps({
   selectRepo: Function,
   groupsList: Array,
   expandedGroups: Object,
-  getRepoById: Function
+  getRepoById: Function,
+  handleAddRepoToGroup: Function
 })
 </script>
 
@@ -97,12 +155,56 @@ defineProps({
   border: 2px solid #aa50e7 !important;
   background-color: #3b3e42 !important;
 }
-.sidebar-container{
+.sidebar-container {
   background-color: #1d1e20;
   width: 20%;
   min-width: 250px;
   max-width: 350px;
-  overflow-y: auto;
+  overflow-y: visible; /* zmienione z auto */
   scrollbar-color: #303236 #1d1e20;
+  position: relative;
 }
+
+/* Każde repo posiada własną pozycję dla dropdownów */
+.repo-item {
+  position: relative;
+  overflow: visible !important;  /* UMOŻLIWIA wysuwanie popupu */
+}
+
+/* Menu po kliknięciu ⋮ */
+.dropdown-menu-custom {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  background: #222;
+  border: 1px solid #444;
+  padding: 5px;
+  width: 150px;
+  border-radius: 6px;
+  z-index: 9999;
+}
+
+.dropdown-item-custom {
+  color: white;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+.dropdown-item-custom:hover {
+  background: #333;
+}
+
+/* Panel wyboru grup (Spotify style) */
+.group-picker-menu {
+  position: absolute;
+  left: 100%;
+  top: 0;
+  background: #222;
+  border: 1px solid #444;
+  padding: 10px;
+  width: 200px;
+  border-radius: 6px;
+  z-index: 10000;
+}
+
 </style>

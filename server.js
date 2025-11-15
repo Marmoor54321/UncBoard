@@ -303,8 +303,12 @@ app.delete("/api/group/:groupId", async (req, res) => {
 //dodawanie repozytorium do grupy
 app.post("/api/group/:groupId/add-repo", async (req, res) => {
   try {
+    console.log("Group id ", req.params.groupId);
     const group = await Group.findById(req.params.groupId);
     if (!group) return res.status(404).json({ message: "Group not found" });
+    if(group.repo_ids.includes(req.body.repo_id)){
+      return res.status(500).json({message: "Repo already in the group"})
+    }
     group.repo_ids.push(req.body.repo_id);
     await group.save();
     res.json(group);
