@@ -4,11 +4,17 @@
       <div class="card-header bg-dark text-white text-uppercase small d-flex justify-content-between align-items-center">
         <span>{{ column.name }}</span>
 
+        <div class="btn-container">
+          <button
+            class="primary-btn btn btn-sm text-white"
+            @click="toggleAddIssue"
+          >
+            +
+          </button>
         <div class="dropdown position-relative">
           <button
-            class="btn btn-sm text-white"
+            class="primary-btn btn btn-sm text-white"
             @click="toggleMenu"
-            style="background: transparent; border: none;"
           >
             ⋮
           </button>
@@ -17,6 +23,7 @@
             <button class="menu-item" @click="onMoveLeft(column), toggleMenu()">Move left</button>
             <button class="menu-item" @click="onMoveRight(column), toggleMenu()">Move right</button>
           </div>
+        </div>
         </div>
       </div>
 
@@ -90,6 +97,26 @@ onBeforeUnmount(() => document.removeEventListener("click", handleClickOutside))
 </script>
 
 <style scoped>
+.btn-container{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.btn-container .primary-btn{
+  background-color: #2b2d31;
+  border: none;
+  color: white;
+  width: 30px;
+  height: 30px;
+  margin-left: 5px;
+  border-radius: 4px;
+  font-size: 18px;
+  line-height: 18px;
+  padding: 0;
+}
+.btn-container button:hover{
+  background-color: #3f4146;
+}
 .dropzone {
   min-height: 300px;
   display: flex;

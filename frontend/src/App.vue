@@ -15,6 +15,7 @@
         class="flex-grow-1 p-4 overflow-auto"
         style="scrollbar-color: #303236 #1d1e20; min-width: 0"
       >
+      <AddIssueModal />
         <KanbanBoard
           :selectedRepo="selectedRepo"
           :columns="columns"
@@ -47,6 +48,7 @@ import Header from '@/components/Header.vue'
 import Sidebar from '@/components/Sidebar.vue'
 import { ref } from 'vue'
 import KanbanBoard from './components/KanbanBoard.vue'
+import AddIssueModal from './components/Issues/AddIssueModal.vue'
 
 const {
   user,
