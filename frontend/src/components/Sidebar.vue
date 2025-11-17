@@ -4,6 +4,7 @@
     tabindex="-1"
     id="sidebarOffcanvas"
     aria-labelledby="sidebarOffcanvasLabel"
+    style="scrollbar-color: #303236 #1d1e20"
   >
     <div v-if="!user" class="text-center mt-4 text-white">
       <button class="btn btn-dark" @click="loginWithGithub">
@@ -299,6 +300,18 @@ onBeforeUnmount(() =>
 
 
 <style scoped>
+.repo-item i.bi-three-dots-vertical,
+.group-repo-item i.bi-three-dots-vertical {
+  opacity: 0;
+  transition: opacity 0.1s;
+}
+
+.repo-item:hover i.bi-three-dots-vertical,
+.group-repo-item:hover i.bi-three-dots-vertical {
+  opacity: 1;
+}
+
+
 .sidebar-container {
   background-color: #1d1e20;
   height: 94vh;
