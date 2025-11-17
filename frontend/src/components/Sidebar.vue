@@ -201,6 +201,7 @@ const pickerStyle = ref({
 function toggleMenu(id, event) {
   if (activeMenu.value === id) {
     activeMenu.value = null;
+    activePicker.value=null;
     return;
   }
 
@@ -362,6 +363,19 @@ onBeforeUnmount(() =>
   padding: 10px;
   border-radius: 6px;
   width: 200px;
+}
+/* Ramka po najechaniu na dropdown items */
+.dropdown-item-custom:hover {
+  background: #444;
+  border: 1px solid #aa50e7;
+  border-radius: 4px;
+}
+
+/* Ramka po najechaniu na elementy pickera */
+.group-picker-menu .list-group-item:hover {
+  background: #444 !important;
+  border: 1px solid #aa50e7 !important;
+  border-radius: 4px;
 }
 
 .list-group-item {
