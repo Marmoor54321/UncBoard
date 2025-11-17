@@ -114,6 +114,7 @@
         <div
           class="dropdown-item-custom"
           @click="onDeleteFromGroupForMenu"
+          @mouseenter="closePicker"
         >
           Delete
         </div>
