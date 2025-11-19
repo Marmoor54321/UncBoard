@@ -304,7 +304,7 @@ app.get("/api/groups/:ownerId", async (req, res) => {
 });
 
 //usuwanie grupy
-app.delete("/api/group/:groupId", async (req, res) => { 
+app.delete("/api/group/:groupId/delete", async (req, res) => { 
   try {
     await Group.findByIdAndDelete(req.params.groupId);
     res.sendStatus(200);

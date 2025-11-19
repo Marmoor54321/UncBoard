@@ -80,7 +80,14 @@
                 @click.stop="toggleMenu(`group-${group._id}-${repoId}`, $event)"
               ></i>
             </li>
-
+            <!-- DELETE GROUP BUTTON -->
+            <div 
+              class="delete-group-btn d-flex align-items-center text-danger mt-2"   
+            >
+              <i class="bi bi-trash ms-auto"
+              @click.stop="onDeleteGroup(group._id)"></i>
+            </div>
+ 
           </ul>
         </li>
       </ul>
@@ -176,7 +183,7 @@
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount } from "vue";
 
-const emit = defineEmits(["addRepoToGroup", "deleteRepoFromGroup", "addGroup"]);
+const emit = defineEmits(["addRepoToGroup", "deleteRepoFromGroup", "addGroup", "deleteGroup"]);
 
 const props = defineProps({
   user: Object,
@@ -221,6 +228,12 @@ function onCreateGroup() {
 
   
   closeModalCreateGroup()
+}
+function onDeleteGroup(groupId) {
+  emit("deleteGroup", {groupId: groupId});
+
+  // schowaj rozwinięcie grupy
+  //props.expandedGroups[groupId] = false;
 }
 
 
@@ -451,4 +464,7 @@ onBeforeUnmount(() =>
   box-shadow: 0 4px 20px rgba(0,0,0,0.3);
 }
 
+.bi-trash {
+  cursor: pointer;
+}
 </style>

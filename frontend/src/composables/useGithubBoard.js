@@ -206,6 +206,17 @@ async function handleAddGroup({ name, created_by }) {
   await loadGroups();
 }
 
+
+async function handleDeleteGroup({ groupId }) {
+  console.log("Deleting group", groupId);
+  await fetch(`http://localhost:3000/api/group/${groupId}/delete`, {
+    method: "DELETE"
+  });
+
+  // odśwież grupy
+  await loadGroups();
+}
+
   onMounted(loadUser)
 
   return {
@@ -226,6 +237,7 @@ async function handleAddGroup({ name, created_by }) {
     getRepoById,
     handleAddRepoToGroup,
     handleDeleteRepoFromGroup,
-    handleAddGroup
+    handleAddGroup,
+    handleDeleteGroup
   }
 }

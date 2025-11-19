@@ -14,6 +14,7 @@
         @addRepoToGroup="handleAddRepoToGroup"
         @deleteRepoFromGroup="handleDeleteRepoFromGroup"
         @addGroup="handleAddGroup"
+        @deleteGroup="handleDeleteGroup"
       
       />
       <!-- PRAWA CZĘŚĆ (KANBAN BOARD) -->
@@ -73,7 +74,8 @@ const {
   getRepoById,
   handleAddRepoToGroup,
   handleDeleteRepoFromGroup,
-  handleAddGroup
+  handleAddGroup,
+  handleDeleteGroup
 } = useGithubBoard()
 
 const selectedIssue = ref(null)
