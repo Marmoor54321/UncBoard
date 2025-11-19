@@ -21,8 +21,32 @@
       </div>
 
       <!-- GROUPS -->
-      <h6 class="text-white mt-4">Your Groups</h6>
+      <div class="d-flex justify-content-between align-items-center mt-4">
+        <h6 class="text-white m-0">Your Groups</h6>
+        <button class="btn btn-sm btn-outline-light" @click="showModalCreateGroup=true">Add</button>
+      </div>
+      <!-- ADD GROUP -->
+      <Teleport to="body">
+        <div v-if="showModalCreateGroup" class="modal-backdrop" @click.self="closeModalCreateGroup">
+          <div class="modal-content-box">
+            <h5 class="mb-3">Create Group</h5>
 
+            <input
+              v-model="groupName"
+              type="text"
+              class="form-control mb-3"
+              placeholder="Group name..."
+            />
+
+            <div class="d-flex justify-content-end gap-2">
+              <button class="btn btn-secondary" @click="closeModalCreateGroup">Cancel</button>
+              <button class="btn btn-primary" @click="onCreateGroup">Create</button>
+            </div>
+          </div>
+        </div>
+      </Teleport>
+
+      
       <ul class="list-group custom-list">
         <li
           v-for="group in groupsList"
@@ -85,7 +109,7 @@
     </div>
   </aside>
 
-  <!-- 📌 MENU ⋮ (TELEPORT) -->
+  <!-- MENU ⋮ (TELEPORT) -->
   <Teleport to="body">
     <div
       v-if="activeMenu"
@@ -122,7 +146,7 @@
     </div>
   </Teleport>
 
-  <!-- 📌 PICKER (TELEPORT) -->
+  <!-- PICKER (TELEPORT) -->
   <Teleport to="body">
     <div
       v-if="activePicker"
@@ -152,7 +176,7 @@
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount } from "vue";
 
-const emit = defineEmits(["addRepoToGroup", "deleteRepoFromGroup"]);
+const emit = defineEmits(["addRepoToGroup", "deleteRepoFromGroup", "addGroup"]);
 
 const props = defineProps({
   user: Object,
@@ -175,6 +199,30 @@ const activePicker = ref(null);
 
 const menuRepoId = ref(null);
 const menuGroupId = ref(null);
+
+const showModalCreateGroup = ref(false);
+const groupName = ref('')
+
+
+function closeModalCreateGroup() {
+  showModalCreateGroup.value = false
+  groupName.value = ''
+}
+
+
+function onCreateGroup() {
+  if (!groupName.value.trim()) return
+  console.log(groupName.value);
+  emit("addGroup", {
+    name: groupName.value,
+    created_by: props.user._id
+
+  });
+
+  
+  closeModalCreateGroup()
+}
+
 
 // MENU POSITION
 const menuStyle = ref({
@@ -383,4 +431,24 @@ onBeforeUnmount(() =>
   background: #303236 !important;
   border: none !important;
 }
+
+/*Modal create group*/
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+
+.modal-content-box {
+  background: #fff;
+  padding: 20px;
+  border-radius: 10px;
+  width: 320px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+}
+
 </style>

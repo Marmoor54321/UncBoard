@@ -263,17 +263,30 @@ app.delete("/api/statuses/:statusId", async (req, res) => {
 
 
 //CRUD dla grup
-//tworzenie grupy
+// tworzenie grupy
 app.post("/api/group/create", async (req, res) => {
   try {
+    const { name, repo_ids, created_by } = req.body;
+
+    if (!name || !created_by) {
+      return res.status(400).json({ message: "Missing required fields" });
+    }
+
+    // sprawdzenie czy już istnieje grupa o tej samej nazwie u tego samego użytkownika
+    const existing = await Group.findOne({ name, created_by });
+    if (existing) {
+      return res.status(400).json({ message: "Group with this name already exists" });
+    }
+
     const group = new Group({
-      name: req.body.name,
-      repo_ids: req.body.repo_ids,
-      created_by: req.body.created_by
+      name,
+      repo_ids: repo_ids || [],
+      created_by
     });
 
     await group.save();
     res.status(201).json(group);
+
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
