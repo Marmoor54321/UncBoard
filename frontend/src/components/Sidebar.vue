@@ -23,26 +23,36 @@
       <!-- GROUPS -->
       <div class="d-flex justify-content-between align-items-center mt-4">
         <h6 class="text-white m-0">Your Groups</h6>
-        <button class="btn btn-sm btn-outline-light" @click="showModalCreateGroup=true">Add</button>
+        <button 
+          class="add-group-btn"
+          @click="showModalCreateGroup = true"
+        >
+          <i class="bi bi-plus-lg"></i>
+        </button>
+
       </div>
       <!-- ADD GROUP -->
       <Teleport to="body">
         <div v-if="showModalCreateGroup" class="modal-backdrop" @click.self="closeModalCreateGroup">
-          <div class="modal-content-box">
-            <h5 class="mb-3">Create Group</h5>
+          <div class="modal-card animate-modal">
+            <h4 class="modal-title">Create new group</h4>
 
-            <input
-              v-model="groupName"
-              type="text"
-              class="form-control mb-3"
-              placeholder="Group name..."
-            />
+            <div class="modal-field">
+              <label>Group name</label>
+              <input
+                v-model="groupName"
+                type="text"
+                placeholder="e.g. Frontend Team"
+                class="modal-input"
+              />
+            </div>
 
-            <div class="d-flex justify-content-end gap-2">
-              <button class="btn btn-secondary" @click="closeModalCreateGroup">Cancel</button>
-              <button class="btn btn-primary" @click="onCreateGroup">Create</button>
+            <div class="modal-actions">
+              <button class="btn-cancel" @click="closeModalCreateGroup">Cancel</button>
+              <button class="btn-create" @click="onCreateGroup">Create</button>
             </div>
           </div>
+
         </div>
       </Teleport>
 
@@ -52,6 +62,7 @@
           v-for="group in groupsList"
           :key="group._id"
           class="list-group-item"
+          :class="{ expanded: expandedGroups[group._id] }"
         >
           <div
             class="d-flex justify-content-between align-items-center"
@@ -62,7 +73,12 @@
           </div>
 
           <!-- REPOS INSIDE GROUP -->
-          <ul v-if="expandedGroups[group._id]" class="list-group nested-repo-list">
+          <transition name="slide">
+            <ul 
+              v-if="expandedGroups[group._id]" 
+              class="list-group nested-repo-list"
+            >
+
 
             <li
               v-for="repoId in group.repo_ids"
@@ -89,6 +105,8 @@
             </div>
  
           </ul>
+          </transition>
+
         </li>
       </ul>
 
@@ -363,18 +381,18 @@ onBeforeUnmount(() =>
 
 
 <style scoped>
-.repo-item i.bi-three-dots-vertical,
-.group-repo-item i.bi-three-dots-vertical {
+/* Ogólny hover na ⋮ w repo i grupach */
+.list-group-item i.bi-three-dots-vertical {
   opacity: 0;
   transition: opacity 0.1s;
 }
 
-.repo-item:hover i.bi-three-dots-vertical,
-.group-repo-item:hover i.bi-three-dots-vertical {
+.list-group-item:hover i.bi-three-dots-vertical {
   opacity: 1;
 }
 
 
+/* SIDEBAR */
 .sidebar-container {
   background-color: #1d1e20;
   height: 94vh;
@@ -384,12 +402,19 @@ onBeforeUnmount(() =>
   overflow-x: hidden;
 }
 
+/* LISTY */
 .custom-list .list-group-item {
   background-color: #303236;
   color: white;
   border: none !important;
 }
+
 .custom-list .list-group-item:hover {
+  border: 1px solid #aa50e7 !important;
+  background-color: #3b3e42 !important;
+}
+
+.custom-list .list-group-item.expanded {
   border: 1px solid #aa50e7 !important;
   background-color: #3b3e42 !important;
 }
@@ -400,7 +425,7 @@ onBeforeUnmount(() =>
   z-index: 9999;
 }
 
-/* Menu */
+/* MENU */
 .dropdown-menu-custom {
   background: #222;
   border: 1px solid #444;
@@ -413,12 +438,15 @@ onBeforeUnmount(() =>
   padding: 6px;
   color: #fff;
   cursor: pointer;
-}
-.dropdown-item-custom:hover {
-  background: #444;
+  border-radius: 4px;
 }
 
-/* Picker */
+.dropdown-item-custom:hover {
+  background: #444;
+  border: 1px solid #aa50e7;
+}
+
+/* PICKER */
 .group-picker-menu {
   background: #222;
   border: 1px solid #444;
@@ -426,45 +454,166 @@ onBeforeUnmount(() =>
   border-radius: 6px;
   width: 200px;
 }
-/* Ramka po najechaniu na dropdown items */
-.dropdown-item-custom:hover {
-  background: #444;
-  border: 1px solid #aa50e7;
-  border-radius: 4px;
-}
 
-/* Ramka po najechaniu na elementy pickera */
 .group-picker-menu .list-group-item:hover {
   background: #444 !important;
   border: 1px solid #aa50e7 !important;
   border-radius: 4px;
 }
 
+/* Usuń border dla listy */
 .list-group-item {
   background: #303236 !important;
   border: none !important;
 }
 
-/*Modal create group*/
+/* Animacja rozwijania */
+.slide-enter-from,
+.slide-leave-to {
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+}
+
+.slide-enter-to,
+.slide-leave-from {
+  max-height: 500px;
+  opacity: 1;
+}
+
+.slide-enter-active,
+.slide-leave-active {
+  transition: all 0.25s ease;
+}
+
+/* ADD GROUP BUTTON */
+.add-group-btn {
+  background: none;
+  color: white;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: 0.15s ease;
+}
+
+.add-group-btn:hover {
+  transform: scale(1.08);
+}
+
+.add-group-btn i {
+  font-size: 16px;
+}
+
+
+/* ---------------------------- */
+/*  MODAL (SCALONE STYLE)       */
+/* ---------------------------- */
+
+/* Backdrop – jedna wersja zamiast dwóch */
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.5);
+  backdrop-filter: blur(4px);
+  background: rgba(0, 0, 0, 0.45);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 2000;
 }
 
-.modal-content-box {
-  background: #fff;
-  padding: 20px;
-  border-radius: 10px;
-  width: 320px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+/* Card */
+.modal-card {
+  background: #2b2d31;
+  padding: 24px;
+  width: 360px;
+  border-radius: 14px;
+  border: 1px solid #444;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.45);
+  color: white;
 }
 
-.bi-trash {
-  cursor: pointer;
+/* Animacja */
+.animate-modal {
+  animation: popupShow 0.18s ease;
 }
+
+@keyframes popupShow {
+  from { opacity: 0; transform: scale(0.92); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+/* Tytuł */
+.modal-title {
+  font-size: 20px;
+  margin-bottom: 16px;
+}
+
+/* Pole */
+.modal-field {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 18px;
+}
+
+.modal-field label {
+  font-size: 14px;
+  margin-bottom: 6px;
+  color: #cfcfcf;
+}
+
+/* Input */
+.modal-input {
+  background: #1f2023;
+  border: 1px solid #555;
+  color: white;
+  padding: 10px 12px;
+  border-radius: 8px;
+  transition: 0.15s;
+}
+
+.modal-input:focus {
+  border-color: #aa50e7;
+  outline: none;
+  box-shadow: 0 0 4px rgba(170, 80, 231, 0.4);
+}
+
+/* Przyciski */
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.btn-cancel {
+  background: transparent;
+  color: #ccc;
+  border: 1px solid #555;
+  padding: 8px 16px;
+  border-radius: 8px;
+  transition: 0.15s;
+}
+
+.btn-cancel:hover {
+  background: #3a3b3f;
+  border-color: #777;
+}
+
+.btn-create {
+  background: #aa50e7;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  transition: 0.15s;
+}
+
+.btn-create:hover {
+  background: #b964f1;
+}
+
+
 </style>
