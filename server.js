@@ -232,18 +232,37 @@ app.put("/api/statuses/:repoId/:statusId/move", async (req, res) => {
 
 //dodawanie nowego statusu
 app.post("/api/statuses", async (req, res) => {
-  const { repo_id, name, user_id } = req.body;
+  try {
+    const { repo_id, name, user_id } = req.body;
 
-  const count = await Status.countDocuments({ repo_id });
+    if (!repo_id || !name) {
+      return res.status(400).json("Missing required fields");
+    }
 
-  const status = await Status.create({
-    repo_id,
-    name,
-    created_by: user_id,
-    order: count + 1
-  });
+    // sprawdzenie duplikatu niezależnie od wielkości liter
+    const exists = await Status.findOne({ 
+      repo_id, 
+      name: { $regex: `^${name}$`, $options: 'i' } 
+    });
 
-  res.json(status);
+    if (exists) {
+      return res.status(400).json("A status with this name already exists");
+    }
+    const count = await Status.countDocuments({ repo_id });
+
+    const status = await Status.create({
+      repo_id,
+      name,
+      created_by: user_id || null,
+      order: count + 1
+    });
+
+    res.json(status);
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json("Server error");
+  }
 });
 
 //usuwanie statusu

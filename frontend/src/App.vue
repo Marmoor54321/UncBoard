@@ -35,7 +35,9 @@
           :onMoveRight="onMoveRight"
           :delete-column="deleteColumn"
           :edit-column="editColumn"
+          :add-column="addColumn"
         />
+
         <!-- PANEL SZCZEGÓŁÓW -->
         <transition name="slide">
           <IssueDetails
@@ -73,6 +75,7 @@ const {
   onMoveRight,
   deleteColumn,
   editColumn,
+  addColumn,
   groupsList,
   expandedGroups,
   getRepoById,

@@ -169,6 +169,43 @@ function onMoveRight(column) {
   moveColumn(column.repo_id, column.id, "right");
 
 }
+
+async function addColumn(repoId, name, userId) {
+  try {
+    const res = await axios.post(
+      "http://localhost:3000/api/statuses",
+      {
+        repo_id: repoId,
+        name,
+        user_id: userId
+      },
+      { withCredentials: true }
+    );
+
+    const newStatus = res.data;
+
+    columns.value.push({
+      id: newStatus._id,
+      name: newStatus.name,
+      repo_id: newStatus.repo_id,
+      order: newStatus.order
+    });
+
+    issuesByColumn.value[newStatus.name] = [];
+
+    return newStatus;
+
+  } catch (err) {
+    if (err.response?.status === 400 && err.response?.data === "A status with this name already exists") {
+      alert("This status column name already exists. Please choose another name.");
+      return;
+    }
+
+    console.error("Error creating column:", err.response?.data || err.message);
+    alert(err.response?.data?.message || "Error creating column");
+  }
+}
+
 async function deleteColumn(column){
   console.log(column)
   try{
@@ -297,6 +334,7 @@ async function handleDeleteGroup({ groupId }) {
     onMoveRight,
     deleteColumn,
     editColumn,
+    addColumn,
     groupsList,
     expandedGroups,
     getRepoById,
