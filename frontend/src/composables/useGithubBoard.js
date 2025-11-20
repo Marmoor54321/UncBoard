@@ -177,7 +177,13 @@ async function deleteColumn(column){
 
   }
   catch (err) {
-    console.error("Error deleting column:",err.response?.data || err.message);
+
+    if (err.response?.status === 400) {
+      alert(err.response.data); // komunikat dla uzytkownika
+      return;
+    }
+
+    console.error("Error deleting column:", err.response?.data || err.message);
   }
 }
 
