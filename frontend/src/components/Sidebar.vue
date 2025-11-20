@@ -31,7 +31,7 @@
         </button>
 
       </div>
-      <!-- ADD GROUP -->
+      <!-- ADD GROUP MODAL -->
       <Teleport to="body">
         <div v-if="showModalCreateGroup" class="modal-backdrop" @click.self="closeModalCreateGroup">
           <div class="modal-card animate-modal">
@@ -53,6 +53,24 @@
             </div>
           </div>
 
+        </div>
+      </Teleport>
+ <!-- DELETE GROUP MODAL -->
+      <Teleport to="body">
+        <div v-if="showModalDeleteGroup" class="modal-backdrop" @click.self="closeModalDeleteGroup">
+          <div class="modal-card animate-modal">
+            <h4 class="modal-title text-danger">Delete group?</h4>
+            
+            <p class="text-white-50 mb-4">
+              Are you sure you want to delete this group? <br>
+              Repositories inside will not be deleted.
+            </p>
+
+            <div class="modal-actions">
+              <button class="btn-cancel" @click="closeModalDeleteGroup">Cancel</button>
+              <button class="btn-delete" @click="onConfirmDeleteGroup">Delete</button>
+            </div>
+          </div>
         </div>
       </Teleport>
 
@@ -102,7 +120,7 @@
               class="delete-group-btn d-flex align-items-center text-danger mt-2"   
             >
               <i class="bi bi-trash ms-auto"
-              @click.stop="onDeleteGroup(group._id)"></i>
+              @click.stop="openDeleteGroupModal(group._id)"></i>
             </div>
  
           </ul>
@@ -226,14 +244,38 @@ const activePicker = ref(null);
 const menuRepoId = ref(null);
 const menuGroupId = ref(null);
 
+// MODALS STATE
+
 const showModalCreateGroup = ref(false);
 const groupName = ref('')
 
+const showModalDeleteGroup = ref(false);
+const groupToDeleteId = ref(null);
+
+// MODAL FUNCTIONS
 
 function closeModalCreateGroup() {
   showModalCreateGroup.value = false
   groupName.value = ''
 }
+
+function openDeleteGroupModal(groupId) {
+  groupToDeleteId.value = groupId;
+  showModalDeleteGroup.value = true;
+}
+
+function closeModalDeleteGroup() {
+  showModalDeleteGroup.value = false;
+  groupToDeleteId.value = null;
+}
+
+function onConfirmDeleteGroup() {
+  if (groupToDeleteId.value) {
+    emit("deleteGroup", { groupId: groupToDeleteId.value });
+  }
+  closeModalDeleteGroup();
+}
+
 
 
 function onCreateGroup() {
@@ -671,5 +713,17 @@ onBeforeUnmount(() =>
   background: #b964f1;
 }
 
+.btn-delete {
+  background: #dc3545; 
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  transition: 0.15s;
+}
+
+.btn-delete:hover {
+  background: #bb2d3b;
+}
 
 </style>
