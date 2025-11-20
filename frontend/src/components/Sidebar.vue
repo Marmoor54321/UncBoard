@@ -282,7 +282,7 @@ const pickerStyle = ref({
 function toggleMenu(id, event) {
   if (activeMenu.value === id) {
     activeMenu.value = null;
-    activePicker.value=null;
+    activePicker.value = null;
     return;
   }
 
@@ -290,13 +290,24 @@ function toggleMenu(id, event) {
   activePicker.value = null;
 
   const rect = event.target.getBoundingClientRect();
+  const windowHeight = window.innerHeight;
+  const estimatedMenuHeight = 120; 
+  const spaceBelow = windowHeight - rect.bottom;
 
-  menuStyle.value = {
+  let newStyle = {
     position: "fixed",
+    left: rect.right + 12 + "px",
+    zIndex: 9999,
     top: rect.top + "px",
-    left: rect.right + 12 + "px",  // ➜ przesunięcie w prawo
-    zIndex: 9999
+    bottom: "auto"
   };
+
+  if (spaceBelow < estimatedMenuHeight) {
+    newStyle.top = "auto";
+    newStyle.bottom = (windowHeight - rect.top) + "px"; 
+  }
+
+  menuStyle.value = newStyle;
 
   // extract repoId & groupId
   if (id.startsWith("repo-")) {
@@ -325,13 +336,26 @@ function openPickerFromMenu(event) {
   pickerGroup.value = menuGroupId.value;
 
   const rect = event.target.getBoundingClientRect();
+  const windowHeight = window.innerHeight;
+  
+  // Szacowana wysokość pickera 
+  const estimatedPickerHeight = 250; 
+  const spaceBelow = windowHeight - rect.top;
 
-  pickerStyle.value = {
+  // Domyślny styl 
+  let newStyle = {
     position: "fixed",
-    top: rect.top + "px",
     left: rect.right + 8 + "px",
-    zIndex: 9999
+    zIndex: 9999,
+    top: rect.top + "px",
+    bottom: "auto" 
   };
+  if (spaceBelow < estimatedPickerHeight) {
+    newStyle.top = "auto"; 
+    newStyle.bottom = (windowHeight - rect.bottom) + "px"; 
+  }
+
+  pickerStyle.value = newStyle;
 }
 
 function keepPickerOpen() {}
@@ -482,6 +506,9 @@ onBeforeUnmount(() =>
   padding: 10px;
   border-radius: 6px;
   width: 200px;
+  max-height: 200px;  
+  overflow-y: auto;     
+  scrollbar-color: #303236 #1d1e20; 
 }
 
 .group-picker-menu .list-group-item:hover {
