@@ -1,5 +1,5 @@
 <template>
-  <aside 
+  <aside
     class="sidebar-container border-end p-3 offcanvas-lg offcanvas-start"
     tabindex="-1"
     id="sidebarOffcanvas"
@@ -13,7 +13,6 @@
     </div>
 
     <div v-else>
-
       <!-- USER -->
       <div class="text-center mb-4 text-white">
         <img :src="user.avatar_url" class="rounded-circle mb-2" width="80" />
@@ -23,13 +22,9 @@
       <!-- GROUPS -->
       <div class="d-flex justify-content-between align-items-center mt-4">
         <h6 class="text-white m-0">Your Groups</h6>
-        <button 
-          class="add-group-btn"
-          @click="showModalCreateGroup = true"
-        >
+        <button class="add-group-btn" @click="showModalCreateGroup = true">
           <i class="bi bi-plus-lg"></i>
         </button>
-
       </div>
       <!-- ADD GROUP MODAL -->
       <Teleport to="body">
@@ -52,17 +47,16 @@
               <button class="btn-create" @click="onCreateGroup">Create</button>
             </div>
           </div>
-
         </div>
       </Teleport>
- <!-- DELETE GROUP MODAL -->
+      <!-- DELETE GROUP MODAL -->
       <Teleport to="body">
         <div v-if="showModalDeleteGroup" class="modal-backdrop" @click.self="closeModalDeleteGroup">
           <div class="modal-card animate-modal">
             <h4 class="modal-title text-danger">Delete group?</h4>
-            
+
             <p class="text-white-50 mb-4">
-              Are you sure you want to delete this group? <br>
+              Are you sure you want to delete this group? <br />
               Repositories inside will not be deleted.
             </p>
 
@@ -74,7 +68,6 @@
         </div>
       </Teleport>
 
-      
       <ul class="list-group custom-list">
         <li
           v-for="group in groupsList"
@@ -87,97 +80,94 @@
             @click="expandedGroups[group._id] = !expandedGroups[group._id]"
           >
             {{ group.name }}
-            <i class="bi" :class="expandedGroups[group._id] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <i
+              class="bi"
+              :class="expandedGroups[group._id] ? 'bi-chevron-down' : 'bi-chevron-right'"
+            ></i>
           </div>
 
           <!-- REPOS INSIDE GROUP -->
           <transition name="slide">
-            <ul 
-              v-if="expandedGroups[group._id]" 
-              class="list-group nested-repo-list"
-            >
+            <ul v-if="expandedGroups[group._id]" class="list-group nested-repo-list">
+              <li
+                v-for="repoId in group.repo_ids"
+                :key="repoId"
+                class="list-group-item nested-item d-flex justify-content-between align-items-center group-repo-item"
+                :class="{ active: selectedRepo && selectedRepo.id === repoId }"
+                @click="selectRepo(repoMap[repoId])"
+              >
+                <span>
+                  {{ repoMap[repoId]?.name || 'Unknown repo' }}
+                </span>
 
-
-            <li
-              v-for="repoId in group.repo_ids"
-              :key="repoId"
-              class="list-group-item nested-item d-flex justify-content-between align-items-center group-repo-item"
-              :class="{ active: selectedRepo && selectedRepo.id === repoId }"
-              @click="selectRepo(repoMap[repoId])"
-            >
-              <span>
-                {{ repoMap[repoId]?.name || 'Unknown repo' }}
-              </span>
-
-              <!-- ⋮ BUTTON -->
-              <i
-                class="bi bi-three-dots-vertical text-white ms-2"
-                @click.stop="toggleMenu(`group-${group._id}-${repoId}`, $event)"
-              ></i>
-            </li>
-            <!-- DELETE GROUP BUTTON -->
-            <div 
-              class="delete-group-btn d-flex align-items-center text-danger mt-2"   
-            >
-              <i class="bi bi-trash ms-auto"
-              @click.stop="openDeleteGroupModal(group._id)"></i>
-            </div>
- 
-          </ul>
+                <!-- ⋮ BUTTON -->
+                <i
+                  class="bi bi-three-dots-vertical text-white ms-2"
+                  @click.stop="toggleMenu(`group-${group._id}-${repoId}`, $event)"
+                ></i>
+              </li>
+              <!-- DELETE GROUP BUTTON -->
+              <div class="delete-group-btn d-flex align-items-center text-danger mt-2">
+                <i class="bi bi-trash ms-auto" @click.stop="openDeleteGroupModal(group._id)"></i>
+              </div>
+            </ul>
           </transition>
-
         </li>
       </ul>
 
       <!-- REPOSITORIES -->
       <h6 class="text-white mt-4">Your Repositories</h6>
 
+      <div class="mb-3 mt-2 position-relative">
+        <input
+          v-model="searchQuery"
+          type="text"
+          class="search-input w-100"
+          placeholder="Search repositories..."
+        />
+      </div>
+
       <ul class="list-group custom-list">
+        <TransitionGroup name="list">
+          <li
+            v-for="repo in filteredRepos"
+            :key="repo.id"
+            class="list-group-item d-flex justify-content-between align-items-center repo-item"
+            :class="{ active: selectedRepo && selectedRepo.id === repo.id }"
+            @click="selectRepo(repo)"
+          >
+            <span>{{ repo.name }}</span>
 
-        <li
-          v-for="repo in repos"
-          :key="repo.id"
-          class="list-group-item d-flex justify-content-between align-items-center repo-item"
-          :class="{ active: selectedRepo && selectedRepo.id === repo.id }"
-          @click="selectRepo(repo)"
+            <!-- ⋮ -->
+            <i
+              class="bi bi-three-dots-vertical text-white ms-2"
+              @click.stop="toggleMenu(`repo-${repo.id}`, $event)"
+            ></i>
+          </li>
+        </TransitionGroup>
+
+        <div
+          v-if="filteredRepos.length === 0 && searchQuery"
+          class="text-center text-white-50 mt-3 animate-fade"
         >
-          <span>{{ repo.name }}</span>
-
-          <!-- ⋮ -->
-          <i
-            class="bi bi-three-dots-vertical text-white ms-2"
-            @click.stop="toggleMenu(`repo-${repo.id}`, $event)"
-          ></i>
-        </li>
+          <i class="bi bi-search" style="font-size: 1.5rem"></i>
+          <p class="mt-1" style="font-size: 0.9rem"></p>
+        </div>
       </ul>
     </div>
   </aside>
 
   <!-- MENU ⋮ (TELEPORT) -->
   <Teleport to="body">
-    <div
-      v-if="activeMenu"
-      class="dropdown-menu-custom popup"
-      :style="menuStyle"
-    >
+    <div v-if="activeMenu" class="dropdown-menu-custom popup" :style="menuStyle">
       <!-- REPO MENU -->
       <template v-if="activeMenu.startsWith('repo-')">
-        <div
-          class="dropdown-item-custom"
-          @mouseenter="openPickerFromMenu"
-        >
-          Add to group
-        </div>
+        <div class="dropdown-item-custom" @mouseenter="openPickerFromMenu">Add to group</div>
       </template>
 
       <!-- GROUP -> REPO MENU -->
       <template v-else>
-        <div
-          class="dropdown-item-custom"
-          @mouseenter="openPickerFromMenu"
-        >
-          Add to group
-        </div>
+        <div class="dropdown-item-custom" @mouseenter="openPickerFromMenu">Add to group</div>
 
         <div
           class="dropdown-item-custom"
@@ -212,15 +202,12 @@
       </ul>
     </div>
   </Teleport>
-
 </template>
 
-
-
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount } from "vue";
+import { ref, computed, onMounted, onBeforeUnmount, watch, TransitionGroup } from 'vue'
 
-const emit = defineEmits(["addRepoToGroup", "deleteRepoFromGroup", "addGroup", "deleteGroup"]);
+const emit = defineEmits(['addRepoToGroup', 'deleteRepoFromGroup', 'addGroup', 'deleteGroup'])
 
 const props = defineProps({
   user: Object,
@@ -229,28 +216,46 @@ const props = defineProps({
   loginWithGithub: Function,
   selectRepo: Function,
   groupsList: Array,
-  expandedGroups: Object
-});
+  expandedGroups: Object,
+})
 
 // MAP REPOS
-const repoMap = computed(() =>
-  Object.fromEntries(props.repos.map(r => [r.id, r]))
-);
+const repoMap = computed(() => Object.fromEntries(props.repos.map((r) => [r.id, r])))
+
+// REPOSITORY SEARCH (DEBOUNCE)
+const searchQuery = ref('')
+const debouncedQuery = ref('')
+let searchTimeout = null
+
+watch(searchQuery, (newValue) => {
+  if (searchTimeout) clearTimeout(searchTimeout)
+  searchTimeout = setTimeout(() => {
+    debouncedQuery.value = newValue
+  }, 1000)
+})
+
+const filteredRepos = computed(() => {
+  if (!debouncedQuery.value.trim()) {
+    return props.repos
+  }
+  const term = debouncedQuery.value.toLowerCase()
+  return props.repos.filter((repo) => repo.name.toLowerCase().includes(term))
+})
 
 // STATE FOR MENUS
-const activeMenu = ref(null);
-const activePicker = ref(null);
+const activeMenu = ref(null)
+const activePicker = ref(null)
 
-const menuRepoId = ref(null);
-const menuGroupId = ref(null);
+const menuRepoId = ref(null)
+const menuGroupId = ref(null)
 
 // MODALS STATE
 
-const showModalCreateGroup = ref(false);
+const showModalCreateGroup = ref(false)
 const groupName = ref('')
 
-const showModalDeleteGroup = ref(false);
-const groupToDeleteId = ref(null);
+const showModalDeleteGroup = ref(false)
+const groupToDeleteId = ref(null)
 
 // MODAL FUNCTIONS
 
@@ -260,192 +265,182 @@ function closeModalCreateGroup() {
 }
 
 function openDeleteGroupModal(groupId) {
-  groupToDeleteId.value = groupId;
-  showModalDeleteGroup.value = true;
+  groupToDeleteId.value = groupId
+  showModalDeleteGroup.value = true
 }
 
 function closeModalDeleteGroup() {
-  showModalDeleteGroup.value = false;
-  groupToDeleteId.value = null;
+  showModalDeleteGroup.value = false
+  groupToDeleteId.value = null
 }
 
 function onConfirmDeleteGroup() {
   if (groupToDeleteId.value) {
-    emit("deleteGroup", { groupId: groupToDeleteId.value });
+    emit('deleteGroup', { groupId: groupToDeleteId.value })
   }
-  closeModalDeleteGroup();
+  closeModalDeleteGroup()
 }
-
-
 
 function onCreateGroup() {
   if (!groupName.value.trim()) return
-  console.log(groupName.value);
-  emit("addGroup", {
+  console.log(groupName.value)
+  emit('addGroup', {
     name: groupName.value,
-    created_by: props.user._id
+    created_by: props.user._id,
+  })
 
-  });
-
-  
   closeModalCreateGroup()
 }
 function onDeleteGroup(groupId) {
-  emit("deleteGroup", {groupId: groupId});
+  emit('deleteGroup', { groupId: groupId })
 
   // schowaj rozwinięcie grupy
   //props.expandedGroups[groupId] = false;
 }
 
-
 // MENU POSITION
 const menuStyle = ref({
-  top: "0px",
-  left: "0px",
-  position: "fixed",
-  zIndex: 9999
-});
+  top: '0px',
+  left: '0px',
+  position: 'fixed',
+  zIndex: 9999,
+})
 
 // PICKER POSITION
-const pickerRepo = ref(null);
-const pickerGroup = ref(null);
+const pickerRepo = ref(null)
+const pickerGroup = ref(null)
 
 const pickerStyle = ref({
-  top: "0px",
-  left: "0px",
-  position: "fixed",
-  zIndex: 9999
-});
-
+  top: '0px',
+  left: '0px',
+  position: 'fixed',
+  zIndex: 9999,
+})
 
 // ------------------------------
 // OPEN / CLOSE MENU
 // ------------------------------
 function toggleMenu(id, event) {
   if (activeMenu.value === id) {
-    activeMenu.value = null;
-    activePicker.value = null;
-    return;
+    activeMenu.value = null
+    activePicker.value = null
+    return
   }
 
-  activeMenu.value = id;
-  activePicker.value = null;
+  activeMenu.value = id
+  activePicker.value = null
 
-  const rect = event.target.getBoundingClientRect();
-  const windowHeight = window.innerHeight;
-  const estimatedMenuHeight = 120; 
-  const spaceBelow = windowHeight - rect.bottom;
+  const rect = event.target.getBoundingClientRect()
+  const windowHeight = window.innerHeight
+  const estimatedMenuHeight = 120
+  const spaceBelow = windowHeight - rect.bottom
 
   let newStyle = {
-    position: "fixed",
-    left: rect.right + 12 + "px",
+    position: 'fixed',
+    left: rect.right + 12 + 'px',
     zIndex: 9999,
-    top: rect.top + "px",
-    bottom: "auto"
-  };
-
-  if (spaceBelow < estimatedMenuHeight) {
-    newStyle.top = "auto";
-    newStyle.bottom = (windowHeight - rect.top) + "px"; 
+    top: rect.top + 'px',
+    bottom: 'auto',
   }
 
-  menuStyle.value = newStyle;
+  if (spaceBelow < estimatedMenuHeight) {
+    newStyle.top = 'auto'
+    newStyle.bottom = windowHeight - rect.top + 'px'
+  }
+
+  menuStyle.value = newStyle
 
   // extract repoId & groupId
-  if (id.startsWith("repo-")) {
-    menuRepoId.value = parseInt(id.split("-")[1]);
-    menuGroupId.value = null;
+  if (id.startsWith('repo-')) {
+    menuRepoId.value = parseInt(id.split('-')[1])
+    menuGroupId.value = null
   } else {
-    const parts = id.split("-");
-    menuGroupId.value = parts[1];
-    menuRepoId.value = parts[2];
+    const parts = id.split('-')
+    menuGroupId.value = parts[1]
+    menuRepoId.value = parts[2]
   }
 }
 
 function keepMenuOpen() {}
 function closeMenu() {
-  activeMenu.value = null;
+  activeMenu.value = null
 }
-
 
 // ------------------------------
 // OPEN PICKER
 // ------------------------------
 function openPickerFromMenu(event) {
-  activePicker.value = "picker";
+  activePicker.value = 'picker'
 
-  pickerRepo.value = menuRepoId.value;
-  pickerGroup.value = menuGroupId.value;
+  pickerRepo.value = menuRepoId.value
+  pickerGroup.value = menuGroupId.value
 
-  const rect = event.target.getBoundingClientRect();
-  const windowHeight = window.innerHeight;
-  
-  // Szacowana wysokość pickera 
-  const estimatedPickerHeight = 250; 
-  const spaceBelow = windowHeight - rect.top;
+  const rect = event.target.getBoundingClientRect()
+  const windowHeight = window.innerHeight
 
-  // Domyślny styl 
+  // Szacowana wysokość pickera
+  const estimatedPickerHeight = 250
+  const spaceBelow = windowHeight - rect.top
+
+  // Domyślny styl
   let newStyle = {
-    position: "fixed",
-    left: rect.right + 8 + "px",
+    position: 'fixed',
+    left: rect.right + 8 + 'px',
     zIndex: 9999,
-    top: rect.top + "px",
-    bottom: "auto" 
-  };
+    top: rect.top + 'px',
+    bottom: 'auto',
+  }
   if (spaceBelow < estimatedPickerHeight) {
-    newStyle.top = "auto"; 
-    newStyle.bottom = (windowHeight - rect.bottom) + "px"; 
+    newStyle.top = 'auto'
+    newStyle.bottom = windowHeight - rect.bottom + 'px'
   }
 
-  pickerStyle.value = newStyle;
+  pickerStyle.value = newStyle
 }
 
 function keepPickerOpen() {}
 function closePicker() {
-  activePicker.value = null;
+  activePicker.value = null
 }
-
 
 // ------------------------------
 // MENU ACTIONS
 // ------------------------------
 function onPickerSelect(groupId) {
-  emit("addRepoToGroup", { repoId: pickerRepo.value, groupId });
-  activePicker.value = null;
-  activeMenu.value = null;
+  emit('addRepoToGroup', { repoId: pickerRepo.value, groupId })
+  activePicker.value = null
+  activeMenu.value = null
 }
 
 function onDeleteFromGroupForMenu() {
-  emit("deleteRepoFromGroup", {
+  emit('deleteRepoFromGroup', {
     repoId: menuRepoId.value,
-    groupId: menuGroupId.value
-  });
-  activeMenu.value = null;
-  activePicker.value = null;
+    groupId: menuGroupId.value,
+  })
+  activeMenu.value = null
+  activePicker.value = null
 }
-
 
 // ------------------------------
 // CLICK OUTSIDE
 // ------------------------------
 function handleClickOutside(e) {
-  if (!e.target.closest(".popup")) {
-    activeMenu.value = null;
-    activePicker.value = null;
+  if (!e.target.closest('.popup')) {
+    activeMenu.value = null
+    activePicker.value = null
   }
 }
 
-onMounted(() =>
-  document.addEventListener("click", handleClickOutside)
-);
+onMounted(() => document.addEventListener('click', handleClickOutside))
 
-onBeforeUnmount(() =>
-  document.removeEventListener("click", handleClickOutside)
-);
+onBeforeUnmount(() => {
+  document.removeEventListener('click', handleClickOutside)
 
+  if (searchTimeout) {
+    clearTimeout(searchTimeout)
+  }
+})
 </script>
-
-
 
 <style scoped>
 /* Ogólny hover na ⋮ w repo i grupach */
@@ -456,25 +451,62 @@ onBeforeUnmount(() =>
   transition: opacity 0.1s ease;
 }
 
-
 .repo-item:hover i.bi-three-dots-vertical,
 .group-repo-item:hover i.bi-three-dots-vertical,
 .nested-item:hover i.bi-three-dots-vertical {
   opacity: 1 !important;
 }
 
-
-
 /* SIDEBAR */
 .sidebar-container {
   background-color: #1d1e20;
   height: 94vh;
-  min-width: 300px;
-  max-width: 350px;
-  overflow-y: auto; 
+  width: 340px;
+  min-width: 340px;
+  overflow-y: auto;
   overflow-x: hidden;
-
   scrollbar-gutter: stable;
+}
+
+/* Styl pola wyszukiwania */
+.search-input {
+  background: #1f2023;
+  border: 1px solid #555;
+  color: white;
+  padding: 8px 12px;
+  border-radius: 6px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+/* Animacje wyszukiwania */
+.list-move,
+.list-enter-active,
+.list-leave-active {
+  transition: all 0.4s ease;
+}
+
+.list-enter-from,
+.list-leave-to {
+  opacity: 0;
+}
+
+.list-leave-active {
+  position: absolute;
+  width: 100%;
+  left: 0;
+  top: auto;
+  z-index: 0;
+  pointer-events: none;
+}
+/*---*/
+
+.search-input:focus {
+  border-color: #aa50e7;
+}
+
+.search-input::placeholder {
+  color: #888;
 }
 
 /* Aktywne repo — główna lista */
@@ -497,9 +529,15 @@ onBeforeUnmount(() =>
   cursor: pointer;
 }
 
-
-
 /* LISTY */
+.custom-list {
+  position: relative;
+  overflow: visible;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
 .custom-list .list-group-item {
   background-color: #303236;
   color: white;
@@ -550,9 +588,9 @@ onBeforeUnmount(() =>
   padding: 10px;
   border-radius: 6px;
   width: 200px;
-  max-height: 200px;  
-  overflow-y: auto;     
-  scrollbar-color: #303236 #1d1e20; 
+  max-height: 200px;
+  overflow-y: auto;
+  scrollbar-color: #303236 #1d1e20;
 }
 
 .group-picker-menu .list-group-item:hover {
@@ -608,7 +646,6 @@ onBeforeUnmount(() =>
   font-size: 16px;
 }
 
-
 /* ---------------------------- */
 /*  MODAL (SCALONE STYLE)       */
 /* ---------------------------- */
@@ -642,8 +679,14 @@ onBeforeUnmount(() =>
 }
 
 @keyframes popupShow {
-  from { opacity: 0; transform: scale(0.92); }
-  to   { opacity: 1; transform: scale(1); }
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 /* Tytuł */
@@ -716,7 +759,7 @@ onBeforeUnmount(() =>
 }
 
 .btn-delete {
-  background: #dc3545; 
+  background: #dc3545;
   color: white;
   border: none;
   padding: 8px 16px;
@@ -727,5 +770,4 @@ onBeforeUnmount(() =>
 .btn-delete:hover {
   background: #bb2d3b;
 }
-
 </style>
