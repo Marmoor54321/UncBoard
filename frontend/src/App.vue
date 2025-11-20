@@ -8,6 +8,14 @@
         :selectedRepo="selectedRepo"
         :loginWithGithub="loginWithGithub"
         :selectRepo="selectRepo"
+        :groupsList="groupsList"
+        :expandedGroups="expandedGroups"
+        :getRepoById="getRepoById"
+        @addRepoToGroup="handleAddRepoToGroup"
+        @deleteRepoFromGroup="handleDeleteRepoFromGroup"
+        @addGroup="handleAddGroup"
+        @deleteGroup="handleDeleteGroup"
+      
       />
       <!-- PRAWA CZĘŚĆ (KANBAN BOARD) -->
       <main
@@ -65,6 +73,13 @@ const {
   onMoveRight,
   deleteColumn,
   editColumn
+  groupsList,
+  expandedGroups,
+  getRepoById,
+  handleAddRepoToGroup,
+  handleDeleteRepoFromGroup,
+  handleAddGroup,
+  handleDeleteGroup
 } = useGithubBoard()
 
 const selectedIssue = ref(null)

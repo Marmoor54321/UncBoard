@@ -26,10 +26,35 @@ export function useGithubBoard() {
       const res = await axios.get('http://localhost:3000/api/github/user', { withCredentials: true, timeout: 5000 })
       user.value = res.data ?? null
       await loadRepos()
+      await loadGroups();
     } catch(e) {
       console.log('Not logged in',e)
     }
   }
+
+  const groupsList = ref([]);
+  const expandedGroups = ref({}); // do rozwijania/zamykania dropdownów
+  function getRepoById(id) {
+  return repos.value.find(r => r.id === id);
+}
+
+  async function loadGroups() {
+    if (!user.value) return;
+
+    try {
+      const res = await axios.get(
+        `http://localhost:3000/api/groups/${user.value._id}`,
+        { withCredentials: true }
+      );
+
+      groupsList.value = res.data;
+
+    } catch (e) {
+      console.error("Error loading groups:", e);
+    }
+  }
+
+
 
   async function loadRepos() {
     try{
@@ -207,7 +232,53 @@ async function editColumn(columnId, newName) {
     alert(err.response?.data?.message || "Error updating column");
   }
 }
+async function handleAddRepoToGroup({ repoId, groupId }) {
+  console.log("Adding repo", repoId, "to group", groupId);
+  await fetch(`http://localhost:3000/api/group/${groupId}/add-repo`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ repo_id: repoId })
+  });
 
+  // odśwież grupy
+  await loadGroups();
+}
+
+async function handleDeleteRepoFromGroup({ repoId, groupId }) {
+  console.log("Deleting repo", repoId, "from group", groupId);
+  await fetch(`http://localhost:3000/api/group/${groupId}/remove-repo`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ repo_id: repoId })
+  });
+
+  // odśwież grupy
+  await loadGroups();
+}
+
+
+async function handleAddGroup({ name, created_by }) {
+  console.log("Creating group", name, "by", created_by);
+  await fetch(`http://localhost:3000/api/group/create`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name: name, created_by: created_by })
+  });
+
+  // odśwież grupy
+  await loadGroups();
+}
+
+
+async function handleDeleteGroup({ groupId }) {
+  console.log("Deleting group", groupId);
+  await fetch(`http://localhost:3000/api/group/${groupId}/delete`, {
+    method: "DELETE"
+  });
+
+  // odśwież grupy
+  await loadGroups();
+}
 
   onMounted(loadUser)
 
@@ -226,5 +297,12 @@ async function editColumn(columnId, newName) {
     onMoveRight,
     deleteColumn,
     editColumn
+    groupsList,
+    expandedGroups,
+    getRepoById,
+    handleAddRepoToGroup,
+    handleDeleteRepoFromGroup,
+    handleAddGroup,
+    handleDeleteGroup
   }
 }
