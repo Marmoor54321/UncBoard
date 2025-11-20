@@ -96,7 +96,7 @@ app.get("/api/github/issues/:owner/:repo", async (req, res) => {
 
     // wszystkie statusy repo
     const statuses = await Status.find({ repo_id });
-    const todoStatus = statuses.find(s => s.name === "TO DO");
+    const defaultStatus = statuses.find(s => s.order === 1);
 
     // powiązania z IssueStatus
     const existing = await IssueStatus.find({ repo_id });
@@ -109,7 +109,7 @@ app.get("/api/github/issues/:owner/:repo", async (req, res) => {
         newStatuses.push({
           repo_id,
           issue_id: issue.id,
-          status_id: todoStatus._id, // domyślny status TO DO
+          status_id: defaultStatus._id, // domyślny status -  order 1
         });
       }
     }
@@ -127,7 +127,7 @@ app.get("/api/github/issues/:owner/:repo", async (req, res) => {
       const status = issueStatuses.find(s => s.issue_id === issue.id);
       return {
         ...issue,
-        status: status ? status.status_id.name : "TO DO",
+        status: status ? status.status_id.order : 1,
       };
     });
 

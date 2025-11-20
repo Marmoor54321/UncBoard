@@ -68,12 +68,13 @@ export function useGithubBoard() {
     columns.value = statuses.data.map(s => ({
       id: s._id,
       name:s.name,
+      order: s.order,
       repo_id: repo.id
     }));
     issuesByColumn.value = {};
 
     columns.value.forEach(col => {
-      issuesByColumn.value[col.name] = issues.filter(issue => issue.status === col.name);
+      issuesByColumn.value[col.name] = issues.filter(issue => issue.status === col.order);
     });
 
     selectedRepo.value = repo;
