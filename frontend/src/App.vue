@@ -33,6 +33,8 @@
           :openIssue="openIssue"
           :onMoveLeft="onMoveLeft"
           :onMoveRight="onMoveRight"
+          :delete-column="deleteColumn"
+          :edit-column="editColumn"
         />
         <!-- PANEL SZCZEGÓŁÓW -->
         <transition name="slide">
@@ -69,6 +71,8 @@ const {
   groups,
   onMoveLeft,      
   onMoveRight,
+  deleteColumn,
+  editColumn
   groupsList,
   expandedGroups,
   getRepoById,

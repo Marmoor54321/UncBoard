@@ -2,7 +2,16 @@
   <div class="col">
     <div class="card h-100" style="border: 1px solid #aa50e7">
       <div class="card-header bg-dark text-white text-uppercase small d-flex justify-content-between align-items-center">
-        <span>{{ column.name }}</span>
+        <span v-if="!editing">{{ column.name }}</span>
+        <input
+          v-else
+          ref="inputRef"
+          v-model="newName"
+          class="rename-input"
+          @keyup.enter="saveEdit"
+          @blur="saveEdit"
+        />
+
 
         <div class="dropdown position-relative">
           <button
@@ -16,6 +25,9 @@
           <div v-if="showMenu" class="menu shadow">
             <button class="menu-item" @click="onMoveLeft(column), toggleMenu()">Move left</button>
             <button class="menu-item" @click="onMoveRight(column), toggleMenu()">Move right</button>
+            <button class="menu-item" @click="startEdit(column), toggleMenu()">Rename</button>
+            <button class="menu-item" @click="deleteColumn(column), toggleMenu()">Delete</button>
+
           </div>
         </div>
       </div>
@@ -35,6 +47,8 @@
           :scrollSpeed="15"
           :on-move-left="onMoveLeft"
           :on-move-right="onMoveRight"
+          :delete-column="deleteColumn"
+          :edit-column="editColumn"
 
         >
           <template #item="{ element }">
@@ -67,11 +81,13 @@ const props = defineProps({
   onDragEnd: Function,
   openIssue: Function,
   onMoveLeft: Function,  
-  onMoveRight: Function
+  onMoveRight: Function,
+  deleteColumn: Function,
+  editColumn: Function
 })
 
 
-
+const inputRef = ref(null)
 const showMenu = ref(false)
 function toggleMenu() {
   showMenu.value = !showMenu.value
@@ -81,7 +97,32 @@ function handleClickOutside(e) {
   if (!e.target.closest(".dropdown")) {
     showMenu.value = false
   }
+
+  if (editing.value) {
+    const isClickInsideInput = inputRef.value && inputRef.value.contains(e.target)
+    const isRenameButton = e.target.textContent.trim() === 'Rename'
+
+    if (!isClickInsideInput && !isRenameButton) {
+        saveEdit()
+    }
+  }
 }
+const editing = ref(false)
+const newName = ref("")
+
+function startEdit() {
+  editing.value = true
+  newName.value = props.column.name
+}
+
+function saveEdit() {
+  editing.value = false
+
+  if (!newName.value.trim() || newName.value === props.column.name) return
+
+  props.editColumn(props.column.id || props.column._id, newName.value.trim())
+}
+
 
 onMounted(() => document.addEventListener("click", handleClickOutside))
 onBeforeUnmount(() => document.removeEventListener("click", handleClickOutside))
@@ -153,4 +194,24 @@ onBeforeUnmount(() => document.removeEventListener("click", handleClickOutside))
   background-color: #3b3e42;
   color: white;
 }
+.rename-input {
+  width: 100%;
+  padding: 4px 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #fff;
+  background-color: #3b3e42;
+  border: 1px solid #aa50e7;
+  border-radius: 4px;
+  outline: none;
+  transition: all 0.2s ease-in-out;
+  box-sizing: border-box;
+}
+
+.rename-input:focus {
+  background-color: #50545b;
+  border-color: #d16aff;
+  box-shadow: 0 0 4px rgba(170, 80, 231, 0.6);
+}
+
 </style>

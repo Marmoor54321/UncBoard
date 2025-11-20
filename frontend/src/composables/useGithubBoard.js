@@ -93,12 +93,13 @@ export function useGithubBoard() {
     columns.value = statuses.data.map(s => ({
       id: s._id,
       name:s.name,
+      order: s.order,
       repo_id: repo.id
     }));
     issuesByColumn.value = {};
 
     columns.value.forEach(col => {
-      issuesByColumn.value[col.name] = issues.filter(issue => issue.status === col.name);
+      issuesByColumn.value[col.name] = issues.filter(issue => issue.status === col.order);
     });
 
     selectedRepo.value = repo;
@@ -144,7 +145,7 @@ async function moveColumn(repoId, statusId, direction) {
     const res = await axios.put(
       `http://localhost:3000/api/statuses/${repoId}/${statusId}/move`,
       { direction },
-      { withCredentials: true }
+      { withCredentials: true },
     );
 
     console.log(`Column moved ${direction}:`, res.data);
@@ -168,7 +169,69 @@ function onMoveRight(column) {
   moveColumn(column.repo_id, column.id, "right");
 
 }
+async function deleteColumn(column){
+  console.log(column)
+  try{
+    const res = await axios.delete(
+      `http://localhost:3000/api/statuses/${column.id}`,
+      {
+        data: { repo_id: column.repo_id },   
+        withCredentials: true      
+      }
+    );
+    columns.value = columns.value.filter(c => c.id !== column.id);
+    const { targetStatusId } = res.data;
+    console.log(res.data);
+    
+    const fromColName = column.name;
+    const targetCol = columns.value.find(c => c.id === targetStatusId);
+    console.log(targetCol);
+    const targetColName = targetCol.name;
 
+    // przenieś całą zawartość kolumny do nowej kolumny
+    const movedIssues = issuesByColumn.value[fromColName];
+
+    if (!issuesByColumn.value[targetColName]) {
+      issuesByColumn.value[targetColName] = [];
+    }
+
+    issuesByColumn.value[targetColName].push(...movedIssues);
+
+    // usuń starą kolumnę
+    delete issuesByColumn.value[fromColName];
+
+  }
+  catch (err) {
+
+    if (err.response?.status === 400) {
+      alert(err.response.data); // komunikat dla uzytkownika
+      return;
+    }
+
+    console.error("Error deleting column:", err.response?.data || err.message);
+  }
+}
+
+async function editColumn(columnId, newName) {
+  try {
+    const res = await axios.put(
+      `http://localhost:3000/api/statuses/${columnId}`,
+      { name: newName },
+      { withCredentials: true }
+    );
+
+    console.log("Updated column:", res.data.status);
+
+    // odśwież repo
+    if (selectedRepo.value) {
+      await selectRepo(selectedRepo.value);
+    }
+
+  } catch (err) {
+    console.error("Error updating column name:", err.response?.data || err.message);
+    alert(err.response?.data?.message || "Error updating column");
+  }
+}
 async function handleAddRepoToGroup({ repoId, groupId }) {
   console.log("Adding repo", repoId, "to group", groupId);
   await fetch(`http://localhost:3000/api/group/${groupId}/add-repo`, {
@@ -232,6 +295,8 @@ async function handleDeleteGroup({ groupId }) {
     groups,
     onMoveLeft,
     onMoveRight,
+    deleteColumn,
+    editColumn
     groupsList,
     expandedGroups,
     getRepoById,
