@@ -471,8 +471,10 @@ onBeforeUnmount(() =>
   height: 94vh;
   min-width: 300px;
   max-width: 350px;
-  overflow-y: auto;
+  overflow-y: auto; 
   overflow-x: hidden;
+
+  scrollbar-gutter: stable;
 }
 
 /* Aktywne repo — główna lista */
