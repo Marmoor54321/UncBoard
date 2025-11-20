@@ -21,6 +21,7 @@
                 :on-move-left="onMoveLeft"
                 :on-move-right="onMoveRight"
                 :delete-column="deleteColumn"
+                :edit-column="editColumn"
                 />
             </div>
 
@@ -43,7 +44,8 @@ defineProps({
   openIssue: Function,
   onMoveLeft: Function,  
   onMoveRight: Function,
-  deleteColumn: Function
+  deleteColumn: Function,
+  editColumn: Function
 })
 
 </script>

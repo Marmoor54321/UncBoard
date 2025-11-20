@@ -26,6 +26,7 @@
           :onMoveLeft="onMoveLeft"
           :onMoveRight="onMoveRight"
           :delete-column="deleteColumn"
+          :edit-column="editColumn"
         />
         <!-- PANEL SZCZEGÓŁÓW -->
         <transition name="slide">
@@ -62,7 +63,8 @@ const {
   groups,
   onMoveLeft,      
   onMoveRight,
-  deleteColumn
+  deleteColumn,
+  editColumn
 } = useGithubBoard()
 
 const selectedIssue = ref(null)

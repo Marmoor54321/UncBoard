@@ -180,6 +180,26 @@ async function deleteColumn(column){
   }
 }
 
+async function editColumn(columnId, newName) {
+  try {
+    const res = await axios.put(
+      `http://localhost:3000/api/statuses/${columnId}`,
+      { name: newName },
+      { withCredentials: true }
+    );
+
+    console.log("Updated column:", res.data.status);
+
+    // odśwież repo
+    if (selectedRepo.value) {
+      await selectRepo(selectedRepo.value);
+    }
+
+  } catch (err) {
+    console.error("Error updating column name:", err.response?.data || err.message);
+    alert(err.response?.data?.message || "Error updating column");
+  }
+}
 
 
   onMounted(loadUser)
@@ -197,6 +217,7 @@ async function deleteColumn(column){
     groups,
     onMoveLeft,
     onMoveRight,
-    deleteColumn
+    deleteColumn,
+    editColumn
   }
 }

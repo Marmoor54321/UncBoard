@@ -291,6 +291,30 @@ app.delete("/api/statuses/:statusId", async (req, res) => {
   }
 });
 
+// edycja nazwy statusu
+app.put("/api/statuses/:statusId", async (req, res) => {
+  try {
+    const { statusId } = req.params;
+    const { name } = req.body;
+
+    if (!name || name.trim() === "") {
+      return res.status(400).json({ message: "Name is required" });
+    }
+
+    const status = await Status.findById(statusId);
+    if (!status) {
+      return res.status(404).json({ message: "Status not found" });
+    }
+
+    status.name = name.trim();
+    await status.save();
+
+    res.json({ message: "Status updated", status });
+  } catch (err) {
+    console.error("Error updating status name:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
 
 
 
