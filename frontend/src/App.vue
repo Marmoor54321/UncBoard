@@ -72,7 +72,7 @@ const {
   onMoveLeft,      
   onMoveRight,
   deleteColumn,
-  editColumn
+  editColumn,
   groupsList,
   expandedGroups,
   getRepoById,

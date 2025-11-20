@@ -296,7 +296,7 @@ async function handleDeleteGroup({ groupId }) {
     onMoveLeft,
     onMoveRight,
     deleteColumn,
-    editColumn
+    editColumn,
     groupsList,
     expandedGroups,
     getRepoById,
