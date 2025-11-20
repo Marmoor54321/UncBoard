@@ -5,6 +5,7 @@
         <span v-if="!editing">{{ column.name }}</span>
         <input
           v-else
+          ref="inputRef"
           v-model="newName"
           class="rename-input"
           @keyup.enter="saveEdit"
@@ -86,7 +87,7 @@ const props = defineProps({
 })
 
 
-
+const inputRef = ref(null)
 const showMenu = ref(false)
 function toggleMenu() {
   showMenu.value = !showMenu.value
@@ -95,6 +96,15 @@ function toggleMenu() {
 function handleClickOutside(e) {
   if (!e.target.closest(".dropdown")) {
     showMenu.value = false
+  }
+
+  if (editing.value) {
+    const isClickInsideInput = inputRef.value && inputRef.value.contains(e.target)
+    const isRenameButton = e.target.textContent.trim() === 'Rename'
+
+    if (!isClickInsideInput && !isRenameButton) {
+        saveEdit()
+    }
   }
 }
 const editing = ref(false)
@@ -184,4 +194,24 @@ onBeforeUnmount(() => document.removeEventListener("click", handleClickOutside))
   background-color: #3b3e42;
   color: white;
 }
+.rename-input {
+  width: 100%;
+  padding: 4px 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #fff;
+  background-color: #3b3e42;
+  border: 1px solid #aa50e7;
+  border-radius: 4px;
+  outline: none;
+  transition: all 0.2s ease-in-out;
+  box-sizing: border-box;
+}
+
+.rename-input:focus {
+  background-color: #50545b;
+  border-color: #d16aff;
+  box-shadow: 0 0 4px rgba(170, 80, 231, 0.6);
+}
+
 </style>
