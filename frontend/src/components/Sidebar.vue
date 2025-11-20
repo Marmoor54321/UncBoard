@@ -42,7 +42,7 @@
               <input
                 v-model="groupName"
                 type="text"
-                placeholder="e.g. Frontend Team"
+                placeholder="e.g. Frontend"
                 class="modal-input"
               />
             </div>
@@ -84,6 +84,7 @@
               v-for="repoId in group.repo_ids"
               :key="repoId"
               class="list-group-item nested-item d-flex justify-content-between align-items-center group-repo-item"
+              :class="{ active: selectedRepo && selectedRepo.id === repoId }"
               @click="selectRepo(repoMap[repoId])"
             >
               <span>
@@ -382,14 +383,20 @@ onBeforeUnmount(() =>
 
 <style scoped>
 /* Ogólny hover na ⋮ w repo i grupach */
-.list-group-item i.bi-three-dots-vertical {
-  opacity: 0;
-  transition: opacity 0.1s;
+.list-group .group-repo-item i.bi-three-dots-vertical,
+.list-group .repo-item i.bi-three-dots-vertical,
+.list-group .nested-item i.bi-three-dots-vertical {
+  opacity: 0 !important;
+  transition: opacity 0.1s ease;
 }
 
-.list-group-item:hover i.bi-three-dots-vertical {
-  opacity: 1;
+
+.repo-item:hover i.bi-three-dots-vertical,
+.group-repo-item:hover i.bi-three-dots-vertical,
+.nested-item:hover i.bi-three-dots-vertical {
+  opacity: 1 !important;
 }
+
 
 
 /* SIDEBAR */
@@ -401,6 +408,28 @@ onBeforeUnmount(() =>
   overflow-y: auto;
   overflow-x: hidden;
 }
+
+/* Aktywne repo — główna lista */
+.list-group-item.repo-item.active {
+  border: 1px solid #aa50e7 !important;
+  background-color: #3b3e42 !important;
+}
+
+/* Aktywne repo — w grupach */
+.list-group-item.group-repo-item.active,
+.list-group-item.nested-item.active {
+  border: 1px solid #aa50e7 !important;
+  background-color: #3b3e42 !important;
+}
+
+/* Kursor najechania na repozytoria */
+.repo-item,
+.group-repo-item,
+.nested-item {
+  cursor: pointer;
+}
+
+
 
 /* LISTY */
 .custom-list .list-group-item {
