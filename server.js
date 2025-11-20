@@ -7,7 +7,7 @@ import cors from "cors";
 import createGitHubRoutes from "./routes/githubAuth.js";
 import Status from "./models/Status.js";
 import IssueStatus from "./models/IssueStatus.js";
-
+import Group from "./models/Group.js";
 
 
 
@@ -261,5 +261,90 @@ app.delete("/api/statuses/:statusId", async (req, res) => {
 });
 
 
+
+//CRUD dla grup
+// tworzenie grupy
+app.post("/api/group/create", async (req, res) => {
+  try {
+    const { name, repo_ids, created_by } = req.body;
+
+    if (!name || !created_by) {
+      return res.status(400).json({ message: "Missing required fields" });
+    }
+
+    // sprawdzenie czy już istnieje grupa o tej samej nazwie u tego samego użytkownika
+    const existing = await Group.findOne({ name, created_by });
+    if (existing) {
+      return res.status(400).json({ message: "Group with this name already exists" });
+    }
+
+    const group = new Group({
+      name,
+      repo_ids: repo_ids || [],
+      created_by
+    });
+
+    await group.save();
+    res.status(201).json(group);
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+//pobieranie grup użytkownika
+app.get("/api/groups/:ownerId", async (req, res) => {
+  try { 
+    const groups = await Group.find({ created_by: req.params.ownerId });
+    res.json(groups);
+    
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  } 
+});
+
+//usuwanie grupy
+app.delete("/api/group/:groupId/delete", async (req, res) => { 
+  try {
+    await Group.findByIdAndDelete(req.params.groupId);
+    res.sendStatus(200);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  } 
+});
+
+//dodawanie repozytorium do grupy
+app.post("/api/group/:groupId/add-repo", async (req, res) => {
+  try {
+    console.log("Group id ", req.params.groupId);
+    const group = await Group.findById(req.params.groupId);
+    if (!group) return res.status(404).json({ message: "Group not found" });
+    if(group.repo_ids.includes(req.body.repo_id)){
+      return res.status(500).json({message: "Repo already in the group"})
+    }
+    group.repo_ids.push(req.body.repo_id);
+    await group.save();
+    res.json(group);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+//usuwanie repozytorium z grupy
+app.post("/api/group/:groupId/remove-repo", async (req, res) => {
+  try {
+    const group = await Group.findById(req.params.groupId);
+    if (!group) return res.status(404).json({ message: "Group not found" });
+    const before = group.repo_ids.length;
+    group.repo_ids = group.repo_ids.filter(id => id !== Number(req.body.repo_id));
+     if (group.repo_ids.length === before) {
+      return res.status(400).json({ message: "Repo not found in group" });
+    }
+    await group.save();
+    res.json(group);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  } 
+});
 
 app.listen(3000, () => console.log("Server running on http://localhost:3000"));
