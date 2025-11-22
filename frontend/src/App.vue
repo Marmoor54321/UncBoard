@@ -8,7 +8,15 @@
         :selectedRepo="selectedRepo"
         :loginWithGithub="loginWithGithub"
         :selectRepo="selectRepo"
+        :groupsList="groupsList"
+        :expandedGroups="expandedGroups"
+        :getRepoById="getRepoById"
+        @addRepoToGroup="handleAddRepoToGroup"
+        @deleteRepoFromGroup="handleDeleteRepoFromGroup"
+        @addGroup="handleAddGroup"
+        @deleteGroup="handleDeleteGroup"
       />
+      <!-- PRAWA CZĘŚĆ (KANBAN BOARD) -->
       <main
         ref="scrollContainer"
         class="flex-grow-1 p-4 overflow-auto"
@@ -24,9 +32,13 @@
           :openIssue="openIssue"
           :onMoveLeft="onMoveLeft"
           :onMoveRight="onMoveRight"
+          :delete-column="deleteColumn"
+          :edit-column="editColumn"
+          :add-column="addColumn"
           @add-issue="showAddIssueModal"
         />
 
+        <!-- PANEL SZCZEGÓŁÓW -->
         <transition name="slide">
           <IssueDetails
             v-if="selectedIssue"
@@ -72,6 +84,16 @@ const {
   groups,
   onMoveLeft,
   onMoveRight,
+  deleteColumn,
+  editColumn,
+  addColumn,
+  groupsList,
+  expandedGroups,
+  getRepoById,
+  handleAddRepoToGroup,
+  handleDeleteRepoFromGroup,
+  handleAddGroup,
+  handleDeleteGroup,
   repoData,
   addIssueToBoard,
 } = useGithubBoard()

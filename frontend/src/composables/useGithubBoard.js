@@ -30,10 +30,35 @@ export function useGithubBoard() {
       const res = await axios.get('http://localhost:3000/api/github/user', { withCredentials: true})
       user.value = res.data ?? null
       await loadRepos()
+      await loadGroups();
     } catch(e) {
       console.error('Not logged in',e)
     }
   }
+
+  const groupsList = ref([]);
+  const expandedGroups = ref({}); // do rozwijania/zamykania dropdownów
+  function getRepoById(id) {
+  return repos.value.find(r => r.id === id);
+}
+
+  async function loadGroups() {
+    if (!user.value) return;
+
+    try {
+      const res = await axios.get(
+        `http://localhost:3000/api/groups/${user.value._id}`,
+        { withCredentials: true }
+      );
+
+      groupsList.value = res.data;
+
+    } catch (e) {
+      console.error("Error loading groups:", e);
+    }
+  }
+
+
 
   async function loadRepos() {
     try{
@@ -88,16 +113,15 @@ export function useGithubBoard() {
 
     columns.value = statuses.map(s => ({
       id: s._id,
-      name: s.name,
+      name:s.name,
+      order: s.order,
       repo_id: repo.id
     }));
 
     issuesByColumn.value = {};
 
     columns.value.forEach(col => {
-      issuesByColumn.value[col.name] = issues.filter(
-        issue => issue.status === col.name
-      );
+      issuesByColumn.value[col.name] = issues.filter(issue => issue.status === col.order);
     });
 
     selectedRepo.value = repo;
@@ -137,7 +161,7 @@ async function moveColumn(repoId, statusId, direction) {
     const res = await axios.put(
       `http://localhost:3000/api/statuses/${repoId}/${statusId}/move`,
       { direction },
-      { withCredentials: true }
+      { withCredentials: true },
     );
     if (selectedRepo.value) {
       await selectRepo(selectedRepo.value);
@@ -159,6 +183,153 @@ function onMoveRight(column) {
 
 }
 
+async function addColumn(repoId, name, userId) {
+  try {
+    const res = await axios.post(
+      "http://localhost:3000/api/statuses",
+      {
+        repo_id: repoId,
+        name,
+        user_id: userId
+      },
+      { withCredentials: true }
+    );
+
+    const newStatus = res.data;
+
+    columns.value.push({
+      id: newStatus._id,
+      name: newStatus.name,
+      repo_id: newStatus.repo_id,
+      order: newStatus.order
+    });
+
+    issuesByColumn.value[newStatus.name] = [];
+
+    return newStatus;
+
+  } catch (err) {
+    if (err.response?.status === 400 && err.response?.data === "A status with this name already exists") {
+      alert("This status column name already exists. Please choose another name.");
+      return;
+    }
+
+    console.error("Error creating column:", err.response?.data || err.message);
+    alert(err.response?.data?.message || "Error creating column");
+  }
+}
+
+async function deleteColumn(column){
+  console.log(column)
+  try{
+    const res = await axios.delete(
+      `http://localhost:3000/api/statuses/${column.id}`,
+      {
+        data: { repo_id: column.repo_id },   
+        withCredentials: true      
+      }
+    );
+    columns.value = columns.value.filter(c => c.id !== column.id);
+    const { targetStatusId } = res.data;
+    console.log(res.data);
+    
+    const fromColName = column.name;
+    const targetCol = columns.value.find(c => c.id === targetStatusId);
+    console.log(targetCol);
+    const targetColName = targetCol.name;
+
+    // przenieś całą zawartość kolumny do nowej kolumny
+    const movedIssues = issuesByColumn.value[fromColName];
+
+    if (!issuesByColumn.value[targetColName]) {
+      issuesByColumn.value[targetColName] = [];
+    }
+
+    issuesByColumn.value[targetColName].push(...movedIssues);
+
+    // usuń starą kolumnę
+    delete issuesByColumn.value[fromColName];
+
+  }
+  catch (err) {
+
+    if (err.response?.status === 400) {
+      alert(err.response.data); // komunikat dla uzytkownika
+      return;
+    }
+
+    console.error("Error deleting column:", err.response?.data || err.message);
+  }
+}
+
+async function editColumn(columnId, newName) {
+  try {
+    const res = await axios.put(
+      `http://localhost:3000/api/statuses/${columnId}`,
+      { name: newName },
+      { withCredentials: true }
+    );
+
+    console.log("Updated column:", res.data.status);
+
+    // odśwież repo
+    if (selectedRepo.value) {
+      await selectRepo(selectedRepo.value);
+    }
+
+  } catch (err) {
+    console.error("Error updating column name:", err.response?.data || err.message);
+    alert(err.response?.data?.message || "Error updating column");
+  }
+}
+async function handleAddRepoToGroup({ repoId, groupId }) {
+  console.log("Adding repo", repoId, "to group", groupId);
+  await fetch(`http://localhost:3000/api/group/${groupId}/add-repo`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ repo_id: repoId })
+  });
+
+  // odśwież grupy
+  await loadGroups();
+}
+
+async function handleDeleteRepoFromGroup({ repoId, groupId }) {
+  console.log("Deleting repo", repoId, "from group", groupId);
+  await fetch(`http://localhost:3000/api/group/${groupId}/remove-repo`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ repo_id: repoId })
+  });
+
+  // odśwież grupy
+  await loadGroups();
+}
+
+
+async function handleAddGroup({ name, created_by }) {
+  console.log("Creating group", name, "by", created_by);
+  await fetch(`http://localhost:3000/api/group/create`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name: name, created_by: created_by })
+  });
+
+  // odśwież grupy
+  await loadGroups();
+}
+
+
+async function handleDeleteGroup({ groupId }) {
+  console.log("Deleting group", groupId);
+  await fetch(`http://localhost:3000/api/group/${groupId}/delete`, {
+    method: "DELETE"
+  });
+
+  // odśwież grupy
+  await loadGroups();
+}
+
 function addIssueToBoard(newIssue) {
   const statusName = newIssue.status;
   
@@ -167,8 +338,7 @@ function addIssueToBoard(newIssue) {
   } else {
     console.error(`Status column not found for: ${statusName}`);
   }
-}
-
+  
   onMounted(loadUser)
 
   return {
@@ -184,6 +354,16 @@ function addIssueToBoard(newIssue) {
     groups,
     onMoveLeft,
     onMoveRight,
+    deleteColumn,
+    editColumn,
+    addColumn,
+    groupsList,
+    expandedGroups,
+    getRepoById,
+    handleAddRepoToGroup,
+    handleDeleteRepoFromGroup,
+    handleAddGroup,
+    handleDeleteGroup,
     repoData,
     addIssueToBoard
   }

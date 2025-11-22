@@ -7,6 +7,7 @@ import cors from "cors";
 import createGitHubRoutes from "./routes/githubAuth.js";
 import Status from "./models/Status.js";
 import IssueStatus from "./models/IssueStatus.js";
+import Group from "./models/Group.js";
 import { createGitHubEndpoint } from "./utils/githubEndpoint.js";
 
 
@@ -147,7 +148,7 @@ app.get("/api/github/issues/:owner/:repo", async (req, res) => {
 
     // wszystkie statusy repo
     const statuses = await Status.find({ repo_id });
-    const todoStatus = statuses.find(s => s.name === "TO DO");
+    const defaultStatus = statuses.find(s => s.order === 1);
 
     // powiązania z IssueStatus
     const existing = await IssueStatus.find({ repo_id });
@@ -161,7 +162,7 @@ app.get("/api/github/issues/:owner/:repo", async (req, res) => {
         newStatuses.push({
           repo_id,
           issue_id: issue.id,
-          status_id: todoStatus._id, // domyślny status TO DO
+          status_id: defaultStatus._id, // domyślny status -  order 1
         });
       }
     }
@@ -179,7 +180,7 @@ app.get("/api/github/issues/:owner/:repo", async (req, res) => {
       const status = issueStatuses.find(s => s.issue_id === issue.id);
       return {
         ...issue,
-        status: status ? status.status_id.name : "TO DO",
+        status: status ? status.status_id.order : 1,
       };
     });
 
@@ -284,34 +285,195 @@ app.put("/api/statuses/:repoId/:statusId/move", async (req, res) => {
 
 //dodawanie nowego statusu
 app.post("/api/statuses", async (req, res) => {
-  const { repo_id, name, user_id } = req.body;
+  try {
+    const { repo_id, name, user_id } = req.body;
 
-  const count = await Status.countDocuments({ repo_id });
+    if (!repo_id || !name) {
+      return res.status(400).json("Missing required fields");
+    }
 
-  const status = await Status.create({
-    repo_id,
-    name,
-    created_by: user_id,
-    order: count + 1
-  });
+    // sprawdzenie duplikatu niezależnie od wielkości liter
+    const exists = await Status.findOne({ 
+      repo_id, 
+      name: { $regex: `^${name}$`, $options: 'i' } 
+    });
 
-  res.json(status);
+    if (exists) {
+      return res.status(400).json("A status with this name already exists");
+    }
+    const count = await Status.countDocuments({ repo_id });
+
+    const status = await Status.create({
+      repo_id,
+      name,
+      created_by: user_id || null,
+      order: count + 1
+    });
+
+    res.json(status);
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json("Server error");
+  }
 });
 
 //usuwanie statusu
 app.delete("/api/statuses/:statusId", async (req, res) => {
-  const status = await Status.findById(req.params.statusId);
+  try {
+    console.log(res.body);
+    const { repo_id } = req.body;
+    const { statusId } = req.params;
 
-  if (!status) return res.status(404).send("Status not found");
+    const status = await Status.findById(statusId);
+    if (!status) return res.status(404).send("Status not found");
 
-  if (status.is_default)
-    return res.status(400).send("Cannot delete default status");
+    const firstStatus = await Status
+      .findOne({ repo_id })
+      .sort({ order: 1 }); // najmniejszy order
 
-  await status.deleteOne();
+    if (!firstStatus)
+      return res.status(400).send("No available status to assign issues to");
 
-  res.sendStatus(200);
+    //Zavezpieczneie jesli usuwany status jest pierwszy
+    let targetStatus = firstStatus;
+    if (String(firstStatus._id) === String(statusId)) {
+      targetStatus = await Status
+        .findOne({ repo_id, _id: { $ne: statusId } }) //$ne not equal żeby pominął samego siebie
+        .sort({ order: 1 });
+
+      if (!targetStatus)
+        return res.status(400).send("Cannot delete the only status in repo");
+    }
+
+    await IssueStatus.updateMany(
+      { status_id: statusId },
+      { $set: { status_id: targetStatus._id } } //Przypisanie nowego status id dla issues
+    );
+    const deletedOrder = status.order;
+    await status.deleteOne();
+    await Status.updateMany(
+      { repo_id, order: { $gt: deletedOrder } },
+      { $inc: { order: -1 } }
+    );
+    res.json({ targetStatusId: targetStatus._id });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Server error");
+  }
 });
 
+// edycja nazwy statusu
+app.put("/api/statuses/:statusId", async (req, res) => {
+  try {
+    const { statusId } = req.params;
+    const { name } = req.body;
+
+    if (!name || name.trim() === "") {
+      return res.status(400).json({ message: "Name is required" });
+    }
+
+    const status = await Status.findById(statusId);
+    if (!status) {
+      return res.status(404).json({ message: "Status not found" });
+    }
+
+    status.name = name.trim();
+    await status.save();
+
+    res.json({ message: "Status updated", status });
+  } catch (err) {
+    console.error("Error updating status name:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+
+
+//CRUD dla grup
+// tworzenie grupy
+app.post("/api/group/create", async (req, res) => {
+  try {
+    const { name, repo_ids, created_by } = req.body;
+
+    if (!name || !created_by) {
+      return res.status(400).json({ message: "Missing required fields" });
+    }
+
+    // sprawdzenie czy już istnieje grupa o tej samej nazwie u tego samego użytkownika
+    const existing = await Group.findOne({ name, created_by });
+    if (existing) {
+      return res.status(400).json({ message: "Group with this name already exists" });
+    }
+
+    const group = new Group({
+      name,
+      repo_ids: repo_ids || [],
+      created_by
+    });
+
+    await group.save();
+    res.status(201).json(group);
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+//pobieranie grup użytkownika
+app.get("/api/groups/:ownerId", async (req, res) => {
+  try { 
+    const groups = await Group.find({ created_by: req.params.ownerId });
+    res.json(groups);
+    
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  } 
+});
+
+//usuwanie grupy
+app.delete("/api/group/:groupId/delete", async (req, res) => { 
+  try {
+    await Group.findByIdAndDelete(req.params.groupId);
+    res.sendStatus(200);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  } 
+});
+
+//dodawanie repozytorium do grupy
+app.post("/api/group/:groupId/add-repo", async (req, res) => {
+  try {
+    console.log("Group id ", req.params.groupId);
+    const group = await Group.findById(req.params.groupId);
+    if (!group) return res.status(404).json({ message: "Group not found" });
+    if(group.repo_ids.includes(req.body.repo_id)){
+      return res.status(500).json({message: "Repo already in the group"})
+    }
+    group.repo_ids.push(req.body.repo_id);
+    await group.save();
+    res.json(group);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+//usuwanie repozytorium z grupy
+app.post("/api/group/:groupId/remove-repo", async (req, res) => {
+  try {
+    const group = await Group.findById(req.params.groupId);
+    if (!group) return res.status(404).json({ message: "Group not found" });
+    const before = group.repo_ids.length;
+    group.repo_ids = group.repo_ids.filter(id => id !== Number(req.body.repo_id));
+     if (group.repo_ids.length === before) {
+      return res.status(400).json({ message: "Repo not found in group" });
+    }
+    await group.save();
+    res.json(group);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  } 
+});
 app.post("/api/github/issues/:owner/:repo", async (req, res) => {
   const token = req.session.token;
   if (!token) return res.status(401).json({ message: "Not authenticated" });
