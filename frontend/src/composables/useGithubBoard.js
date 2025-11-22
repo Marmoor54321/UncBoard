@@ -13,6 +13,10 @@ export function useGithubBoard() {
   const statusFieldId = ref(null)
   const columns = ref([])
   const issuesByColumn = ref({})
+  const repoData = ref({  collaborators: [],
+  labels: [],
+  milestones: []
+})
 
   const groups = { name: 'issues', pull: true, put: true }
 
@@ -23,17 +27,17 @@ export function useGithubBoard() {
 
   async function loadUser() {
     try {
-      const res = await axios.get('http://localhost:3000/api/github/user', { withCredentials: true, timeout: 5000 })
+      const res = await axios.get('http://localhost:3000/api/github/user', { withCredentials: true})
       user.value = res.data ?? null
       await loadRepos()
     } catch(e) {
-      console.log('Not logged in',e)
+      console.error('Not logged in',e)
     }
   }
 
   async function loadRepos() {
     try{
-    const res = await axios.get('http://localhost:3000/api/github/repos', { withCredentials: true, timeout: 5000 })
+    const res = await axios.get('http://localhost:3000/api/github/repos', { withCredentials: true })
     repos.value = res?.data ?? null
     }
     catch(e){
@@ -43,37 +47,57 @@ export function useGithubBoard() {
 
   async function selectRepo(repo) {
   try {
-    // Utwórz domyślne statusy
-    await axios.post("http://localhost:3000/api/statuses/default", {
-      repo_id: repo.id,
-    }, { withCredentials: true });
-
-    // Pobierz statusy repo
-    const statuses = await axios.get(`http://localhost:3000/api/statuses/${repo.id}`, {
-      withCredentials: true
-    });
-
-    console.log("Repo statuses:", statuses.data);
-
-    // Pobierz issue (z przypisanymi statusami)
-    const issuesRes = await axios.get(
-      `http://localhost:3000/api/github/issues/${repo.owner.login}/${repo.name}?repo_id=${repo.id}`,
+    await axios.post(
+      "http://localhost:3000/api/statuses/default",
+      { repo_id: repo.id },
       { withCredentials: true }
     );
 
-    const issues = issuesRes.data;
+    const statusesRes = await axios.get(
+      `http://localhost:3000/api/statuses/${repo.id}`,
+      { withCredentials: true }
+    );
 
-    // Utwórz kolumny (nazwy statusów)
-    console.log("Issues with statuses:", statuses.data);
-    columns.value = statuses.data.map(s => ({
+    const statuses = statusesRes.data;
+    console.log("Repo statuses:", statuses);
+
+    const [issuesRes, collaboratorsRes, labelsRes, milestonesRes] =
+      await Promise.all([
+        axios.get(
+          `http://localhost:3000/api/github/issues/${repo.owner.login}/${repo.name}?repo_id=${repo.id}`,
+          { withCredentials: true }
+        ),
+        axios.get(
+          `http://localhost:3000/api/github/repos/collaborators?owner=${repo.owner.login}&repo=${repo.name}`,
+          { withCredentials: true }
+        ),
+        axios.get(
+          `http://localhost:3000/api/github/repos/labels?owner=${repo.owner.login}&repo=${repo.name}`,
+          { withCredentials: true }
+        ),
+        axios.get(
+          `http://localhost:3000/api/github/repos/milestones?owner=${repo.owner.login}&repo=${repo.name}`,
+          { withCredentials: true }
+        ),
+      ]);
+
+     const issues = issuesRes.data;
+     repoData.value.collaborators = collaboratorsRes.data;
+     repoData.value.labels = labelsRes.data;
+     repoData.value.milestones = milestonesRes.data;
+
+    columns.value = statuses.map(s => ({
       id: s._id,
-      name:s.name,
+      name: s.name,
       repo_id: repo.id
     }));
+
     issuesByColumn.value = {};
 
     columns.value.forEach(col => {
-      issuesByColumn.value[col.name] = issues.filter(issue => issue.status === col.name);
+      issuesByColumn.value[col.name] = issues.filter(
+        issue => issue.status === col.name
+      );
     });
 
     selectedRepo.value = repo;
@@ -95,12 +119,7 @@ export function useGithubBoard() {
 
   try {
     const newStatus = columns.value.find(c => c.name === newStatusName)
-    console.log( newStatus);
     if (!newStatus) return
-    console.log("🔹 Found new status:", newStatus)
-    console.log(issueId, typeof(issueId));
-    console.log(selectedRepo.value.id, typeof(selectedRepo.value.id));
-    console.log(newStatus.id, typeof(newStatus.id));
 
     await axios.put("http://localhost:3000/api/issue-status", {
       issue_id: parseInt(issueId),
@@ -108,7 +127,6 @@ export function useGithubBoard() {
       status_id: newStatus.id
     }, { withCredentials: true })
 
-    console.log(`Updated issue ${issueId} → ${newStatus.name}`)
   } catch (err) {
     console.error("Error updating issue status:", err.response?.data || err.message)
   }
@@ -121,9 +139,6 @@ async function moveColumn(repoId, statusId, direction) {
       { direction },
       { withCredentials: true }
     );
-
-    console.log(`Column moved ${direction}:`, res.data);
-
     if (selectedRepo.value) {
       await selectRepo(selectedRepo.value);
     }
@@ -144,7 +159,15 @@ function onMoveRight(column) {
 
 }
 
-
+function addIssueToBoard(newIssue) {
+  const statusName = newIssue.status;
+  
+  if (issuesByColumn.value[statusName]) {
+    issuesByColumn.value[statusName].unshift(newIssue);
+  } else {
+    console.error(`Status column not found for: ${statusName}`);
+  }
+}
 
   onMounted(loadUser)
 
@@ -160,6 +183,8 @@ function onMoveRight(column) {
     onDragEnd,
     groups,
     onMoveLeft,
-    onMoveRight
+    onMoveRight,
+    repoData,
+    addIssueToBoard
   }
 }

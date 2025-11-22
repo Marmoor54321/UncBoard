@@ -42,7 +42,6 @@
           :scrollSpeed="15"
           :on-move-left="onMoveLeft"
           :on-move-right="onMoveRight"
-
         >
           <template #item="{ element }">
             <div
@@ -77,7 +76,7 @@ const props = defineProps({
   onMoveRight: Function
 })
 
-
+const emit = defineEmits(['add-issue'])
 
 const showMenu = ref(false)
 function toggleMenu() {
@@ -93,7 +92,9 @@ function handleClickOutside(e) {
 onMounted(() => document.addEventListener("click", handleClickOutside))
 onBeforeUnmount(() => document.removeEventListener("click", handleClickOutside))
 
-
+function toggleAddIssue() {
+  emit('add-issue', props.column)
+}
 </script>
 
 <style scoped>
