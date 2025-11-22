@@ -338,7 +338,7 @@ function addIssueToBoard(newIssue) {
   } else {
     console.error(`Status column not found for: ${statusName}`);
   }
-  
+}
   onMounted(loadUser)
 
   return {

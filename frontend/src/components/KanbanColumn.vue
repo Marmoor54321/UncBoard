@@ -1,30 +1,30 @@
 <template>
   <div class="col">
     <div class="card h-100" style="border: 1px solid #aa50e7">
-      <div class="card-header bg-dark text-white text-uppercase small d-flex justify-content-between align-items-center">
+      <div
+        class="card-header bg-dark text-white text-uppercase small d-flex justify-content-between align-items-center"
+      >
         <span>{{ column.name }}</span>
 
         <div class="btn-container">
-          <button
-            class="primary-btn btn btn-sm text-white"
-            @click="toggleAddIssue"
-          >
-            +
-          </button>
-        <div class="dropdown position-relative">
-          <button
-            class="primary-btn btn btn-sm text-white"
-            @click="toggleMenu"
-          >
-            ⋮
-          </button>
+          <button class="primary-btn btn btn-sm text-white" @click="toggleAddIssue">+</button>
 
-          <div v-if="showMenu" class="menu shadow">
-            <button class="menu-item" @click="onMoveLeft(column), toggleMenu()">Move left</button>
-            <button class="menu-item" @click="onMoveRight(column), toggleMenu()">Move right</button>
-            <button class="menu-item" @click="openRenameModal(column), toggleMenu()">Rename</button>
-            <button class="menu-item" @click="openDeleteModal(column), toggleMenu()">Delete</button>
-
+          <div class="dropdown position-relative">
+            <button class="primary-btn btn btn-sm text-white" @click="toggleMenu">⋮</button>
+            <div v-if="showMenu" class="menu shadow">
+              <button class="menu-item" @click="(onMoveLeft(column), toggleMenu())">
+                Move left
+              </button>
+              <button class="menu-item" @click="(onMoveRight(column), toggleMenu())">
+                Move right
+              </button>
+              <button class="menu-item" @click="(openRenameModal(column), toggleMenu())">
+                Rename
+              </button>
+              <button class="menu-item" @click="(openDeleteModal(column), toggleMenu())">
+                Delete
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -41,6 +41,7 @@
           class="dropzone"
           :scroll="scrollContainer"
           :scrollSensitivity="100"
+          ~~
           :scrollSpeed="15"
           :on-move-left="onMoveLeft"
           :on-move-right="onMoveRight"
@@ -107,8 +108,8 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount, nextTick } from "vue"
-import draggable from "vuedraggable"
+import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import draggable from 'vuedraggable'
 
 const props = defineProps({
   column: Object,
@@ -117,10 +118,10 @@ const props = defineProps({
   groups: Object,
   onDragEnd: Function,
   openIssue: Function,
-  onMoveLeft: Function, 
+  onMoveLeft: Function,
   onMoveRight: Function,
   deleteColumn: Function,
-  editColumn: Function
+  editColumn: Function,
 })
 const emit = defineEmits(['add-issue'])
 const showMenu = ref(false)
@@ -130,18 +131,17 @@ function toggleMenu() {
 
 // Obsługa kliknięcia poza menu i poza modalem
 function handleClickOutside(e) {
-  if (!e.target.closest(".dropdown")) {
+  if (!e.target.closest('.dropdown')) {
     showMenu.value = false
   }
 }
 
-onMounted(() => document.addEventListener("click", handleClickOutside))
-onBeforeUnmount(() => document.removeEventListener("click", handleClickOutside))
-
+onMounted(() => document.addEventListener('click', handleClickOutside))
+onBeforeUnmount(() => document.removeEventListener('click', handleClickOutside))
 
 // rename modal
 const showModalRenameColumn = ref(false)
-const newName = ref("")
+const newName = ref('')
 
 function openRenameModal(column) {
   newName.value = column.name
@@ -150,25 +150,24 @@ function openRenameModal(column) {
 
 function closeRenameModal() {
   showModalRenameColumn.value = false
-  newName.value = ""
+  newName.value = ''
 }
 
 function confirmRename() {
   const trimmedName = newName.value.trim()
-  
+
   if (!trimmedName || trimmedName === props.column.name) {
     closeRenameModal()
     return
   }
 
-  props.editColumn(props.column.id || props.column._id, trimmedName)  // Używamy _id lub id, zależnie od backendu
+  props.editColumn(props.column.id || props.column._id, trimmedName) // Używamy _id lub id, zależnie od backendu
   closeRenameModal()
 }
 
-
 // delete modal
 const showModalDeleteColumn = ref(false)
-const columnToDeleteName = ref("")
+const columnToDeleteName = ref('')
 const columnToDeleteId = ref(null)
 const columnToDeleteObject = ref(null)
 
@@ -180,14 +179,14 @@ function openDeleteModal(column) {
 }
 function closeDeleteModal() {
   showModalDeleteColumn.value = false
-  columnToDeleteName.value = ""
+  columnToDeleteName.value = ''
   columnToDeleteId.value = null
   columnToDeleteObject.value = null
 }
 
 function confirmDelete() {
   if (columnToDeleteObject.value) {
-    props.deleteColumn(columnToDeleteObject.value) 
+    props.deleteColumn(columnToDeleteObject.value)
   }
   closeDeleteModal()
 }
@@ -197,12 +196,12 @@ function toggleAddIssue() {
 </script>
 
 <style scoped>
-.btn-container{
+.btn-container {
   display: flex;
   align-items: center;
   justify-content: center;
 }
-.btn-container .primary-btn{
+.btn-container .primary-btn {
   background-color: #2b2d31;
   border: none;
   color: white;
@@ -214,84 +213,84 @@ function toggleAddIssue() {
   line-height: 18px;
   padding: 0;
 }
-.btn-container button:hover{
+.btn-container button:hover {
   background-color: #3f4146;
 }
 .dropzone {
- min-height: 300px;
- display: flex;
- flex-direction: column;
- gap: 0.5rem;
- padding: 0.5rem;
+  min-height: 300px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.5rem;
 }
 
 .issuebox {
- background-color: #3b3e42;
- color: white;
- padding: 10px;
- margin-bottom: 10px;
- border-radius: 5px;
- box-shadow: 0 4px 4px rgba(0, 0, 0, 0.1);
- cursor: grab;
+  background-color: #3b3e42;
+  color: white;
+  padding: 10px;
+  margin-bottom: 10px;
+  border-radius: 5px;
+  box-shadow: 0 4px 4px rgba(0, 0, 0, 0.1);
+  cursor: grab;
 }
 .issuebox:hover {
- background-color: #50545b;
+  background-color: #50545b;
 }
 .chosen {
- background-color: #aa50e7 !important;
- transform: scale(1.05);
+  background-color: #aa50e7 !important;
+  transform: scale(1.05);
 }
 .ghost {
- opacity: 1;
+  opacity: 1;
 }
 .issuebody {
- margin-top: 5px;
- font-size: 14px;
- color: #d1d1d1;
- max-height: 60px;
- overflow: hidden;
- text-overflow: ellipsis;
- overflow-wrap: break-word;
+  margin-top: 5px;
+  font-size: 14px;
+  color: #d1d1d1;
+  max-height: 60px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  overflow-wrap: break-word;
 }
 
 .menu {
- position: absolute;
- right: 0;
- top: 1.5rem;
- background: #2b2d31;
- border-radius: 6px;
- padding: 0.25rem 0;
- display: flex;
- flex-direction: column;
- min-width: 120px;
- z-index: 10;
+  position: absolute;
+  right: 0;
+  top: 1.5rem;
+  background: #2b2d31;
+  border-radius: 6px;
+  padding: 0.25rem 0;
+  display: flex;
+  flex-direction: column;
+  min-width: 120px;
+  z-index: 10;
 }
 
 .menu-item {
- background: transparent;
- color: #e0e0e0;
- border: none;
- text-align: left;
- padding: 8px 12px;
- font-size: 14px;
- cursor: pointer;
+  background: transparent;
+  color: #e0e0e0;
+  border: none;
+  text-align: left;
+  padding: 8px 12px;
+  font-size: 14px;
+  cursor: pointer;
 }
 .menu-item:hover {
- background-color: #3b3e42;
- color: white;
+  background-color: #3b3e42;
+  color: white;
 }
 .rename-input {
- width: 100%;
- padding: 4px 8px;
- font-size: 0.85rem;
- font-weight: 600;
- color: #fff;
- background-color: #3b3e42;
- border: 1px solid #aa50e7;
- border-radius: 4px;
- outline: none;
- transition: all 0.2s ease-in-out;
- box-sizing: border-box;
+  width: 100%;
+  padding: 4px 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #fff;
+  background-color: #3b3e42;
+  border: 1px solid #aa50e7;
+  border-radius: 4px;
+  outline: none;
+  transition: all 0.2s ease-in-out;
+  box-sizing: border-box;
 }
 
 .rename-input:focus {
