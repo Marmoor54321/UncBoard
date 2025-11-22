@@ -9,9 +9,7 @@
         Issues for <span class="text-primary">{{ selectedRepo.name }}</span>
       </h3>
 
-      <button class="btn btn-dark" @click="showModalAddColumn = true">
-        Add column
-      </button>
+      <button class="btn btn-dark" @click="showModalAddColumn = true">Add column</button>
 
       <Teleport to="body">
         <div v-if="showModalAddColumn" class="modal-backdrop" @click.self="closeModalAddColumn">
@@ -52,9 +50,9 @@
         :on-move-right="onMoveRight"
         :delete-column="deleteColumn"
         :edit-column="editColumn"
+        @add-issue="handleAddIssue"
       />
     </div>
-
   </div>
 </template>
 
@@ -70,13 +68,13 @@ const props = defineProps({
   groups: Object,
   onDragEnd: Function,
   openIssue: Function,
-  onMoveLeft: Function, 
+  onMoveLeft: Function,
   onMoveRight: Function,
   deleteColumn: Function,
   editColumn: Function,
-  addColumn: Function
+  addColumn: Function,
 })
-
+const emit = defineEmits(['add-issue'])
 const showModalAddColumn = ref(false)
 const newColumnName = ref('')
 
@@ -94,6 +92,9 @@ function onAddColumn() {
   props.addColumn(props.selectedRepo.id, name, null)
   closeModalAddColumn()
 }
+function handleAddIssue(column) {
+  emit('add-issue', column)
+}
 </script>
 
 <style>
@@ -105,7 +106,7 @@ function onAddColumn() {
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  backdrop-filter: blur(4px); 
+  backdrop-filter: blur(4px);
   background: rgba(0, 0, 0, 0.45);
   display: flex;
   align-items: center;
@@ -115,7 +116,7 @@ function onAddColumn() {
 
 /* Card - Ujednolicony styl */
 .modal-card {
-  background: #2b2d31; 
+  background: #2b2d31;
   padding: 24px;
   width: 360px;
   border-radius: 14px;

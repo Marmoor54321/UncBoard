@@ -15,7 +15,6 @@
         @deleteRepoFromGroup="handleDeleteRepoFromGroup"
         @addGroup="handleAddGroup"
         @deleteGroup="handleDeleteGroup"
-      
       />
       <!-- PRAWA CZĘŚĆ (KANBAN BOARD) -->
       <main
@@ -36,6 +35,7 @@
           :delete-column="deleteColumn"
           :edit-column="editColumn"
           :add-column="addColumn"
+          @add-issue="showAddIssueModal"
         />
 
         <!-- PANEL SZCZEGÓŁÓW -->
@@ -45,6 +45,15 @@
             :issue="selectedIssue"
             @close="selectedIssue = null"
             class="details-panel"
+          />
+        </transition>
+
+        <transition name="modal-pop">
+          <AddIssueModal
+            v-if="showAddIssue"
+            :repoData="repoData"
+            @close="showAddIssue = false"
+            @submit="handleAddIssueSubmit"
           />
         </transition>
       </main>
@@ -59,6 +68,8 @@ import Header from '@/components/Header.vue'
 import Sidebar from '@/components/Sidebar.vue'
 import { ref } from 'vue'
 import KanbanBoard from './components/KanbanBoard.vue'
+import AddIssueModal from './components/Issues/AddIssueModal.vue'
+import { addIssue } from './api/issues.js'
 
 const {
   user,
@@ -71,7 +82,7 @@ const {
   selectRepo,
   onDragEnd,
   groups,
-  onMoveLeft,      
+  onMoveLeft,
   onMoveRight,
   deleteColumn,
   editColumn,
@@ -82,28 +93,52 @@ const {
   handleAddRepoToGroup,
   handleDeleteRepoFromGroup,
   handleAddGroup,
-  handleDeleteGroup
+  handleDeleteGroup,
+  repoData,
+  addIssueToBoard,
 } = useGithubBoard()
+
+const showAddIssue = ref(false)
+const targetColumn = ref(null)
 
 const selectedIssue = ref(null)
 function openIssue(issue) {
   selectedIssue.value = issue
 }
+
+function showAddIssueModal(column) {
+  targetColumn.value = column
+  showAddIssue.value = true
+  console.log('', repoData)
+}
+function handleAddIssueSubmit(data) {
+  console.log('Nowe issue:', data, 'dla kolumny:', targetColumn.value.id)
+  addIssue(selectedRepo, data, targetColumn)
+    .then((newIssue) => {
+      if (newIssue) {
+        addIssueToBoard(newIssue)
+      }
+    })
+    .catch((error) => {
+      console.error('Failed to add issue to board:', error)
+    })
+    .finally(() => {
+      showAddIssue.value = false
+      targetColumn.value = null
+    })
+}
 </script>
 
 <style scoped>
-/* Animacja pojawiania się panelu */
 .slide-enter-active,
 .slide-leave-active {
   transition: all 0.2s ease;
 }
 .slide-enter-from,
 .slide-leave-to {
-
   opacity: 0;
 }
 
-/* Panel szczegółów */
 .details-panel {
   position: absolute;
   right: 0;
@@ -111,6 +146,26 @@ function openIssue(issue) {
   width: 67%;
   height: 100%;
   z-index: 10;
-  box-shadow: -3px 0 10px rgba(0,0,0,0.5);
+  box-shadow: -3px 0 10px rgba(0, 0, 0, 0.5);
+}
+
+.modal-pop-enter-active,
+.modal-pop-leave-active {
+  transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.modal-pop-enter-from,
+.modal-pop-leave-to {
+  opacity: 0;
+}
+
+.modal-pop-enter-active :deep(.modal-window),
+.modal-pop-leave-active :deep(.modal-window) {
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.modal-pop-enter-from :deep(.modal-window),
+.modal-pop-leave-to :deep(.modal-window) {
+  transform: scale(0.96);
 }
 </style>

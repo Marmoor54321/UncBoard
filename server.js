@@ -8,6 +8,8 @@ import createGitHubRoutes from "./routes/githubAuth.js";
 import Status from "./models/Status.js";
 import IssueStatus from "./models/IssueStatus.js";
 import Group from "./models/Group.js";
+import { createGitHubEndpoint } from "./utils/githubEndpoint.js";
+
 
 
 
@@ -34,22 +36,72 @@ mongoose.connect('mongodb://localhost:27017/uncboard', {
 .then(() => console.log("✅ Połączono z MongoDB"))
 .catch(err => console.log(err));
 
+
+createGitHubEndpoint(app, "/api/github/repos", "GET", () => "/user/repos");
+
 // User repos
-  app.get("/api/github/repos", async (req, res) => {
-    const token = req.session.token;
-    if (!token) return res.status(401).send("Not authenticated");
+  // app.get("/api/github/repos", async (req, res) => {
+  //   const token = req.session.token;
+  //   if (!token) return res.status(401).send("Not authenticated");
 
-    try {
-      const response = await axios.get("https://api.github.com/user/repos", {
-        headers: { Authorization: `token ${token}` },
-      });
-      res.json(response.data);
-    } catch (err) {
-      res.status(500).send("Failed to fetch repositories");
-    }
-  });
+  //   try {
+  //     const response = await axios.get("https://api.github.com/user/repos", {
+  //       headers: { Authorization: `token ${token}` },
+  //     });
+  //     res.json(response.data);
+  //   } catch (err) {
+  //     res.status(500).send("Failed to fetch repositories");
+  //   }
+  // });
   
+  createGitHubEndpoint(
+  app,
+  "/api/github/repos/collaborators",
+  "GET",
+  (req) => `/repos/${req.query.owner}/${req.query.repo}/collaborators`
+);
 
+createGitHubEndpoint(
+  app,
+  "/api/github/repos/labels",
+  "GET",
+  (req) => `/repos/${req.query.owner}/${req.query.repo}/labels`
+);
+
+createGitHubEndpoint(
+  app,
+  "/api/github/repos/milestones",
+  "GET",
+  (req) => `/repos/${req.query.owner}/${req.query.repo}/milestones`
+);
+
+
+  app.get("/api/github/repo-data", async (req, res) => {
+  const token = req.session.token;
+  if (!token) return res.status(401).send("Not authenticated");
+
+  const { owner, repo } = req.query;
+  if (!owner || !repo) return res.status(400).send("Missing owner or repo");
+
+  const headers = { Authorization: `token ${token}` };
+
+  try {
+    const [collaborators, labels, milestones] = await Promise.all([
+      axios.get(`https://api.github.com/repos/${owner}/${repo}/collaborators`, { headers }),
+      axios.get(`https://api.github.com/repos/${owner}/${repo}/labels`, { headers }),
+      axios.get(`https://api.github.com/repos/${owner}/${repo}/milestones`, { headers }),
+    ]);
+
+    res.json({
+      collaborators: collaborators.data,
+      labels: labels.data,
+      milestones: milestones.data,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Failed to fetch repository data");
+  }
+});
 
 app.post("/api/statuses/default", async (req, res) => {
   try {
@@ -105,6 +157,7 @@ app.get("/api/github/issues/:owner/:repo", async (req, res) => {
     const newStatuses = [];
     for (const issue of githubIssues) {
       const already = existing.find(e => e.issue_id === issue.id);
+
       if (!already) {
         newStatuses.push({
           repo_id,
@@ -420,6 +473,66 @@ app.post("/api/group/:groupId/remove-repo", async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: err.message });
   } 
+});
+app.post("/api/github/issues/:owner/:repo", async (req, res) => {
+  const token = req.session.token;
+  if (!token) return res.status(401).json({ message: "Not authenticated" });
+
+  const { title, body = "", repo_id, status_id, assignees, labels, milestone } = req.body;
+  const { owner, repo: repoName } = req.params;
+
+  if (!title?.trim()) return res.status(400).json({ message: "Title is required" });
+  if (!repo_id || !status_id) return res.status(400).json({ message: "repo_id and status_id are required" });
+
+  const githubPayload = {
+    title: title.trim(),
+    body: body.trim() || undefined,
+    assignees: assignees || [], 
+    labels: labels || [],
+  };
+
+  if (milestone) {
+    githubPayload.milestone = milestone;
+  }
+
+  try {
+    const githubResponse = await axios.post(
+      `https://api.github.com/repos/${owner}/${repoName}/issues`,
+      githubPayload,
+      {
+        headers: {
+          Authorization: `token ${token}`,
+          Accept: "application/vnd.github+json",
+        },
+      }
+    );
+
+    const createdIssue = githubResponse.data;
+
+    const targetStatus = await Status.findOne({ _id: status_id, repo_id });
+    if (!targetStatus) {
+      return res.status(400).json({ message: "Status not found for this repo" });
+    }
+
+    await IssueStatus.create({
+      repo_id,
+      issue_id: createdIssue.id,
+      status_id: targetStatus._id,
+    });
+
+    const issueWithStatus = {
+      ...createdIssue,
+      status: targetStatus.name,
+      status_id: targetStatus._id
+    };
+
+    console.log("Zwrócone issue ma status:", issueWithStatus.status);
+
+    res.status(201).json(issueWithStatus);
+  } catch (err) {
+    console.error("Błąd GitHub API:", err.response?.data || err.message);
+    res.status(500).json({ message: "Failed to create issue", details: err.response?.data });
+  }
 });
 
 app.listen(3000, () => console.log("Server running on http://localhost:3000"));
