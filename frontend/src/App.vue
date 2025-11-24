@@ -65,7 +65,7 @@
 import { useGithubBoard } from '@/composables/useGithubBoard.js'
 import IssueDetails from '@/components/IssueDetails.vue'
 import Header from '@/components/Header.vue'
-import Sidebar from '@/components/Sidebar.vue'
+import Sidebar from '@/components/Sidebar/Sidebar.vue'
 import { ref } from 'vue'
 import KanbanBoard from './components/KanbanBoard.vue'
 import AddIssueModal from './components/Issues/AddIssueModal.vue'
