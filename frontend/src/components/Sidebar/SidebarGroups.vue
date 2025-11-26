@@ -67,10 +67,35 @@ function toggleExpand(groupId) {
 <style scoped>
 /* Style specyficzne dla grup przeniesione tutaj */
 .custom-list { list-style: none; padding: 0; margin: 0; }
-.custom-list .list-group-item { background-color: #303236; color: white; border: none !important; cursor: pointer; }
-.custom-list .list-group-item:hover, .group-repo-item:hover {
-  background-color: #3b3e42 !important;
+
+/* ZMIANA 1: Baza dla elementów listy (zarówno nagłówek grupy jak i zagnieżdżone repo).
+   Ustawiamy przezroczystą ramkę, żeby zarezerwować miejsce. */
+.custom-list .list-group-item {
+  background-color: #303236;
+  color: white;
+  border: 1px solid transparent !important; /* Było: none !important */
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
 }
+
+/* ZMIANA 2: Nowy styl dla ROZWINIĘTEJ grupy.
+   Główny element LI otrzymuje fioletową ramkę, gdy ma klasę 'expanded'. */
+.list-group-item.expanded {
+    border-color: #aa50e7 !important;
+    /* Opcjonalnie: można też lekko zmienić tło rozwiniętego kontenera */
+    /* background-color: #36383c !important; */
+}
+
+/* ZMIANA 3: Hover dla nagłówków grup ORAZ zagnieżdżonych repozytoriów.
+   Dodajemy warunek :not(.expanded) dla głównego LI, żeby szara ramka hovera
+   nie nadpisywała fioletowej ramki, gdy grupa jest już rozwinięta. */
+.custom-list .list-group-item:not(.expanded):hover,
+.group-repo-item:hover {
+  background-color: #3b3e42 !important;
+  border-color: #777 !important; /* Szara ramka po najechaniu */
+}
+
+/* Active dla zagnieżdżonego repozytorium */
 .active { border: 1px solid #aa50e7 !important; background-color: #3b3e42 !important; }
 
 .add-group-btn {

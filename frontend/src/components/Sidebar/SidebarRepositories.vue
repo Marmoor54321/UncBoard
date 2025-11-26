@@ -79,10 +79,25 @@ onBeforeUnmount(() => {
 .search-input:focus { border-color: #aa50e7; }
 
 .custom-list { list-style: none; padding: 0; margin: 0; }
-.custom-list .list-group-item { background-color: #303236; color: white; border: none !important; cursor: pointer; }
+
+/* ZMIANA 1: Baza dla elementu listy.
+   Ustawiamy przezroczystą ramkę 1px zamiast 'none', aby uniknąć skakania
+   układu przy pojawieniu się ramki po hoverze. Dodajemy też transition. */
+.custom-list .list-group-item {
+  background-color: #303236;
+  color: white;
+  border: 1px solid transparent !important; /* Było: none !important */
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
 .repo-item:hover {
   background-color: #3b3e42 !important;
+  /* ZMIANA 2: Kolor ramki po najechaniu myszką */
+  border-color: #aa50e7 !important;
 }
+
+/* Active ma już swoją ramkę, działa poprawnie z nową bazą */
 .active { border: 1px solid #aa50e7 !important; background-color: #3b3e42 !important; }
 
 /* Three dots icon */
