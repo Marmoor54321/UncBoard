@@ -49,7 +49,7 @@ const props = defineProps({
 
 const emit = defineEmits(['selectRepo', 'toggleMenu'])
 
-// --- LOGIKA WYSZUKIWANIA (Przeniesiona z rodzica) ---
+// --- LOGIKA WYSZUKIWANIA ---
 const searchQuery = ref('')
 const debouncedQuery = ref('')
 let searchTimeout = null
@@ -71,7 +71,7 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
-/* Style specyficzne dla tego komponentu */
+/* Input wyszukiwania */
 .search-input {
   background: #1f2023; border: 1px solid #555; color: white; padding: 8px 12px;
   border-radius: 6px; outline: none; transition: border-color 0.2s;
@@ -80,29 +80,39 @@ onBeforeUnmount(() => {
 
 .custom-list { list-style: none; padding: 0; margin: 0; }
 
-/* ZMIANA 1: Baza dla elementu listy.
-   Ustawiamy przezroczystą ramkę 1px zamiast 'none', aby uniknąć skakania
-   układu przy pojawieniu się ramki po hoverze. Dodajemy też transition. */
+/* Baza dla elementu listy - przezroczysta ramka rezerwuje miejsce */
 .custom-list .list-group-item {
   background-color: #303236;
   color: white;
-  border: 1px solid transparent !important; /* Było: none !important */
+  border: 1px solid transparent !important;
   cursor: pointer;
   transition: background-color 0.2s ease, border-color 0.2s ease;
 }
 
+/* --- STYL DLA REPOZYTORIUM --- */
+
+/* Hover na repozytorium -> Fioletowa ramka */
 .repo-item:hover {
   background-color: #3b3e42 !important;
-  /* ZMIANA 2: Kolor ramki po najechaniu myszką */
   border-color: #aa50e7 !important;
 }
 
-/* Active ma już swoją ramkę, działa poprawnie z nową bazą */
-.active { border: 1px solid #aa50e7 !important; background-color: #3b3e42 !important; }
+/* Wybrane repozytorium (Active) -> Fioletowa ramka */
+.repo-item.active {
+  border: 1px solid #aa50e7 !important;
+  background-color: #3b3e42 !important;
+}
 
-/* Three dots icon */
-.list-group i.bi-three-dots-vertical { opacity: 0; transition: opacity 0.1s ease; }
-.list-group-item:hover i.bi-three-dots-vertical { opacity: 1; }
+/* --- TRZY KROPKI --- */
+/* Domyślnie ukryte */
+.repo-item .bi-three-dots-vertical { 
+    opacity: 0; 
+    transition: opacity 0.1s ease; 
+}
+/* Widoczne po najechaniu na wiersz */
+.repo-item:hover .bi-three-dots-vertical { 
+    opacity: 1; 
+}
 
 /* Animacje listy */
 .list-move, .list-enter-active, .list-leave-active { transition: all 0.3s ease; }
