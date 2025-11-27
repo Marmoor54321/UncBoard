@@ -43,8 +43,10 @@
           <IssueDetails
             v-if="selectedIssue"
             :issue="selectedIssue"
+            :repo-data="repoData"
             @close="selectedIssue = null"
             class="details-panel"
+            @update-issue="handleIssueUpdate"
           />
         </transition>
 
@@ -71,6 +73,18 @@ import KanbanBoard from './components/KanbanBoard.vue'
 import AddIssueModal from './components/Issues/AddIssueModal.vue'
 import { addIssue } from './api/issues.js'
 
+
+async function handleIssueUpdate({ number, updates }) {
+  try {
+    await updateIssue(number, updates)
+    // The 'issue' prop passed to IssueDetails is reactive, 
+    // so updating the store inside updateIssue() will automatically 
+    // update the modal content and the card on the board.
+  } catch (error) {
+    alert("Failed to update issue")
+  }
+}
+
 const {
   user,
   repos,
@@ -96,6 +110,7 @@ const {
   handleDeleteGroup,
   repoData,
   addIssueToBoard,
+  updateIssue
 } = useGithubBoard()
 
 const showAddIssue = ref(false)
