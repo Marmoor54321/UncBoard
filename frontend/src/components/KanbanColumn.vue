@@ -218,11 +218,18 @@ function toggleAddIssue() {
 }
 .dropzone {
   min-height: 300px;
+  max-height: 70vh; 
+  overflow-y: auto; 
+  
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
   padding: 0.5rem;
+  
+  scrollbar-width: thin; 
+  scrollbar-color: #2b2d31; 
 }
+
 
 .issuebox {
   background-color: #3b3e42;

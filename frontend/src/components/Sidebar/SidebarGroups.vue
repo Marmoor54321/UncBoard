@@ -85,7 +85,7 @@ function toggleExpand(groupId) {
 
 .custom-list > .list-group-item:not(.expanded):hover {
   background-color: #3b3e42 !important;
-  border-color: #777 !important;
+  border-color: #aa50e7 !important;
 }
 
 /* --- STYL DLA REPOZYTORIUM (DZIECKO) --- */
@@ -120,7 +120,7 @@ function toggleExpand(groupId) {
 }
 
 /* Animacje rozwijania */
-.slide-enter-active, .slide-leave-active { transition: all 0.3s ease; }
+.slide-enter-active, .slide-leave-active { transition: all 0.3s ease; overflow: hidden;}
 .slide-enter-from, .slide-leave-to { opacity: 0; max-height: 0; }
 .slide-enter-to { max-height: 500px; opacity: 1; }
 </style>
