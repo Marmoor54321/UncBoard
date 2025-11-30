@@ -16,7 +16,6 @@
         @addGroup="handleAddGroup"
         @deleteGroup="handleDeleteGroup"
       />
-      <!-- PRAWA CZĘŚĆ (KANBAN BOARD) -->
       <main
         ref="scrollContainer"
         class="flex-grow-1 p-4 overflow-auto"
@@ -38,12 +37,11 @@
           @add-issue="showAddIssueModal"
         />
 
-        <!-- PANEL SZCZEGÓŁÓW -->
         <transition name="slide">
           <IssueDetails
             v-if="selectedIssue"
             :issue="selectedIssue"
-            @close="selectedIssue = null"
+            @close="closeIssuePanel"
             class="details-panel"
           />
         </transition>
@@ -66,10 +64,15 @@ import { useGithubBoard } from '@/composables/useGithubBoard.js'
 import IssueDetails from '@/components/IssueDetails.vue'
 import Header from '@/components/Header.vue'
 import Sidebar from '@/components/Sidebar/Sidebar.vue'
-import { ref } from 'vue'
+import { ref, computed, watch } from 'vue' // Dodano computed i watch
+import { useRoute, useRouter } from 'vue-router' // Import routera
 import KanbanBoard from './components/KanbanBoard.vue'
 import AddIssueModal from './components/Issues/AddIssueModal.vue'
 import { addIssue } from './api/issues.js'
+
+// Inicjalizacja Routera
+const route = useRoute()
+const router = useRouter()
 
 const {
   user,
@@ -101,18 +104,45 @@ const {
 const showAddIssue = ref(false)
 const targetColumn = ref(null)
 
-const selectedIssue = ref(null)
+// --- ZMIANA: Logic dla selectedIssue oparta na URL ---
+
+// 1. Computed property, która szuka issue na podstawie URL
+const selectedIssue = computed(() => {
+  const issueId = route.params.issueId
+  if (!issueId) return null
+
+  // Musimy przeszukać issuesByColumn, aby znaleźć obiekt issue pasujący do ID (lub number) z URL
+  // issuesByColumn to zazwyczaj obiekt { colId: [issues], colId2: [issues] }
+  for (const colId in issuesByColumn.value) {
+    const issues = issuesByColumn.value[colId]
+    // Porównujemy jako String, bo param z URL to string, a issue.number to zazwyczaj int
+    const found = issues.find((i) => String(i.number) === String(issueId))
+    if (found) return found
+  }
+  return null
+})
+
+// 2. Funkcja otwierająca - teraz zmienia URL
 function openIssue(issue) {
-  selectedIssue.value = issue
+  // Zamiast ustawiać zmienną, pushujemy nowy stan do routera
+  // Zakładam, że issue.number to unikalny numer issue na GitHubie
+  router.push({ name: 'issue-details', params: { issueId: issue.number } })
 }
+
+// 3. Funkcja zamykająca - czyści URL
+function closeIssuePanel() {
+  // Wracamy do głównego widoku (bez parametrów)
+  router.push({ name: 'board' })
+}
+
+// --- Koniec zmian Routingowych ---
 
 function showAddIssueModal(column) {
   targetColumn.value = column
   showAddIssue.value = true
-  console.log('', repoData)
 }
+
 function handleAddIssueSubmit(data) {
-  console.log('Nowe issue:', data, 'dla kolumny:', targetColumn.value.id)
   addIssue(selectedRepo, data, targetColumn)
     .then((newIssue) => {
       if (newIssue) {
@@ -130,6 +160,7 @@ function handleAddIssueSubmit(data) {
 </script>
 
 <style scoped>
+/* Twoje style bez zmian */
 .slide-enter-active,
 .slide-leave-active {
   transition: all 0.2s ease;
@@ -147,6 +178,7 @@ function handleAddIssueSubmit(data) {
   height: 100%;
   z-index: 10;
   box-shadow: -3px 0 10px rgba(0, 0, 0, 0.5);
+  background-color: #1d1e20; /* Ważne: tło musi być nieprzezroczyste */
 }
 
 .modal-pop-enter-active,
