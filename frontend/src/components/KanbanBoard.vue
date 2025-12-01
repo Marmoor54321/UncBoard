@@ -36,7 +36,7 @@
     </div>
 
     <!-- Kanban board -->
-    <div class="row row-cols-1 row-cols-lg-2 row-cols-xl-4 g-3">
+    <div class="kanban-board pb-3">
       <kanban-column
         v-for="column in columns"
         :key="column._id"
@@ -221,5 +221,32 @@ function handleAddIssue(column) {
 
 .btn-delete:hover {
   background: #bb2d3b;
+}
+
+.kanban-board {
+  display: flex;              /* Układ elastyczny */
+  flex-wrap: nowrap;          /* Zakaz zawijania do nowej linii */
+  overflow-x: auto;           /* Włącz przewijanie poziome */
+  gap: 1rem;                  /* Odstęp między kolumnami */
+  align-items: flex-start;    /* Wyrównanie kolumn do góry */
+  padding-bottom: 1rem;       /* Miejsce na pasek przewijania */
+  
+  /* Stylizacja paska przewijania (opcjonalna, dla ładniejszego wyglądu) */
+  scrollbar-width: thin;
+  scrollbar-color: #2b2d31;
+}
+
+.kanban-board::-webkit-scrollbar {
+  height: 8px;
+}
+
+.kanban-board::-webkit-scrollbar-track {
+  background: #2b2d31;
+  border-radius: 4px;
+}
+
+.kanban-board::-webkit-scrollbar-thumb {
+  background-color: #aa50e7;
+  border-radius: 4px;
 }
 </style>

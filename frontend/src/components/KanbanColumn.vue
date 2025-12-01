@@ -1,5 +1,5 @@
 <template>
-  <div class="col">
+  <div class="kanban-col-wrapper">
     <div class="card h-100" style="border: 1px solid #aa50e7">
       <div
         class="card-header bg-dark text-white text-uppercase small d-flex justify-content-between align-items-center"
@@ -196,6 +196,12 @@ function toggleAddIssue() {
 </script>
 
 <style scoped>
+.kanban-col-wrapper {
+  flex: 0 0 auto;       /* Nie kurcz się, nie rozciągaj automatycznie */
+  width: 320px;         /* Stała szerokość kolumny */
+  min-width: 320px;     /* Minimalna szerokość (zabezpieczenie) */
+  max-width: 320px;     /* Maksymalna szerokość */
+}
 .btn-container {
   display: flex;
   align-items: center;
