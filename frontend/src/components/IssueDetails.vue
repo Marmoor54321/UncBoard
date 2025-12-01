@@ -6,8 +6,12 @@
     <!-- HEADER (TITLE) -->
     <div class="d-flex justify-content-between align-items-center mb-3">
       <div v-if="!isEditingTitle" class="d-flex align-items-center flex-grow-1 me-3">
-        <h2 class="mb-0 me-3">{{ issue.title }}</h2>
-        <button class="btn btn-sm btn-link text-secondary p-0" @click="startEditTitle">
+          <h2 class="mb-0 me-3">
+            <a :href="issue.html_url" target="_blank" rel="noopener noreferrer">
+              {{ issue.title }}
+            </a>          
+          </h2>        
+          <button class="btn btn-sm btn-link text-secondary p-0" @click="startEditTitle">
           <i class="bi bi-pencil-fill"></i>
         </button>
       </div>

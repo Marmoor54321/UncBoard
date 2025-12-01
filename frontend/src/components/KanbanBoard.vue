@@ -6,9 +6,13 @@
   <div v-else>
     <div class="d-flex justify-content-between align-items-center mb-4">
       <h3 class="text-white">
-        Issues for <span class="text-primary">{{ selectedRepo.name }}</span>
+        Issues for 
+        <span class="text-primary">
+            <a :href="selectedRepo.html_url" target="_blank" rel="noopener noreferrer">
+              {{ selectedRepo.name }}
+            </a>          
+        </span>
       </h3>
-
       <button class="btn btn-dark" @click="showModalAddColumn = true">Add column</button>
 
       <Teleport to="body">
