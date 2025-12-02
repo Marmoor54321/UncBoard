@@ -52,7 +52,6 @@ function handleBackdropClick() {
 </script>
 
 <style scoped>
-/* Backdrop */
 .modal-backdrop {
   position: fixed;
   inset: 0;
@@ -64,7 +63,6 @@ function handleBackdropClick() {
   z-index: 2000;
 }
 
-/* Card  */
 .modal-card {
   background: #2b2d31;
   padding: 24px;
@@ -91,53 +89,41 @@ function handleBackdropClick() {
   }
 }
 
-/* Tytuł */
-.modal-title {
-  font-size: 20px;
-  margin-bottom: 16px;
-}
-
-.modal-content {
-  margin-bottom: 18px;
-}
-
-/* Pole */
-.modal-field {
+:deep(.modal-field) {
   display: flex;
   flex-direction: column;
   margin-bottom: 18px;
 }
 
-.modal-field label {
+:deep(.modal-field label) {
   font-size: 14px;
   margin-bottom: 6px;
   color: #cfcfcf;
 }
 
-/* Input */
-.modal-input {
+:deep(.modal-input) {
   background: #1f2023;
   border: 1px solid #555;
   color: white;
   padding: 10px 12px;
   border-radius: 8px;
   transition: 0.15s;
+  width: 100%;
 }
 
-.modal-input:focus {
+:deep(.modal-input:focus) {
   border-color: #aa50e7;
   outline: none;
   box-shadow: 0 0 4px rgba(170, 80, 231, 0.4);
 }
 
-/* Przyciski */
 .modal-actions {
   display: flex;
   justify-content: flex-end;
   gap: 10px;
 }
 
-.btn-cancel {
+:deep(.btn-cancel) {
   background: transparent;
   color: #ccc;
   border: 1px solid #555;
@@ -146,12 +132,12 @@ function handleBackdropClick() {
   transition: 0.15s;
 }
 
-.btn-cancel:hover {
+:deep(.btn-cancel:hover) {
   background: #3a3b3f;
   border-color: #777;
 }
 
-.btn-create {
+:deep(.btn-create) {
   background: #aa50e7;
   color: white;
   border: none;
@@ -160,11 +146,11 @@ function handleBackdropClick() {
   transition: 0.15s;
 }
 
-.btn-create:hover {
+:deep(.btn-create:hover) {
   background: #b964f1;
 }
 
-.btn-delete {
+:deep(.btn-delete) {
   background: #dc3545;
   color: white;
   border: none;
@@ -173,7 +159,7 @@ function handleBackdropClick() {
   transition: 0.15s;
 }
 
-.btn-delete:hover {
+:deep(.btn-delete:hover) {
   background: #bb2d3b;
 }
 </style>
