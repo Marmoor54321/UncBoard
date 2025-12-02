@@ -95,11 +95,6 @@ function handleAddIssue(column) {
 </script>
 
 <style>
-/* ---------------------------- */
-/* MODAL (UJEDNOLICONE STYLE)  */
-/* ---------------------------- */
-
-/* Backdrop – Ujednolicony styl z rozmyciem */
 .modal-backdrop {
   position: fixed;
   inset: 0;
@@ -111,7 +106,7 @@ function handleAddIssue(column) {
   z-index: 2000;
 }
 
-/* Card - Ujednolicony styl */
+/* Card */
 .modal-card {
   background: #2b2d31;
   padding: 24px;
