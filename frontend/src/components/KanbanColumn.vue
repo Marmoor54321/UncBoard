@@ -64,51 +64,45 @@
   </div>
 
   <Teleport to="body">
-    <div v-if="showModalRenameColumn" class="modal-backdrop" @click.self="closeRenameModal">
-      <div class="modal-card animate-modal">
-        <h4 class="modal-title">Rename column</h4>
-
-        <div class="modal-field">
-          <label>New name</label>
-          <input
-            v-model="newName"
-            type="text"
-            placeholder="e.g. Done"
-            class="modal-input"
-            @keyup.enter="confirmRename"
-          />
-        </div>
-
-        <div class="modal-actions">
-          <button class="btn-cancel" @click="closeRenameModal">Cancel</button>
-          <button class="btn-create" @click="confirmRename">Rename</button>
-        </div>
+    <BaseModal
+      :show="showModalRenameColumn"
+      default-title="Rename column"
+      @close="closeRenameModal"
+      @confirm="confirmRename"
+    >
+      <div class="modal-field">
+        <label>New name</label>
+        <input
+          v-model="newName"
+          type="text"
+          placeholder="e.g. Done"
+          class="modal-input"
+          @keyup.enter="confirmRename"
+        />
       </div>
-    </div>
+    </BaseModal>
   </Teleport>
 
-  <Teleport to="body">
-    <div v-if="showModalDeleteColumn" class="modal-backdrop" @click.self="closeDeleteModal">
-      <div class="modal-card animate-modal">
-        <h4 class="modal-title text-danger">Delete column?</h4>
-
-        <p class="text-white-50 mb-4">
-          Are you sure you want to delete the column
-          <span class="text-white">"{{ columnToDeleteName }}"</span>? <br />
-          All issues inside will be moved to the next available column.
-        </p>
-
-        <div class="modal-actions">
-          <button class="btn-cancel" @click="closeDeleteModal">Cancel</button>
-          <button class="btn-delete" @click="confirmDelete">Delete</button>
-        </div>
-      </div>
-    </div>
+    <Teleport to="body">
+    <BaseModal
+      :show="showModalDeleteColumn"
+      default-title="Delete column?"
+      :is-delete="true"
+      @close="closeDeleteModal"
+      @confirm="confirmDelete"
+    >
+      <p class="text-white-50 mb-4">
+        Are you sure you want to delete the column
+        <span class="text-white">"{{ columnToDeleteName }}"</span>? <br />
+        All issues inside will be moved to the next available column.
+      </p>
+    </BaseModal>
   </Teleport>
 </template>
 
 <script setup>
 import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import BaseModal from './Modals/BaseModal.vue'
 import draggable from 'vuedraggable'
 
 const props = defineProps({

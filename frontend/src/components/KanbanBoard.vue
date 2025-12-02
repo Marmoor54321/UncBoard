@@ -11,29 +11,25 @@
 
       <button class="btn btn-dark" @click="showModalAddColumn = true">Add column</button>
 
-      <Teleport to="body">
-        <div v-if="showModalAddColumn" class="modal-backdrop" @click.self="closeModalAddColumn">
-          <div class="modal-card animate-modal">
-            <h4 class="modal-title">Add new column</h4>
-
+        <Teleport to="body">
+          <BaseModal
+            :show="showModalAddColumn"
+            default-title="Add new column"
+            @close="closeModalAddColumn"
+            @confirm="onAddColumn"
+          >
             <div class="modal-field">
               <label>Column name</label>
-              <input
-                v-model="newColumnName"
-                type="text"
-                placeholder="e.g. In Progress"
-                class="modal-input"
+                <input
+                  v-model="newColumnName"
+                  type="text"
+                  placeholder="e.g. In Progress"
+                  class="modal-input"
               />
             </div>
-
-            <div class="modal-actions">
-              <button class="btn-cancel" @click="closeModalAddColumn">Cancel</button>
-              <button class="btn-create" @click="onAddColumn">Add</button>
-            </div>
-          </div>
-        </div>
-      </Teleport>
-    </div>
+          </BaseModal>
+        </Teleport>
+      </div>
 
     <!-- Kanban board -->
     <div class="row row-cols-1 row-cols-lg-2 row-cols-xl-4 g-3">
@@ -58,6 +54,7 @@
 
 <script setup>
 import KanbanColumn from './KanbanColumn.vue'
+import BaseModal from './Modals/BaseModal.vue'
 import { ref } from 'vue'
 
 const props = defineProps({
