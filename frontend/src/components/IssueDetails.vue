@@ -36,6 +36,7 @@
 
     <div class="row">
       <div class="col-lg-8 col-md-7 col-sm-12 mb-4">
+        
         <div class="bg-dark rounded p-3 mb-4">
           <div class="d-flex justify-content-between align-items-center mb-2">
             <h5 class="mb-0">Description</h5>
@@ -163,66 +164,106 @@
           </p>
           <p class="mb-2"><strong>Created:</strong> {{ new Date(issue.created_at).toLocaleString() }}</p>
 
-          <div class="mb-2">
-            <UniversalDropdown
-              :items="repoData.collaborators || []"
-              :selected="issue.assignees"
-              :multiple="true"
-              label-key="login"
-              search-key="login"
-              id-key="id"
-              placement="bottom"
-              @select="toggleAssignee"
-            >
-              <template #trigger>
-                <div class="dropdown-trigger">
-                  <strong>Assignees</strong>
-                </div>
-              </template>
-              <template #item="{ item }">
-                <div class="d-flex align-items-center">
-                  <img :src="item.avatar_url" width="20" height="20" class="rounded-circle me-2" />
-                  {{ item.login }}
-                </div>
-              </template>
-            </UniversalDropdown>
+          <div class="mb-3 border-bottom border-secondary pb-3">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <UniversalDropdown
+                placement="bottom-end"
+                ref="assigneeDropdownRef"
+                class="w-100"
+              >
+                <template #trigger>
+                  <div class="sidebar-trigger d-flex justify-content-between align-items-center w-100">
+                    <strong>Assignees</strong>
+                    <i class="bi bi-gear text-secondary gear-icon"></i>
+                  </div>
+                </template>
 
-            <div class="d-flex flex-wrap gap-1 mt-1">
-              <span v-if="issue.assignees.length === 0" class="text-secondary small">No assignees</span>
-              <span v-for="(a, i) in issue.assignees" :key="i" class="badge bg-secondary d-flex align-items-center">
-                <img :src="a.avatar_url" width="16" class="rounded-circle me-1" />
-                {{ a.login }}
+                <template #header>
+                  <DropdownSearch 
+                    v-model="searchQueries.assignee" 
+                    placeholder="Filter people..." 
+                  />
+                </template>
+
+                <DropdownList
+                  :items="filteredAssignees"
+                  :selected="issue.assignees"
+                  :multiple="true"
+                  id-key="id"
+                  label-key="login"
+                  @select="toggleAssignee"
+                >
+                  <template #item="{ item }">
+                    <div class="dropdown-row">
+                      <img :src="item.avatar_url" class="avatar" />
+                      <span>{{ item.login }}</span>
+                    </div>
+                  </template>
+                </DropdownList>
+              </UniversalDropdown>
+            </div>
+
+            <div class="d-flex flex-column gap-1 mt-1">
+              <span v-if="issue.assignees.length === 0" class="text-secondary small">
+                No one assigned
               </span>
+              <div 
+                v-for="(a, i) in issue.assignees" 
+                :key="i" 
+                class="d-flex align-items-center justify-content-between mt-1"
+                style="font-size: 0.9rem;"
+              >
+                <div class="d-flex align-items-center">
+                   <img :src="a.avatar_url" width="20" height="20" class="rounded-circle me-2" />
+                   <span class="text-white fw-bold">{{ a.login }}</span>
+                </div>
+              </div>
             </div>
           </div>
 
-          <div class="mb-2">
-            <UniversalDropdown
-              :items="repoData.labels || []"
-              :selected="issue.labels"
-              :multiple="true"
-              label-key="name"
-              search-key="name"
-              id-key="id"
-              placement="bottom"
-              @select="toggleLabel"
-            >
-              <template #trigger>
-                <div class="dropdown-trigger">
-                  <strong>Labels</strong>
-                </div>
-              </template>
-              <template #item="{ item }">
-                <span
-                  class="rounded-circle d-inline-block me-2"
-                  :style="{ width: '10px', height: '10px', backgroundColor: '#' + item.color }"
-                ></span>
-                {{ item.name }}
-              </template>
-            </UniversalDropdown>
+          <div class="mb-3 border-bottom border-secondary pb-3">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+               <UniversalDropdown
+                placement="bottom-end"
+                ref="labelsDropdownRef"
+                class="w-100"
+              >
+                <template #trigger>
+                   <div class="sidebar-trigger d-flex justify-content-between align-items-center w-100">
+                    <strong>Labels</strong>
+                    <i class="bi bi-gear text-secondary gear-icon"></i>
+                  </div>
+                </template>
 
-            <div class="d-flex flex-wrap gap-1 mt-1">
-              <span v-if="issue.labels.length === 0" class="text-secondary small">No labels</span>
+                <template #header>
+                  <DropdownSearch 
+                    v-model="searchQueries.labels" 
+                    placeholder="Filter labels..." 
+                  />
+                </template>
+
+                <DropdownList
+                  :items="filteredLabels"
+                  :selected="issue.labels"
+                  :multiple="true"
+                  id-key="id"
+                  label-key="name"
+                  @select="toggleLabel"
+                >
+                  <template #item="{ item }">
+                    <div class="dropdown-row">
+                      <span class="color-dot" :style="{ backgroundColor: '#' + item.color }"></span>
+                      <span>{{ item.name }}</span>
+                    </div>
+                  </template>
+                </DropdownList>
+              </UniversalDropdown>
+            </div>
+
+            <div class="d-flex flex-wrap gap-1 mt-2">
+              <span v-if="issue.labels.length === 0" class="text-secondary small">
+                No labels
+              </span>
               <span
                 v-for="(label, i) in issue.labels"
                 :key="i"
@@ -241,12 +282,16 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue'
-import axios from 'axios' // Dodajemy axios
+import { ref, onMounted, watch, reactive, computed } from 'vue'
+import axios from 'axios'
 import MarkdownIt from 'markdown-it'
 import DOMPurify from 'dompurify'
 import 'github-markdown-css/github-markdown-dark.css'
-import UniversalDropdown from './UniversalDropdown.vue' 
+
+// Import komponentów dropdown (tak jak w AddIssueModal)
+import UniversalDropdown from './Dropdown/UniversalDropdown.vue'
+import DropdownSearch from './Dropdown/DropdownSearch.vue'
+import DropdownList from './Dropdown/DropdownList.vue'
 
 const md = new MarkdownIt({
   html: true,
@@ -268,6 +313,10 @@ const emit = defineEmits(['close', 'update-issue'])
 const timeline = ref([])
 const loading = ref(false)
 
+// --- Refs for Dropdowns ---
+const assigneeDropdownRef = ref(null)
+const labelsDropdownRef = ref(null)
+
 // --- Editing State ---
 const isEditingTitle = ref(false)
 const tempTitle = ref('')
@@ -278,13 +327,27 @@ const tempBody = ref('')
 const newCommentBody = ref('')
 const isSubmitting = ref(false)
 
+// --- Search Logic for Dropdowns (Nowe) ---
+const searchQueries = reactive({
+  assignee: '',
+  labels: ''
+})
+
+const filteredAssignees = computed(() => {
+  const q = searchQueries.assignee.toLowerCase()
+  return (props.repoData.collaborators || []).filter((u) => u.login.toLowerCase().includes(q))
+})
+
+const filteredLabels = computed(() => {
+  const q = searchQueries.labels.toLowerCase()
+  return (props.repoData.labels || []).filter((l) => l.name.toLowerCase().includes(q))
+})
+
 // Pobieranie danych timeline
 const fetchTimelineData = async () => {
   loading.value = true
   timeline.value = []
   try {
-    // Uwaga: pobieranie timeline bezpośrednio z GitHub (GET) zazwyczaj działa, 
-    // ale do POST używamy Twojego backendu proxy.
     const [commentsRes, eventsRes] = await Promise.all([
       fetch(props.issue.comments_url),
       fetch(props.issue.events_url)
@@ -309,7 +372,7 @@ watch(() => props.issue, (newVal) => {
   }
 }, { immediate: true })
 
-// --- Comment Logic (Nowa funkcja) ---
+// --- Comment Logic ---
 const submitComment = async () => {
   if (!newCommentBody.value.trim()) return
 
@@ -323,18 +386,12 @@ const submitComment = async () => {
     const res = await axios.post(
       `http://localhost:3000/api/github/issues/${owner}/${repo}/${number}/comments`,
       { body: newCommentBody.value },
-      { withCredentials: true } // Ważne dla sesji/tokena
+      { withCredentials: true }
     )
 
-    // Dodaj nowy komentarz do lokalnej listy timeline (optymistycznie lub z odpowiedzi)
     const newComment = res.data
     timeline.value.push(newComment)
-    
-    // Wyczyść pole tekstowe
     newCommentBody.value = ''
-    
-    // Opcjonalnie przewiń na dół
-    // ...
 
   } catch (error) {
     console.error('Error submitting comment:', error)
@@ -363,6 +420,9 @@ const saveBody = () => {
 
 // --- Assignee Logic ---
 const toggleAssignee = (user) => {
+  // Reset search query
+  // searchQueries.assignee = '' (opcjonalnie, jeśli chcesz czyścić po wyborze)
+  
   const currentAssignees = [...props.issue.assignees]
   const index = currentAssignees.findIndex(u => u.id === user.id)
   if (index !== -1) {
@@ -379,6 +439,9 @@ const toggleAssignee = (user) => {
 
 // --- Label Logic ---
 const toggleLabel = (label) => {
+  // Reset search query
+  // searchQueries.labels = ''
+  
   const currentLabels = [...props.issue.labels]
   const index = currentLabels.findIndex(l => l.id === label.id)
   if (index !== -1) {
@@ -456,27 +519,42 @@ onMounted(() => {
 .btn-save { background: #aa50e7; color: white; border: none; padding: 5px 8px; border-radius: 8px; font-size: small;}
 .btn-save:disabled { opacity: 0.6; cursor: not-allowed; }
 
-/* Reszta stylów bez zmian */
-.section-header { cursor: pointer; }
-.section-header:hover .gear-icon { color: #fff !important; }
-.gear-icon { transition: color 0.2s; cursor: pointer; }
-.dropdown-trigger {
-  height: 32px;
-  padding: 0 12px;
-  border: 1px solid #555;
-  border-radius: 6px;
-  background: #333;
+/* Sidebar Trigger Styling */
+.sidebar-trigger {
   cursor: pointer;
-  color: #c9d1d9;
-  margin-bottom: 2px;
-  display: inline-flex;
-  align-items: center;
-  width: auto;
-  max-width: 220px;
-  gap: 8px;
-  font-size: 13px;
-  user-select: none;
-  transition: all 0.2s;
+  padding: 4px 0;
+  transition: opacity 0.2s;
 }
-.dropdown-trigger:hover { border-color: #aa50e7; }
+.sidebar-trigger:hover .gear-icon {
+  color: #58a6ff !important;
+}
+
+.gear-icon { 
+  transition: color 0.2s; 
+  cursor: pointer; 
+}
+
+/* Dropdown Internal Styling (Imported from AddIssueModal) */
+.dropdown-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.avatar {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.color-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: inline-block;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  flex-shrink: 0;
+}
 </style>

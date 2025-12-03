@@ -41,7 +41,7 @@
             v-if="selectedIssue"
             :issue="selectedIssue"
             :repo-data="repoData"
-            @close="selectedIssue = null"
+            @close="closeIssuePanel"
             class="details-panel"
             @update-issue="handleIssueUpdate"
           />
