@@ -19,9 +19,8 @@
       <!-- PRAWA CZĘŚĆ (KANBAN BOARD) -->
       <main
         ref="scrollContainer"
-        class="flex-grow-1 p-4 overflow-auto"
-        style="scrollbar-color: #303236 #1d1e20; min-width: 0"
-      >
+        class="flex-grow-1 p-4 overflow-hidden d-flex flex-column" 
+        style="scrollbar-color: #303236 #1d1e20; min-width: 0"      >
         <KanbanBoard
           :selectedRepo="selectedRepo"
           :columns="columns"

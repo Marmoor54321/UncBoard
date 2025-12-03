@@ -1,6 +1,6 @@
 <template>
   <div class="kanban-col-wrapper">
-    <div class="card h-100" style="border: 1px solid #aa50e7">
+    <div class="card h-100 d-flex flex-column" style="border: 1px solid #aa50e7">
       <div
         class="card-header bg-dark text-white text-uppercase small d-flex justify-content-between align-items-center"
       >
@@ -29,7 +29,7 @@
         </div>
       </div>
 
-      <div class="card-body rounded-bottom-1" style="background-color: #303236">
+      <div class="card-body rounded-bottom-1 d-flex flex-column p-0" style="background-color: #303236; overflow: hidden;">
         <draggable
           v-model="issuesByColumn[column.name]"
           :group="groups"
@@ -199,8 +199,7 @@ function toggleAddIssue() {
 .kanban-col-wrapper {
   flex: 0 0 auto;       /* Nie kurcz się, nie rozciągaj automatycznie */
   width: 320px;         /* Stała szerokość kolumny */
-  min-width: 320px;     /* Minimalna szerokość (zabezpieczenie) */
-  max-width: 320px;     /* Maksymalna szerokość */
+  height: 100%; /* DODANE: Kolumna musi być pełnej wysokości */
 }
 .btn-container {
   display: flex;
@@ -223,18 +222,19 @@ function toggleAddIssue() {
   background-color: #3f4146;
 }
 .dropzone {
-  min-height: 300px;
-  max-height: 70vh; 
-  overflow-y: auto; 
   
+flex-grow: 1;           /* Zajmij całą wolną przestrzeń w karcie */
+  overflow-y: auto;       /* Scrolluj tylko ten element */
+  min-height: 0;          /* Zapobiega wypychaniu kontenera flex */
+  height: 0;              /* Hack dla flexboxa, żeby scroll działał poprawnie */
+
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
   padding: 0.5rem;
   
-  scrollbar-width: thin; 
-  scrollbar-color: #2b2d31; 
-}
+  scrollbar-width: thin;
+  scrollbar-color: #2b2d31;}
 
 
 .issuebox {

@@ -228,18 +228,21 @@ function handleAddIssue(column) {
 }
 
 .kanban-board {
-  display: flex;              /* Układ elastyczny */
-  flex-wrap: nowrap;          /* Zakaz zawijania do nowej linii */
-  overflow-x: auto;           /* Włącz przewijanie poziome */
-  gap: 1rem;                  /* Odstęp między kolumnami */
-  align-items: flex-start;    /* Wyrównanie kolumn do góry */
-  padding-bottom: 1rem;       /* Miejsce na pasek przewijania */
+  display: flex;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  gap: 1rem;
   
-  /* Stylizacja paska przewijania (opcjonalna, dla ładniejszego wyglądu) */
+  /* ZMIANA 1: Rozciągnij kolumny do pełnej wysokości kontenera */
+  align-items: stretch; 
+  
+  /* ZMIANA 2: Wymuś 100% wysokości dostępnej w rodzicu */
+  height: 100%;
+  
+  padding-bottom: 1rem;
   scrollbar-width: thin;
   scrollbar-color: #2b2d31;
 }
-
 .kanban-board::-webkit-scrollbar {
   height: 8px;
 }
