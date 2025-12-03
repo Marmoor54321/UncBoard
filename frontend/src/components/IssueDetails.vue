@@ -3,15 +3,14 @@
     class="issue-details text-white p-4"
     style="background-color: #232427; height: 100vh; overflow-y: auto"
   >
-    <!-- HEADER (TITLE) -->
     <div class="d-flex justify-content-between align-items-center mb-3">
       <div v-if="!isEditingTitle" class="d-flex align-items-center flex-grow-1 me-3">
-          <h2 class="mb-0 me-3">
-            <a :href="issue.html_url" target="_blank" rel="noopener noreferrer">
-              {{ issue.title }}
-            </a>          
-          </h2>        
-          <button class="btn btn-sm btn-link text-secondary p-0" @click="startEditTitle">
+        <h2 class="mb-0 me-3">
+          <a :href="issue.html_url" target="_blank" rel="noopener noreferrer">
+            {{ issue.title }}
+          </a>          
+        </h2>        
+        <button class="btn btn-sm btn-link text-secondary p-0" @click="startEditTitle">
           <i class="bi bi-pencil-fill"></i>
         </button>
       </div>
@@ -36,9 +35,7 @@
     <hr class="border-secondary" />
 
     <div class="row">
-      <!-- LEFT COLUMN -->
       <div class="col-lg-8 col-md-7 col-sm-12 mb-4">
-        <!-- DESCRIPTION -->
         <div class="bg-dark rounded p-3 mb-4">
           <div class="d-flex justify-content-between align-items-center mb-2">
             <h5 class="mb-0">Description</h5>
@@ -71,7 +68,6 @@
           </div>
         </div>
 
-        <!-- TIMELINE -->
         <div class="bg-dark rounded p-3">
           <h5 class="mb-3">Discussion & Timeline</h5>
 
@@ -80,11 +76,11 @@
             Loading timeline...
           </div>
 
-          <div v-else-if="timeline.length === 0" class="text-secondary">
-            No activity yet.
-          </div>
+          <div v-else class="d-flex flex-column gap-3 position-relative mb-4">
+            <div v-if="timeline.length === 0" class="text-secondary mb-3">
+              No activity yet.
+            </div>
 
-          <div v-else class="d-flex flex-column gap-3 position-relative">
             <div v-for="item in timeline" :key="item.id">
               <div v-if="item.event" class="d-flex align-items-center text-secondary ms-4 py-1" style="font-size: 0.9rem">
                 <span
@@ -127,14 +123,35 @@
                   style="background-color: #303236; border-bottom-left-radius: 6px; border-bottom-right-radius: 6px; overflow-wrap: break-word;"
                   v-html="renderMarkdown(item.body)"
                 >
-              </div>
+                </div>
               </div>
             </div>
           </div>
+
+          <div class="border-top border-secondary pt-3 mt-3">
+            <h6 class="mb-2 text-secondary">Add a comment</h6>
+            <textarea
+              v-model="newCommentBody"
+              class="form-control bg-dark text-white border-secondary mb-2"
+              rows="4"
+              placeholder="Leave a comment"
+              style="background-color: #303236 !important"
+            ></textarea>
+            <div class="d-flex justify-content-end gap-2">
+               <button 
+                class="btn-save d-flex align-items-center gap-2" 
+                @click="submitComment" 
+                :disabled="isSubmitting || !newCommentBody.trim()"
+              >
+                <span v-if="isSubmitting" class="spinner-border spinner-border-sm"></span>
+                Comment
+              </button>
+            </div>
+          </div>
+
         </div>
       </div>
 
-      <!-- RIGHT COLUMN (DETAILS & SETTINGS) -->
       <div class="col-lg-4 col-md-5 col-sm-12">
         <div class="bg-dark rounded p-3">
           <h6 class="border-bottom border-secondary pb-2 mb-3">Details</h6>
@@ -146,7 +163,6 @@
           </p>
           <p class="mb-2"><strong>Created:</strong> {{ new Date(issue.created_at).toLocaleString() }}</p>
 
-          <!-- ASSIGNEES SECTION -->
           <div class="mb-2">
             <UniversalDropdown
               :items="repoData.collaborators || []"
@@ -158,15 +174,11 @@
               placement="bottom"
               @select="toggleAssignee"
             >
-              <!-- TRIGGER SLOT: To co klikasz, żeby otworzyć dropdown -->
               <template #trigger>
                 <div class="dropdown-trigger">
                   <strong>Assignees</strong>
-                  
                 </div>
               </template>
-
-              <!-- ITEM SLOT: Wygląd pojedynczej opcji na liście -->
               <template #item="{ item }">
                 <div class="d-flex align-items-center">
                   <img :src="item.avatar_url" width="20" height="20" class="rounded-circle me-2" />
@@ -175,7 +187,6 @@
               </template>
             </UniversalDropdown>
 
-            <!-- WYŚWIETLANIE WYBRANYCH -->
             <div class="d-flex flex-wrap gap-1 mt-1">
               <span v-if="issue.assignees.length === 0" class="text-secondary small">No assignees</span>
               <span v-for="(a, i) in issue.assignees" :key="i" class="badge bg-secondary d-flex align-items-center">
@@ -185,7 +196,6 @@
             </div>
           </div>
 
-          <!-- LABELS SECTION -->
           <div class="mb-2">
             <UniversalDropdown
               :items="repoData.labels || []"
@@ -197,15 +207,11 @@
               placement="bottom"
               @select="toggleLabel"
             >
-              <!-- TRIGGER SLOT -->
               <template #trigger>
                 <div class="dropdown-trigger">
                   <strong>Labels</strong>
-                  
                 </div>
               </template>
-
-              <!-- ITEM SLOT -->
               <template #item="{ item }">
                 <span
                   class="rounded-circle d-inline-block me-2"
@@ -215,7 +221,6 @@
               </template>
             </UniversalDropdown>
 
-            <!-- WYŚWIETLANIE WYBRANYCH -->
             <div class="d-flex flex-wrap gap-1 mt-1">
               <span v-if="issue.labels.length === 0" class="text-secondary small">No labels</span>
               <span
@@ -237,11 +242,12 @@
 
 <script setup>
 import { ref, onMounted, watch } from 'vue'
+import axios from 'axios' // Dodajemy axios
 import MarkdownIt from 'markdown-it'
 import DOMPurify from 'dompurify'
 import 'github-markdown-css/github-markdown-dark.css'
-// Upewnij się, że ścieżka do UniversalDropdown jest poprawna
 import UniversalDropdown from './UniversalDropdown.vue' 
+
 const md = new MarkdownIt({
   html: true,
   linkify: true,
@@ -249,9 +255,7 @@ const md = new MarkdownIt({
 })
 const renderMarkdown = (text) => {
   if (!text) return ''
-  // 1. Parsowanie Markdown do HTML
   const rawHtml = md.render(text)
-  // 2. Czyszczenie HTML (sanityzacja) dla bezpieczeństwa
   return DOMPurify.sanitize(rawHtml)
 }
 const props = defineProps({
@@ -270,11 +274,17 @@ const tempTitle = ref('')
 const isEditingBody = ref(false)
 const tempBody = ref('')
 
+// --- New Comment State ---
+const newCommentBody = ref('')
+const isSubmitting = ref(false)
+
 // Pobieranie danych timeline
 const fetchTimelineData = async () => {
   loading.value = true
   timeline.value = []
   try {
+    // Uwaga: pobieranie timeline bezpośrednio z GitHub (GET) zazwyczaj działa, 
+    // ale do POST używamy Twojego backendu proxy.
     const [commentsRes, eventsRes] = await Promise.all([
       fetch(props.issue.comments_url),
       fetch(props.issue.events_url)
@@ -299,6 +309,41 @@ watch(() => props.issue, (newVal) => {
   }
 }, { immediate: true })
 
+// --- Comment Logic (Nowa funkcja) ---
+const submitComment = async () => {
+  if (!newCommentBody.value.trim()) return
+
+  isSubmitting.value = true
+  try {
+    const urlParts = props.issue.url.split('/')
+    const owner = urlParts[4]
+    const repo = urlParts[5]
+    const number = props.issue.number
+
+    const res = await axios.post(
+      `http://localhost:3000/api/github/issues/${owner}/${repo}/${number}/comments`,
+      { body: newCommentBody.value },
+      { withCredentials: true } // Ważne dla sesji/tokena
+    )
+
+    // Dodaj nowy komentarz do lokalnej listy timeline (optymistycznie lub z odpowiedzi)
+    const newComment = res.data
+    timeline.value.push(newComment)
+    
+    // Wyczyść pole tekstowe
+    newCommentBody.value = ''
+    
+    // Opcjonalnie przewiń na dół
+    // ...
+
+  } catch (error) {
+    console.error('Error submitting comment:', error)
+    alert('Failed to post comment')
+  } finally {
+    isSubmitting.value = false
+  }
+}
+
 // --- Title Handlers ---
 const startEditTitle = () => { tempTitle.value = props.issue.title; isEditingTitle.value = true }
 const cancelEditTitle = () => { isEditingTitle.value = false; tempTitle.value = props.issue.title }
@@ -316,20 +361,16 @@ const saveBody = () => {
   isEditingBody.value = false
 }
 
-// --- Assignee Logic (Dodałem, bo brakowało w Twoim kodzie) ---
+// --- Assignee Logic ---
 const toggleAssignee = (user) => {
   const currentAssignees = [...props.issue.assignees]
   const index = currentAssignees.findIndex(u => u.id === user.id)
-
   if (index !== -1) {
     currentAssignees.splice(index, 1)
   } else {
     currentAssignees.push(user)
   }
-
-  // API GitHuba oczekuje tablicy loginów
   const assigneesLogins = currentAssignees.map(u => u.login)
-
   emit('update-issue', {
     number: props.issue.number,
     updates: { assignees: assigneesLogins }
@@ -340,15 +381,12 @@ const toggleAssignee = (user) => {
 const toggleLabel = (label) => {
   const currentLabels = [...props.issue.labels]
   const index = currentLabels.findIndex(l => l.id === label.id)
-
   if (index !== -1) {
     currentLabels.splice(index, 1)
   } else {
     currentLabels.push(label)
   }
-
   const labelNames = currentLabels.map(l => l.name)
-
   emit('update-issue', {
     number: props.issue.number,
     updates: { labels: labelNames }
@@ -416,18 +454,12 @@ onMounted(() => {
 .comment-body :deep(img) { max-width: 100%; height: auto; border-radius: 4px; }
 .btn-cancel { background: transparent; color: #ccc; border: 1px solid #555; padding: 5px 8px; border-radius: 8px; font-size: small;}
 .btn-save { background: #aa50e7; color: white; border: none; padding: 5px 8px; border-radius: 8px; font-size: small;}
+.btn-save:disabled { opacity: 0.6; cursor: not-allowed; }
 
-/* Style dla nagłówka sekcji z zębatką */
-.section-header {
-  cursor: pointer; /* To sprawia, że kursor zmienia się w łapkę */
-}
-.section-header:hover .gear-icon {
-  color: #fff !important; /* Rozjaśnij zębatkę po najechaniu */
-}
-.gear-icon {
-  transition: color 0.2s;
-  cursor: pointer;
-}
+/* Reszta stylów bez zmian */
+.section-header { cursor: pointer; }
+.section-header:hover .gear-icon { color: #fff !important; }
+.gear-icon { transition: color 0.2s; cursor: pointer; }
 .dropdown-trigger {
   height: 32px;
   padding: 0 12px;
@@ -437,19 +469,14 @@ onMounted(() => {
   cursor: pointer;
   color: #c9d1d9;
   margin-bottom: 2px;
-
   display: inline-flex;
   align-items: center;
   width: auto;
   max-width: 220px;
-
   gap: 8px;
   font-size: 13px;
   user-select: none;
   transition: all 0.2s;
 }
-
-.dropdown-trigger:hover {
-  border-color: #aa50e7;
-}
+.dropdown-trigger:hover { border-color: #aa50e7; }
 </style>
