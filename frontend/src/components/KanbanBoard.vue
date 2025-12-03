@@ -3,7 +3,7 @@
     <h4>Select a repository to view its issues</h4>
   </div>
 
-  <div v-else>
+  <div v-else class="flex-grow-1 d-flex flex-column overflow-hidden">
     <div class="d-flex justify-content-between align-items-center mb-4">
       <h3 class="text-white">
         Issues for 
@@ -237,8 +237,7 @@ function handleAddIssue(column) {
   align-items: stretch; 
   
   /* ZMIANA 2: Wymuś 100% wysokości dostępnej w rodzicu */
-  height: 100%;
-  
+  flex-grow: 1;  
   padding-bottom: 1rem;
   scrollbar-width: thin;
   scrollbar-color: #2b2d31;
