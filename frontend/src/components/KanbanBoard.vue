@@ -3,12 +3,16 @@
     <h4>Select a repository to view its issues</h4>
   </div>
 
-  <div v-else>
+  <div v-else class="flex-grow-1 d-flex flex-column overflow-hidden">
     <div class="d-flex justify-content-between align-items-center mb-4">
       <h3 class="text-white">
-        Issues for <span class="text-primary">{{ selectedRepo.name }}</span>
+        Issues for 
+        <span class="text-primary">
+            <a :href="selectedRepo.html_url" target="_blank" rel="noopener noreferrer">
+              {{ selectedRepo.name }}
+            </a>          
+        </span>
       </h3>
-
       <button class="btn btn-dark" @click="showModalAddColumn = true">Add column</button>
 
         <Teleport to="body">
@@ -32,7 +36,7 @@
       </div>
 
     <!-- Kanban board -->
-    <div class="row row-cols-1 row-cols-lg-2 row-cols-xl-4 g-3">
+    <div class="kanban-board pb-3">
       <kanban-column
         v-for="column in columns"
         :key="column._id"
@@ -95,7 +99,24 @@ function handleAddIssue(column) {
 </script>
 
 <style>
-
+.kanban-board {
+  display: flex;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  gap: 1rem;
+  align-items: stretch; /* Rozciągnij kolumny w pionie */
+  
+  /* ZMIANA: Zamiast height: 100% dajemy flex-grow */
+  flex-grow: 1; 
+  
+  /* WAŻNE: min-height: 0 naprawia flexboxa w zagnieżdżeniu (szczególnie w Firefox) */
+  min-height: 0; 
+  
+  padding-bottom: 0.5rem; /* Opcjonalnie, lekki odstęp od dołu ekranu */
+  
+  scrollbar-width: thin;
+  scrollbar-color: #2b2d31;
+}
 
 
 </style>

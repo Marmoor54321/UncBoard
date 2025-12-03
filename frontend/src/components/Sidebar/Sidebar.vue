@@ -19,6 +19,7 @@
         @open-delete-group="openDeleteGroupModal"
         @select-repo="selectRepo"
         @toggle-menu="toggleMenu"
+        @toggle-expand="onToggleGroupExpand"
       />
 
       <SidebarRepositories
@@ -54,7 +55,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { ref, reactive, computed, onMounted, onBeforeUnmount } from 'vue'
 import SidebarModals from './SidebarModals.vue'
 import SidebarContextMenus from './SidebarContextMenus.vue'
 import SidebarProfile from './SidebarProfile.vue'
@@ -70,11 +71,21 @@ const props = defineProps({
   loginWithGithub: Function,
   selectRepo: Function,
   groupsList: Array,
-  expandedGroups: Object,
+  // USUNIĘTO: expandedGroups z props, ponieważ Sidebar powinien zarządzać tym stanem
 })
 
 const repoMap = computed(() => Object.fromEntries(props.repos.map((r) => [r.id, r])))
 
+// --- LOKALNY STAN: EXPANDED GROUPS ---
+// Tworzymy reaktywny obiekt do przechowywania stanu otwartych grup
+const expandedGroups = reactive({})
+
+function onToggleGroupExpand(groupId) {
+  // Tutaj bezpiecznie zmieniamy stan lokalny
+  expandedGroups[groupId] = !expandedGroups[groupId]
+}
+
+// --- RESZTA LOGIKI BEZ ZMIAN ---
 const activeMenu = ref(null)
 const activePicker = ref(null)
 const menuRepoId = ref(null)
@@ -89,7 +100,6 @@ const showModalCreateGroup = ref(false)
 const showModalDeleteGroup = ref(false)
 const groupToDeleteId = ref(null)
 
-// --- ACTIONS: MODALS ---
 function handleCreateGroup(name) {
   emit('addGroup', { name, created_by: props.user._id })
   showModalCreateGroup.value = false
@@ -130,7 +140,7 @@ function toggleMenu(id, event) {
 
   if (spaceBelow < estimatedMenuHeight) {
     newStyle.top = 'auto'
-    newStyle.bottom = windowHeight - rect.top-30 + 'px'
+    newStyle.bottom = windowHeight - rect.top - 30 + 'px'
   }
   menuStyle.value = newStyle
 

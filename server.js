@@ -535,4 +535,96 @@ app.post("/api/github/issues/:owner/:repo", async (req, res) => {
   }
 });
 
+// Uniwersalny endpoint do aktualizacji Issue (Tytuł, Opis, Status, Labele, Milestone, Assignees)
+app.patch("/api/github/issues/:owner/:repo/:number", async (req, res) => {
+  let token = req.session.token;
+  if (!token && req.headers.authorization) {
+    const authHeader = req.headers.authorization;
+    if (authHeader.startsWith('Bearer ')) {
+      token = authHeader.split(' ')[1];
+    }
+  }
+
+  if (!token) return res.status(401).json({ message: "Not authenticated" });
+  const { owner, repo, number } = req.params;
+  
+  // Wyciągamy wszystkie możliwe pola z body
+  const { title, body, state, state_reason, milestone, labels, assignees } = req.body;
+
+  // Budujemy dynamiczny obiekt payload - wyślemy do GitHub tylko to, co przysłał frontend
+  const payload = {};
+  if (title !== undefined) payload.title = title;
+  if (body !== undefined) payload.body = body;
+  if (state !== undefined) payload.state = state;             // 'open' lub 'closed'
+  if (state_reason !== undefined) payload.state_reason = state_reason; // 'completed' lub 'not_planned'
+  if (milestone !== undefined) payload.milestone = milestone; // numer milestone lub null
+  if (labels !== undefined) payload.labels = labels;          // tablica stringów (np. ["bug"])
+  if (assignees !== undefined) payload.assignees = assignees; // tablica stringów (np. ["johndoe"])
+
+  // Sprawdzamy czy w ogóle jest co aktualizować
+  if (Object.keys(payload).length === 0) {
+    return res.status(400).json({ message: "No valid fields provided for update" });
+  }
+
+  try {
+    const response = await axios.patch(
+      `https://api.github.com/repos/${owner}/${repo}/issues/${number}`,
+      payload,
+      {
+        headers: {
+          Authorization: `token ${token}`,
+          Accept: "application/vnd.github+json",
+        },
+      }
+    );
+
+    res.json(response.data);
+  } catch (err) {
+    console.error("Error updating issue:", err.response?.data || err.message);
+    res.status(500).json({ 
+      message: "Failed to update issue", 
+      details: err.response?.data 
+    });
+  }
+});
+// Dodaj nowy komentarz do issue
+app.post("/api/github/issues/:owner/:repo/:number/comments", async (req, res) => {
+  let token = req.session.token;
+  if (!token && req.headers.authorization) {
+    const authHeader = req.headers.authorization;
+    if (authHeader.startsWith('Bearer ')) {
+      token = authHeader.split(' ')[1];
+    }
+  }
+  if (!token) return res.status(401).json({ message: "Not authenticated" });
+
+  const { owner, repo, number } = req.params;
+  const { body } = req.body; 
+
+  if (!body) {
+    return res.status(400).json({ message: "Comment body is required" });
+  }
+
+  try {
+    const response = await axios.post(
+      `https://api.github.com/repos/${owner}/${repo}/issues/${number}/comments`,
+      { body: body },
+      {
+        headers: {
+          Authorization: `token ${token}`,
+          Accept: "application/vnd.github+json",
+        },
+      }
+    );
+
+    res.status(201).json(response.data);
+  } catch (err) {
+    console.error("Error creating comment:", err.response?.data || err.message);
+    res.status(500).json({ 
+      message: "Failed to create comment", 
+      details: err.response?.data 
+    });
+  }
+});
+
 app.listen(3000, () => console.log("Server running on http://localhost:3000"));

@@ -108,6 +108,7 @@ export function useGithubBoard() {
 
      const issues = issuesRes.data;
      repoData.value.collaborators = collaboratorsRes.data;
+     console.log(repoData);
      repoData.value.labels = labelsRes.data;
      repoData.value.milestones = milestonesRes.data;
 
@@ -339,6 +340,41 @@ function addIssueToBoard(newIssue) {
     console.error(`Status column not found for: ${statusName}`);
   }
 }
+
+
+async function updateIssue(issueNumber, updates) {
+  if (!selectedRepo.value) return;
+
+  const { owner, name } = selectedRepo.value;
+  
+  try {
+    // 1. Send data to Backend
+    const res = await axios.patch(
+      `http://localhost:3000/api/github/issues/${owner.login}/${name}/${issueNumber}`,
+      updates,
+      { withCredentials: true }
+    );
+
+    const updatedIssueData = res.data;
+
+    // 2. Update local state (issuesByColumn) so the UI refreshes instantly
+    // We need to find the issue in the nested arrays
+    for (const colName in issuesByColumn.value) {
+      const index = issuesByColumn.value[colName].findIndex(i => i.number === issueNumber);
+      if (index !== -1) {
+        // We merge the new data into the existing object to preserve reactivity
+        Object.assign(issuesByColumn.value[colName][index], updatedIssueData);
+        break;
+      }
+    }
+
+    return updatedIssueData;
+
+  } catch (err) {
+    console.error("Error updating issue:", err);
+    throw err;
+  }
+}
   onMounted(loadUser)
 
   return {
@@ -365,6 +401,7 @@ function addIssueToBoard(newIssue) {
     handleAddGroup,
     handleDeleteGroup,
     repoData,
-    addIssueToBoard
+    addIssueToBoard,
+    updateIssue
   }
 }
