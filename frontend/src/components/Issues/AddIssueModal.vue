@@ -20,6 +20,7 @@
               class="form-control"
               placeholder="Title"
               required
+              ref="titleInput"
             />
           </div>
 
@@ -36,15 +37,7 @@
 
         <div class="buttons">
           <div class="variable-buttons">
-            <UniversalDropdown
-              :items="repoData.collaborators || []"
-              label-key="login"
-              search-key="login"
-              id-key="id"
-              :selected="data.assignee"
-              placement="top"
-              @select="(item) => updateField('assignee', item)"
-            >
+            <UniversalDropdown placement="top" ref="assigneeDropdownRef">
               <template #trigger>
                 <div class="dropdown-trigger-btn" :class="{ 'has-value': data.assignee }">
                   <template v-if="data.assignee">
@@ -55,24 +48,27 @@
                 </div>
               </template>
 
-              <template #item="{ item }">
-                <div class="dropdown-row">
-                  <img :src="item.avatar_url" class="avatar" />
-                  <span>{{ item.login }}</span>
-                </div>
+              <template #header>
+                <DropdownSearch v-model="searchQueries.assignee" placeholder="Filter people..." />
               </template>
+
+              <DropdownList
+                :items="filteredAssignees"
+                :selected="data.assignee"
+                id-key="id"
+                label-key="login"
+                @select="selectAssignee"
+              >
+                <template #item="{ item }">
+                  <div class="dropdown-row">
+                    <img :src="item.avatar_url" class="avatar" />
+                    <span>{{ item.login }}</span>
+                  </div>
+                </template>
+              </DropdownList>
             </UniversalDropdown>
 
-            <UniversalDropdown
-              :items="repoData.labels || []"
-              label-key="name"
-              search-key="name"
-              id-key="id"
-              :multiple="true"
-              :selected="data.labels"
-              placement="top"
-              @select="(item) => updateField('labels', item)"
-            >
+            <UniversalDropdown placement="top" ref="labelsDropdownRef">
               <template #trigger>
                 <div class="dropdown-trigger-btn" :class="{ 'has-value': data.labels.length > 0 }">
                   <template v-if="data.labels.length > 0">
@@ -81,7 +77,6 @@
                       :style="{ backgroundColor: '#' + data.labels[0].color }"
                     ></span>
                     <span class="truncate-text">{{ data.labels[0].name }}</span>
-
                     <span v-if="data.labels.length > 1" class="more-counter">
                       +{{ data.labels.length - 1 }}
                     </span>
@@ -90,23 +85,37 @@
                 </div>
               </template>
 
-              <template #item="{ item }">
-                <div class="dropdown-row">
-                  <span class="color-dot" :style="{ backgroundColor: '#' + item.color }"></span>
-                  <span>{{ item.name }}</span>
+              <template #header>
+                <DropdownSearch v-model="searchQueries.labels" placeholder="Filter labels..." />
+              </template>
+
+              <DropdownList
+                :items="filteredLabels"
+                :selected="data.labels"
+                :multiple="true"
+                id-key="id"
+                label-key="name"
+                @select="toggleLabel"
+              >
+                <template #item="{ item }">
+                  <div class="dropdown-row">
+                    <span class="color-dot" :style="{ backgroundColor: '#' + item.color }"></span>
+                    <span>{{ item.name }}</span>
+                  </div>
+                </template>
+              </DropdownList>
+
+              <template #footer="{ close }">
+                <div
+                  class="footer-action"
+                  @click="(alert('Open create label modal logic here'), close())"
+                >
+                  <i class="bi bi-plus-lg"></i> Create new label (WIP)
                 </div>
               </template>
             </UniversalDropdown>
 
-            <UniversalDropdown
-              :items="repoData.milestones || []"
-              label-key="title"
-              search-key="title"
-              id-key="id"
-              :selected="data.milestone"
-              placement="top"
-              @select="(item) => updateField('milestone', item)"
-            >
+            <UniversalDropdown placement="top" ref="milestoneDropdownRef">
               <template #trigger>
                 <div class="dropdown-trigger-btn" :class="{ 'has-value': data.milestone }">
                   <i class="bi bi-signpost-split" v-if="data.milestone"></i>
@@ -115,8 +124,26 @@
                   </span>
                 </div>
               </template>
+
+              <template #header>
+                <DropdownSearch
+                  v-model="searchQueries.milestone"
+                  placeholder="Filter milestones..."
+                />
+              </template>
+
+              <DropdownList
+                :items="filteredMilestones"
+                :selected="data.milestone"
+                id-key="id"
+                label-key="title"
+                @select="selectMilestone"
+              >
+                <template #empty>No milestones found</template>
+              </DropdownList>
             </UniversalDropdown>
           </div>
+
           <div class="action-buttons">
             <button type="button" class="button cancel" @click="close">Cancel</button>
             <button type="submit" class="button create">Create</button>
@@ -128,12 +155,18 @@
 </template>
 
 <script setup>
-import { reactive, onMounted, onBeforeUnmount } from 'vue'
-import UniversalDropdown from '../UniversalDropdown.vue'
+import { reactive, onMounted, onBeforeUnmount, computed, ref, nextTick } from 'vue'
+import UniversalDropdown from '../Dropdown/UniversalDropdown.vue'
+import DropdownSearch from '../Dropdown/DropdownSearch.vue'
+import DropdownList from '../Dropdown/DropdownList.vue'
 
-defineProps({ repoData: Object })
-
+const props = defineProps({ repoData: Object })
 const emit = defineEmits(['close', 'submit'])
+
+const titleInput = ref(null)
+const assigneeDropdownRef = ref(null)
+const milestoneDropdownRef = ref(null)
+const labelsDropdownRef = ref(null)
 
 const data = reactive({
   title: '',
@@ -143,49 +176,68 @@ const data = reactive({
   milestone: null,
 })
 
+const searchQueries = reactive({
+  assignee: '',
+  labels: '',
+  milestone: '',
+})
+
+const filteredAssignees = computed(() => {
+  const q = searchQueries.assignee.toLowerCase()
+  return (props.repoData.collaborators || []).filter((u) => u.login.toLowerCase().includes(q))
+})
+
+const filteredLabels = computed(() => {
+  const q = searchQueries.labels.toLowerCase()
+  return (props.repoData.labels || []).filter((l) => l.name.toLowerCase().includes(q))
+})
+
+const filteredMilestones = computed(() => {
+  const q = searchQueries.milestone.toLowerCase()
+  return (props.repoData.milestones || []).filter((m) => m.title.toLowerCase().includes(q))
+})
+
+const selectAssignee = (item) => {
+  if (data.assignee && data.assignee.id === item.id) {
+    data.assignee = null
+  } else {
+    data.assignee = item
+  }
+  assigneeDropdownRef.value?.close()
+  searchQueries.assignee = ''
+}
+
+const selectMilestone = (item) => {
+  if (data.milestone && data.milestone.id === item.id) {
+    data.milestone = null
+  } else {
+    data.milestone = item
+  }
+  milestoneDropdownRef.value?.close()
+  searchQueries.milestone = ''
+}
+//multiselect
+const toggleLabel = (item) => {
+  const index = data.labels.findIndex((l) => l.id === item.id)
+  if (index > -1) {
+    data.labels.splice(index, 1)
+  } else {
+    data.labels.push(item)
+  }
+}
+
 let isMouseDownOnBackdrop = false
 
 const handleBackdropMouseDown = () => {
   isMouseDownOnBackdrop = true
 }
-
 const handleBackdropMouseUp = () => {
-  if (isMouseDownOnBackdrop) {
-    close()
-  }
+  if (isMouseDownOnBackdrop) close()
   isMouseDownOnBackdrop = false
 }
 
 const handleKeydown = (e) => {
-  if (e.key === 'Escape') {
-    close()
-  }
-}
-
-onMounted(() => {
-  document.addEventListener('keydown', handleKeydown)
-})
-
-onBeforeUnmount(() => {
-  document.removeEventListener('keydown', handleKeydown)
-})
-
-const updateField = (key, item) => {
-  if (Array.isArray(data[key])) {
-    const index = data[key].findIndex((i) => i.id === item.id)
-    if (index > -1) {
-      data[key].splice(index, 1)
-    } else {
-      data[key].push(item)
-    }
-    return
-  }
-
-  if (data[key] && data[key].id === item.id) {
-    data[key] = null
-  } else {
-    data[key] = item
-  }
+  if (e.key === 'Escape') close()
 }
 
 const close = () => {
@@ -195,6 +247,7 @@ const close = () => {
 const submit = () => {
   if (!data.title.trim()) {
     alert('Title is required!')
+    nextTick(() => titleInput.value?.focus())
     return
   }
 
@@ -214,8 +267,21 @@ const submit = () => {
   data.labels = []
   data.milestone = null
 
+  searchQueries.assignee = ''
+  searchQueries.labels = ''
+  searchQueries.milestone = ''
+
   close()
 }
+
+onMounted(() => {
+  document.addEventListener('keydown', handleKeydown)
+  nextTick(() => titleInput.value?.focus())
+})
+
+onBeforeUnmount(() => {
+  document.removeEventListener('keydown', handleKeydown)
+})
 </script>
 
 <style scoped>
@@ -240,6 +306,7 @@ const submit = () => {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
 }
 
 .header-container {
@@ -283,7 +350,6 @@ form {
 .form-group {
   margin-bottom: 15px;
 }
-
 .form-group label {
   display: block;
   margin-bottom: 6px;
@@ -307,9 +373,25 @@ form {
   color: white !important;
   border-color: #58a6ff;
   outline: none;
-  box-shadow: none;
+}
+.form-control::-webkit-input-placeholder {
+  color: #666 !important;
+  opacity: 1;
 }
 
+.form-control::-moz-placeholder {
+  color: #666 !important;
+  opacity: 1;
+}
+
+.form-control:-ms-input-placeholder {
+  color: #666 !important;
+}
+
+.form-control::placeholder {
+  color: #666 !important;
+  opacity: 1;
+}
 .description-group {
   flex: 1;
   display: flex;
@@ -342,12 +424,6 @@ form {
   align-items: center;
 }
 
-.action-buttons {
-  display: flex;
-  gap: 10px;
-  flex-shrink: 0;
-}
-
 .dropdown-trigger-btn {
   height: 32px;
   padding: 0 12px;
@@ -356,12 +432,10 @@ form {
   background: #21262d;
   cursor: pointer;
   color: #c9d1d9;
-
   display: inline-flex;
   align-items: center;
   width: auto;
   max-width: 220px;
-
   gap: 8px;
   font-size: 13px;
   user-select: none;
@@ -394,18 +468,18 @@ form {
   flex-shrink: 0;
 }
 
-.avatar {
-  width: 20px;
-  height: 20px;
+.avatar,
+.avatar-small {
   border-radius: 50%;
   flex-shrink: 0;
 }
-
+.avatar {
+  width: 20px;
+  height: 20px;
+}
 .avatar-small {
   width: 16px;
   height: 16px;
-  border-radius: 50%;
-  flex-shrink: 0;
 }
 
 .color-dot {
@@ -422,6 +496,27 @@ form {
   align-items: center;
   gap: 8px;
   width: 100%;
+}
+
+.footer-action {
+  font-size: 12px;
+  color: #ccc;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: color 0.2s;
+}
+.footer-action:hover {
+  color: #58a6ff;
+  text-decoration: underline;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 10px;
+  flex-shrink: 0;
 }
 
 .button {
@@ -445,12 +540,12 @@ form {
 }
 
 .create {
-  background: #238636;
+  background: #aa50e7;
   color: white;
   border-color: rgba(240, 246, 252, 0.1);
 }
 .create:hover {
-  background: #2ea043;
+  background: #b964f1;
 }
 
 .fields::-webkit-scrollbar {
@@ -462,10 +557,5 @@ form {
 .fields::-webkit-scrollbar-thumb {
   background-color: #444;
   border-radius: 4px;
-}
-
-input::placeholder,
-textarea::placeholder {
-  color: #666;
 }
 </style>

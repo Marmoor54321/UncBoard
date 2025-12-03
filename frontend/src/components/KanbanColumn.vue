@@ -64,51 +64,45 @@
   </div>
 
   <Teleport to="body">
-    <div v-if="showModalRenameColumn" class="modal-backdrop" @click.self="closeRenameModal">
-      <div class="modal-card animate-modal">
-        <h4 class="modal-title">Rename column</h4>
-
-        <div class="modal-field">
-          <label>New name</label>
-          <input
-            v-model="newName"
-            type="text"
-            placeholder="e.g. Done"
-            class="modal-input"
-            @keyup.enter="confirmRename"
-          />
-        </div>
-
-        <div class="modal-actions">
-          <button class="btn-cancel" @click="closeRenameModal">Cancel</button>
-          <button class="btn-create" @click="confirmRename">Rename</button>
-        </div>
+    <BaseModal
+      :show="showModalRenameColumn"
+      default-title="Rename column"
+      @close="closeRenameModal"
+      @confirm="confirmRename"
+    >
+      <div class="modal-field">
+        <label>New name</label>
+        <input
+          v-model="newName"
+          type="text"
+          placeholder="e.g. Done"
+          class="modal-input"
+          @keyup.enter="confirmRename"
+        />
       </div>
-    </div>
+    </BaseModal>
   </Teleport>
 
-  <Teleport to="body">
-    <div v-if="showModalDeleteColumn" class="modal-backdrop" @click.self="closeDeleteModal">
-      <div class="modal-card animate-modal">
-        <h4 class="modal-title text-danger">Delete column?</h4>
-
-        <p class="text-white-50 mb-4">
-          Are you sure you want to delete the column
-          <span class="text-white">"{{ columnToDeleteName }}"</span>? <br />
-          All issues inside will be moved to the next available column.
-        </p>
-
-        <div class="modal-actions">
-          <button class="btn-cancel" @click="closeDeleteModal">Cancel</button>
-          <button class="btn-delete" @click="confirmDelete">Delete</button>
-        </div>
-      </div>
-    </div>
+    <Teleport to="body">
+    <BaseModal
+      :show="showModalDeleteColumn"
+      default-title="Delete column?"
+      :is-delete="true"
+      @close="closeDeleteModal"
+      @confirm="confirmDelete"
+    >
+      <p class="text-white-50 mb-4">
+        Are you sure you want to delete the column
+        <span class="text-white">"{{ columnToDeleteName }}"</span>? <br />
+        All issues inside will be moved to the next available column.
+      </p>
+    </BaseModal>
   </Teleport>
 </template>
 
 <script setup>
 import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import BaseModal from './Modals/BaseModal.vue'
 import draggable from 'vuedraggable'
 
 const props = defineProps({
@@ -312,123 +306,4 @@ flex-grow: 1;           /* Zajmij całą wolną przestrzeń w karcie */
   box-shadow: 0 0 4px rgba(170, 80, 231, 0.6);
 }
 
-.modal-backdrop {
-  position: fixed;
-  inset: 0;
-  backdrop-filter: blur(4px);
-  background: rgba(0, 0, 0, 0.45);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 2000;
-}
-
-/* Card  */
-.modal-card {
-  background: #2b2d31;
-  padding: 24px;
-  width: 360px;
-  border-radius: 14px;
-  border: 1px solid #444;
-  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.45);
-  color: white;
-}
-
-/* Animacja */
-.animate-modal {
-  animation: popupShow 0.18s ease;
-}
-
-@keyframes popupShow {
-  from {
-    opacity: 0;
-    transform: scale(0.92);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-/* Tytuł */
-.modal-title {
-  font-size: 20px;
-  margin-bottom: 16px;
-}
-
-/* Pole */
-.modal-field {
-  display: flex;
-  flex-direction: column;
-  margin-bottom: 18px;
-}
-
-.modal-field label {
-  font-size: 14px;
-  margin-bottom: 6px;
-  color: #cfcfcf;
-}
-
-/* Input */
-.modal-input {
-  background: #1f2023;
-  border: 1px solid #555;
-  color: white;
-  padding: 10px 12px;
-  border-radius: 8px;
-  transition: 0.15s;
-}
-
-.modal-input:focus {
-  border-color: #aa50e7;
-  outline: none;
-  box-shadow: 0 0 4px rgba(170, 80, 231, 0.4);
-}
-
-/* Przyciski */
-.modal-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-}
-
-.btn-cancel {
-  background: transparent;
-  color: #ccc;
-  border: 1px solid #555;
-  padding: 8px 16px;
-  border-radius: 8px;
-  transition: 0.15s;
-}
-
-.btn-cancel:hover {
-  background: #3a3b3f;
-  border-color: #777;
-}
-
-.btn-create {
-  background: #aa50e7;
-  color: white;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 8px;
-  transition: 0.15s;
-}
-
-.btn-create:hover {
-  background: #b964f1;
-}
-
-.btn-delete {
-  background: #dc3545;
-  color: white;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 8px;
-  transition: 0.15s;
-}
-
-.btn-delete:hover {
-  background: #bb2d3b;
-}
 </style>
