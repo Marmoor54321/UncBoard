@@ -18,6 +18,9 @@
   "dependencies": {
     "bootstrap": "^5.3.8",
     "bootstrap-icons": "^1.13.1",
+    "dompurify": "^3.3.0",
+    "github-markdown-css": "^5.8.1",
+    "markdown-it": "^14.1.0",
     "vue": "^3.5.22",
     "vuedraggable": "^4.1.0"
   },

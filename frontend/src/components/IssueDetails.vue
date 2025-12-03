@@ -53,8 +53,7 @@
 
           <div
             v-if="!isEditingBody"
-            v-html="issue.body ? issue.body : '<em class=\'text-secondary\'>No description provided</em>'"
-            class="markdown-body"
+            v-html="issue.body ? renderMarkdown(issue.body) : '<em class=\'text-secondary\'>No description provided</em>'"       class="markdown-body"
             style="background: #303236; padding: 1rem; border-radius: 8px; overflow-wrap: break-word;"
           ></div>
 
@@ -126,8 +125,9 @@
                 <div
                   class="comment-body p-3"
                   style="background-color: #303236; border-bottom-left-radius: 6px; border-bottom-right-radius: 6px; overflow-wrap: break-word;"
-                  v-html="item.body"
-                ></div>
+                  v-html="renderMarkdown(item.body)"
+                >
+              </div>
               </div>
             </div>
           </div>
@@ -237,9 +237,23 @@
 
 <script setup>
 import { ref, onMounted, watch } from 'vue'
+import MarkdownIt from 'markdown-it'
+import DOMPurify from 'dompurify'
+import 'github-markdown-css/github-markdown-dark.css'
 // Upewnij się, że ścieżka do UniversalDropdown jest poprawna
 import UniversalDropdown from './UniversalDropdown.vue' 
-
+const md = new MarkdownIt({
+  html: true,
+  linkify: true,
+  typographer: true
+})
+const renderMarkdown = (text) => {
+  if (!text) return ''
+  // 1. Parsowanie Markdown do HTML
+  const rawHtml = md.render(text)
+  // 2. Czyszczenie HTML (sanityzacja) dla bezpieczeństwa
+  return DOMPurify.sanitize(rawHtml)
+}
 const props = defineProps({
   issue: { type: Object, required: true },
   repoData: { type: Object, required: true }
