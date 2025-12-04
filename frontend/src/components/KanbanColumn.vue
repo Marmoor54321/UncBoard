@@ -1,29 +1,20 @@
 <template>
   <div class="kanban-col-wrapper">
     <div class="card h-100 d-flex flex-column" style="border: 1px solid #aa50e7">
-      <div
-        class="card-header bg-dark text-white text-uppercase small d-flex justify-content-between align-items-center"
-      >
+      <div class="card-header bg-dark text-white text-uppercase small d-flex justify-content-between align-items-center">
         <span>{{ column.name }}</span>
 
         <div class="btn-container">
-          <button class="primary-btn btn btn-sm text-white" @click="toggleAddIssue">+</button>
+          <button class="primary-btn btn btn-sm text-white" @click="$emit('add-issue', column)">+</button>
 
           <div class="dropdown position-relative">
-            <button class="primary-btn btn btn-sm text-white" @click="toggleMenu">⋮</button>
+            <button class="primary-btn btn btn-sm text-white" @click.stop="toggleMenu">⋮</button>
+            
             <div v-if="showMenu" class="menu shadow">
-              <button class="menu-item" @click="(onMoveLeft(column), toggleMenu())">
-                Move left
-              </button>
-              <button class="menu-item" @click="(onMoveRight(column), toggleMenu())">
-                Move right
-              </button>
-              <button class="menu-item" @click="(openRenameModal(column), toggleMenu())">
-                Rename
-              </button>
-              <button class="menu-item" @click="(openDeleteModal(column), toggleMenu())">
-                Delete
-              </button>
+              <button class="menu-item" @click="handleAction(() => onMoveLeft(column))">Move left</button>
+              <button class="menu-item" @click="handleAction(() => onMoveRight(column))">Move right</button>
+              <button class="menu-item" @click="handleAction(() => $emit('request-rename', column))">Rename</button>
+              <button class="menu-item" @click="handleAction(() => $emit('request-delete', column))">Delete</button>
             </div>
           </div>
         </div>
@@ -41,66 +32,28 @@
           class="dropzone"
           :scroll="scrollContainer"
           :scrollSensitivity="100"
-          ~~
           :scrollSpeed="15"
           :on-move-left="onMoveLeft"
           :on-move-right="onMoveRight"
         >
-        <template #item="{ element }">
-          <KanbanTaskCard 
-            :title="element.title"
-            :body="element.body"
-            :data-item-id="element.id" 
-            @click="openIssue(element)"
-          />
-        </template>        
+          <template #item="{ element }">
+            <KanbanTaskCard 
+              :title="element.title"
+              :body="element.body"
+              :data-item-id="element.id"
+              @click="openIssue(element)"
+            />
+          </template>
         </draggable>
       </div>
     </div>
   </div>
-
-  <Teleport to="body">
-    <BaseModal
-      :show="showModalRenameColumn"
-      default-title="Rename column"
-      @close="closeRenameModal"
-      @confirm="confirmRename"
-    >
-      <div class="modal-field">
-        <label>New name</label>
-        <input
-          v-model="newName"
-          type="text"
-          placeholder="e.g. Done"
-          class="modal-input"
-          @keyup.enter="confirmRename"
-        />
-      </div>
-    </BaseModal>
-  </Teleport>
-
-    <Teleport to="body">
-    <BaseModal
-      :show="showModalDeleteColumn"
-      default-title="Delete column?"
-      :is-delete="true"
-      @close="closeDeleteModal"
-      @confirm="confirmDelete"
-    >
-      <p class="text-white-50 mb-4">
-        Are you sure you want to delete the column
-        <span class="text-white">"{{ columnToDeleteName }}"</span>? <br />
-        All issues inside will be moved to the next available column.
-      </p>
-    </BaseModal>
-  </Teleport>
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue'
-import BaseModal from './Modals/BaseModal.vue'
-import KanbanTaskCard from './KanbanIssueCard.vue'
+import { ref, onMounted, onBeforeUnmount } from 'vue'
 import draggable from 'vuedraggable'
+import KanbanTaskCard from './KanbanIssueCard.vue' // Pamiętaj o imporcie
 
 const props = defineProps({
   column: Object,
@@ -111,16 +64,21 @@ const props = defineProps({
   openIssue: Function,
   onMoveLeft: Function,
   onMoveRight: Function,
-  deleteColumn: Function,
-  editColumn: Function,
 })
-const emit = defineEmits(['add-issue'])
+
+const emit = defineEmits(['add-issue', 'request-rename', 'request-delete'])
+
 const showMenu = ref(false)
+
 function toggleMenu() {
   showMenu.value = !showMenu.value
 }
 
-// Obsługa kliknięcia poza menu i poza modalem
+function handleAction(actionCallback) {
+  actionCallback()
+  showMenu.value = false
+}
+
 function handleClickOutside(e) {
   if (!e.target.closest('.dropdown')) {
     showMenu.value = false
@@ -129,75 +87,22 @@ function handleClickOutside(e) {
 
 onMounted(() => document.addEventListener('click', handleClickOutside))
 onBeforeUnmount(() => document.removeEventListener('click', handleClickOutside))
-
-// rename modal
-const showModalRenameColumn = ref(false)
-const newName = ref('')
-
-function openRenameModal(column) {
-  newName.value = column.name
-  showModalRenameColumn.value = true
-}
-
-function closeRenameModal() {
-  showModalRenameColumn.value = false
-  newName.value = ''
-}
-
-function confirmRename() {
-  const trimmedName = newName.value.trim()
-
-  if (!trimmedName || trimmedName === props.column.name) {
-    closeRenameModal()
-    return
-  }
-
-  props.editColumn(props.column.id || props.column._id, trimmedName) // Używamy _id lub id, zależnie od backendu
-  closeRenameModal()
-}
-
-// delete modal
-const showModalDeleteColumn = ref(false)
-const columnToDeleteName = ref('')
-const columnToDeleteId = ref(null)
-const columnToDeleteObject = ref(null)
-
-function openDeleteModal(column) {
-  columnToDeleteName.value = column.name
-  columnToDeleteId.value = column.id || column._id
-  columnToDeleteObject.value = column
-  showModalDeleteColumn.value = true
-}
-function closeDeleteModal() {
-  showModalDeleteColumn.value = false
-  columnToDeleteName.value = ''
-  columnToDeleteId.value = null
-  columnToDeleteObject.value = null
-}
-
-function confirmDelete() {
-  if (columnToDeleteObject.value) {
-    props.deleteColumn(columnToDeleteObject.value)
-  }
-  closeDeleteModal()
-}
-function toggleAddIssue() {
-  emit('add-issue', props.column)
-}
 </script>
 
 <style scoped>
 .kanban-col-wrapper {
-  flex: 0 0 auto;       
-  width: 320px;         
-  height: 100%; 
+  flex: 0 0 auto;
+  width: 320px;
+  height: 100%;
 }
+
 .btn-container {
   display: flex;
   align-items: center;
   justify-content: center;
 }
-.btn-container .primary-btn {
+
+.primary-btn {
   background-color: #2b2d31;
   border: none;
   color: white;
@@ -209,31 +114,22 @@ function toggleAddIssue() {
   line-height: 18px;
   padding: 0;
 }
-.btn-container button:hover {
+
+.primary-btn:hover {
   background-color: #3f4146;
 }
-.dropzone {
-  
-flex-grow: 1;           
-  overflow-y: auto;       
-  min-height: 0;          
-  height: 0;              
 
+.dropzone {
+  flex-grow: 1;
+  overflow-y: auto;
+  min-height: 0;
+  height: 0;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
   padding: 0.5rem;
-  
   scrollbar-width: thin;
-  scrollbar-color: #2b2d31;}
-
-
-.chosen {
-  background-color: #aa50e7 !important;
-  transform: scale(1.05);
-}
-.ghost {
-  opacity: 1;
+  scrollbar-color: #2b2d31 transparent;
 }
 
 .menu {
@@ -246,7 +142,7 @@ flex-grow: 1;
   display: flex;
   flex-direction: column;
   min-width: 120px;
-  z-index: 10;
+  z-index: 100; 
 }
 
 .menu-item {
@@ -258,28 +154,15 @@ flex-grow: 1;
   font-size: 14px;
   cursor: pointer;
 }
+
 .menu-item:hover {
   background-color: #3b3e42;
   color: white;
 }
-.rename-input {
-  width: 100%;
-  padding: 4px 8px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: #fff;
-  background-color: #3b3e42;
-  border: 1px solid #aa50e7;
-  border-radius: 4px;
-  outline: none;
-  transition: all 0.2s ease-in-out;
-  box-sizing: border-box;
-}
 
-.rename-input:focus {
-  background-color: #50545b;
-  border-color: #d16aff;
-  box-shadow: 0 0 4px rgba(170, 80, 231, 0.6);
+.ghost { opacity: 1; }
+.chosen {
+  background-color: #aa50e7 !important;
+  transform: scale(1.05);
 }
-
 </style>
