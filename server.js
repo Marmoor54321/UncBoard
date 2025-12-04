@@ -627,4 +627,36 @@ app.post("/api/github/issues/:owner/:repo/:number/comments", async (req, res) =>
   }
 });
 
+// Pobierz oś czasu issue (komentarze + wydarzenia)
+app.get("/api/github/issues/:owner/:repo/:number/timeline", async (req, res) => {
+  const token = req.session.token;
+  if (!token) return res.status(401).json({ message: "Not authenticated" });
+
+  const { owner, repo, number } = req.params;
+
+  try {
+    const headers = { 
+      Authorization: `token ${token}`,
+      Accept: "application/vnd.github+json"
+    };
+
+    const [commentsRes, eventsRes] = await Promise.all([
+      axios.get(`https://api.github.com/repos/${owner}/${repo}/issues/${number}/comments`, { headers }),
+      axios.get(`https://api.github.com/repos/${owner}/${repo}/issues/${number}/events`, { headers })
+    ]);
+
+    const comments = commentsRes.data;
+    const events = eventsRes.data;
+
+    const combined = [...comments, ...events];
+    combined.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+
+    res.json(combined);
+
+  } catch (err) {
+    console.error("Error fetching timeline:", err.response?.data || err.message);
+
+    res.status(err.response?.status || 500).json({ message: "Failed to fetch timeline" });
+  }
+});
 app.listen(3000, () => console.log("Server running on http://localhost:3000"));
