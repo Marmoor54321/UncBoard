@@ -104,15 +104,13 @@ function handleAddIssue(column) {
   flex-wrap: nowrap;
   overflow-x: auto;
   gap: 1rem;
-  align-items: stretch; /* Rozciągnij kolumny w pionie */
+  align-items: stretch; 
   
-  /* ZMIANA: Zamiast height: 100% dajemy flex-grow */
   flex-grow: 1; 
   
-  /* WAŻNE: min-height: 0 naprawia flexboxa w zagnieżdżeniu (szczególnie w Firefox) */
   min-height: 0; 
   
-  padding-bottom: 0.5rem; /* Opcjonalnie, lekki odstęp od dołu ekranu */
+  padding-bottom: 0.5rem; 
   
   scrollbar-width: thin;
   scrollbar-color: #2b2d31;

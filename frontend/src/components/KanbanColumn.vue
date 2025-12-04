@@ -46,18 +46,14 @@
           :on-move-left="onMoveLeft"
           :on-move-right="onMoveRight"
         >
-          <template #item="{ element }">
-            <div
-              class="issuebox mb-2 p-2 rounded"
-              :data-item-id="element.id"
-              @click="openIssue(element)"
-            >
-              <div class="issuetitle">
-                <strong>{{ element.title }}</strong>
-              </div>
-              <div class="issuebody small">{{ element.body }}</div>
-            </div>
-          </template>
+        <template #item="{ element }">
+          <KanbanTaskCard 
+            :title="element.title"
+            :body="element.body"
+            :data-item-id="element.id" 
+            @click="openIssue(element)"
+          />
+        </template>        
         </draggable>
       </div>
     </div>
@@ -103,6 +99,7 @@
 <script setup>
 import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import BaseModal from './Modals/BaseModal.vue'
+import KanbanTaskCard from './KanbanIssueCard.vue'
 import draggable from 'vuedraggable'
 
 const props = defineProps({
@@ -191,9 +188,9 @@ function toggleAddIssue() {
 
 <style scoped>
 .kanban-col-wrapper {
-  flex: 0 0 auto;       /* Nie kurcz się, nie rozciągaj automatycznie */
-  width: 320px;         /* Stała szerokość kolumny */
-  height: 100%; /* DODANE: Kolumna musi być pełnej wysokości */
+  flex: 0 0 auto;       
+  width: 320px;         
+  height: 100%; 
 }
 .btn-container {
   display: flex;
@@ -217,10 +214,10 @@ function toggleAddIssue() {
 }
 .dropzone {
   
-flex-grow: 1;           /* Zajmij całą wolną przestrzeń w karcie */
-  overflow-y: auto;       /* Scrolluj tylko ten element */
-  min-height: 0;          /* Zapobiega wypychaniu kontenera flex */
-  height: 0;              /* Hack dla flexboxa, żeby scroll działał poprawnie */
+flex-grow: 1;           
+  overflow-y: auto;       
+  min-height: 0;          
+  height: 0;              
 
   display: flex;
   flex-direction: column;
@@ -231,33 +228,12 @@ flex-grow: 1;           /* Zajmij całą wolną przestrzeń w karcie */
   scrollbar-color: #2b2d31;}
 
 
-.issuebox {
-  background-color: #3b3e42;
-  color: white;
-  padding: 10px;
-  margin-bottom: 10px;
-  border-radius: 5px;
-  box-shadow: 0 4px 4px rgba(0, 0, 0, 0.1);
-  cursor: grab;
-}
-.issuebox:hover {
-  background-color: #50545b;
-}
 .chosen {
   background-color: #aa50e7 !important;
   transform: scale(1.05);
 }
 .ghost {
   opacity: 1;
-}
-.issuebody {
-  margin-top: 5px;
-  font-size: 14px;
-  color: #d1d1d1;
-  max-height: 60px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  overflow-wrap: break-word;
 }
 
 .menu {
