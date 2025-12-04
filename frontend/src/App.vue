@@ -7,7 +7,7 @@
         :repos="repos"
         :selectedRepo="selectedRepo"
         :loginWithGithub="loginWithGithub"
-        :selectRepo="selectRepo"
+        :selectRepo="handleRepoSelect"
         :groupsList="groupsList"
         :expandedGroups="expandedGroups"
         :getRepoById="getRepoById"
@@ -18,8 +18,9 @@
       />
       <main
         ref="scrollContainer"
-        class="flex-grow-1 p-4 overflow-hidden d-flex flex-column" 
-        style="scrollbar-color: #303236 #1d1e20; min-width: 0"      >
+        class="flex-grow-1 p-4 overflow-hidden d-flex flex-column"
+        style="scrollbar-color: #303236 #1d1e20; min-width: 0"
+      >
         <KanbanBoard
           :selectedRepo="selectedRepo"
           :columns="columns"
@@ -71,15 +72,14 @@ import KanbanBoard from './components/KanbanBoard.vue'
 import AddIssueModal from './components/Issues/AddIssueModal.vue'
 import { addIssue } from './api/issues.js'
 
-
 async function handleIssueUpdate({ number, updates }) {
   try {
     await updateIssue(number, updates)
-    // The 'issue' prop passed to IssueDetails is reactive, 
-    // so updating the store inside updateIssue() will automatically 
+    // The 'issue' prop passed to IssueDetails is reactive,
+    // so updating the store inside updateIssue() will automatically
     // update the modal content and the card on the board.
   } catch (error) {
-    alert("Failed to update issue")
+    alert('Failed to update issue')
   }
 }
 // Inicjalizacja Routera
@@ -111,25 +111,20 @@ const {
   handleDeleteGroup,
   repoData,
   addIssueToBoard,
-  updateIssue
+  updateIssue,
 } = useGithubBoard()
 
 const showAddIssue = ref(false)
 const targetColumn = ref(null)
 
-// --- ZMIANA: Logic dla selectedIssue oparta na URL ---
-
 // 1. Computed property, która szuka issue na podstawie URL
 const selectedIssue = computed(() => {
   const issueId = route.params.issueId
-  if (!issueId) return null
+  if (!issueId || !issuesByColumn.value) return null
 
-  // Musimy przeszukać issuesByColumn, aby znaleźć obiekt issue pasujący do ID (lub number) z URL
-  // issuesByColumn to zazwyczaj obiekt { colId: [issues], colId2: [issues] }
   for (const colId in issuesByColumn.value) {
     const issues = issuesByColumn.value[colId]
-    // Porównujemy jako String, bo param z URL to string, a issue.number to zazwyczaj int
-    const found = issues.find((i) => String(i.number) === String(issueId))
+    const found = issues.find((i) => i.number == issueId)
     if (found) return found
   }
   return null
@@ -137,18 +132,69 @@ const selectedIssue = computed(() => {
 
 // 2. Funkcja otwierająca - teraz zmienia URL
 function openIssue(issue) {
-  // Zamiast ustawiać zmienną, pushujemy nowy stan do routera
-  // Zakładam, że issue.number to unikalny numer issue na GitHubie
-  router.push({ name: 'issue-details', params: { issueId: issue.number } })
+  router.push({
+    name: 'issue-details',
+    params: {
+      owner: route.params.owner,
+      repo: route.params.repo,
+      issueId: issue.number,
+    },
+  })
 }
 
 // 3. Funkcja zamykająca - czyści URL
 function closeIssuePanel() {
-  // Wracamy do głównego widoku (bez parametrów)
-  router.push({ name: 'board' })
+  router.push({
+    name: 'repo-board',
+    params: {
+      owner: route.params.owner,
+      repo: route.params.repo,
+    },
+  })
 }
 
-// --- Koniec zmian Routingowych ---
+const syncStateWithUrl = () => {
+  // Jeśli nie ma listy repozytoriów, nie mamy czego szukać. Czekamy.
+  if (!repos.value || repos.value.length === 0) return
+
+  const { owner, repo, issueId } = route.params
+
+  // Jeśli w URL nie ma parametrów repozytorium, nic nie robimy
+  if (!owner || !repo) return
+
+  // Szukamy repozytorium pasującego do URL
+  const repoFromUrl = repos.value.find((r) => r.owner.login === owner && r.name === repo)
+
+  // Jeśli znaleźliśmy repo i nie jest ono obecnie wybrane -> wybieramy je
+  if (repoFromUrl && selectedRepo.value?.id !== repoFromUrl.id) {
+    console.log('Synchronizacja: Ustawiam repo z URL:', repoFromUrl.full_name)
+    selectRepo(repoFromUrl)
+  }
+}
+watch(
+  () => [route.params.owner, route.params.repo],
+  () => {
+    syncStateWithUrl()
+  },
+)
+watch(
+  repos,
+  (newRepos) => {
+    if (newRepos && newRepos.length > 0) {
+      syncStateWithUrl()
+    }
+  },
+  { immediate: true },
+)
+const handleRepoSelect = (repo) => {
+  router.push({
+    name: 'repo-board',
+    params: {
+      owner: repo.owner.login,
+      repo: repo.name,
+    },
+  })
+}
 
 function showAddIssueModal(column) {
   targetColumn.value = column
