@@ -90,7 +90,7 @@
 <script setup>
 import { ref } from 'vue'
 import KanbanColumn from './KanbanColumn.vue'
-import BaseModal from './Modals/BaseModal.vue'
+import BaseModal from '../Modals/BaseModal.vue'
 
 const props = defineProps({
   selectedRepo: Object,

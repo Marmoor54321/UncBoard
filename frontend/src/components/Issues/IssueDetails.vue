@@ -289,9 +289,9 @@ import DOMPurify from 'dompurify'
 import 'github-markdown-css/github-markdown-dark.css'
 
 // Import komponentów dropdown (tak jak w AddIssueModal)
-import UniversalDropdown from './Dropdown/UniversalDropdown.vue'
-import DropdownSearch from './Dropdown/DropdownSearch.vue'
-import DropdownList from './Dropdown/DropdownList.vue'
+import UniversalDropdown from '../Dropdown/UniversalDropdown.vue'
+import DropdownSearch from '../Dropdown/DropdownSearch.vue'
+import DropdownList from '../Dropdown/DropdownList.vue'
 
 const md = new MarkdownIt({
   html: true,

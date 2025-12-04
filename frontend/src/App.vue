@@ -63,12 +63,12 @@
 
 <script setup>
 import { useGithubBoard } from '@/composables/useGithubBoard.js'
-import IssueDetails from '@/components/IssueDetails.vue'
+import IssueDetails from '@/components/Issues/IssueDetails.vue'
 import Header from '@/components/Header.vue'
 import Sidebar from '@/components/Sidebar/Sidebar.vue'
 import { ref, computed, watch } from 'vue' // Dodano computed i watch
 import { useRoute, useRouter } from 'vue-router' // Import routera
-import KanbanBoard from './components/KanbanBoard.vue'
+import KanbanBoard from './components/Kanban/KanbanBoard.vue'
 import AddIssueModal from './components/Issues/AddIssueModal.vue'
 import { addIssue } from './api/issues.js'
 
