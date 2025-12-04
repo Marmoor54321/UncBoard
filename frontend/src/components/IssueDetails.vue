@@ -347,16 +347,20 @@ const filteredLabels = computed(() => {
 const fetchTimelineData = async () => {
   loading.value = true
   timeline.value = []
+  
   try {
-    const [commentsRes, eventsRes] = await Promise.all([
-      fetch(props.issue.comments_url),
-      fetch(props.issue.events_url)
-    ])
-    const comments = commentsRes.ok ? await commentsRes.json() : []
-    const events = eventsRes.ok ? await eventsRes.json() : []
-    const combined = [...comments, ...events]
-    combined.sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
-    timeline.value = combined
+    const urlParts = props.issue.url.split('/')
+    const owner = urlParts[4]
+    const repo = urlParts[5]
+    const number = props.issue.number
+
+    const res = await axios.get(
+      `http://localhost:3000/api/github/issues/${owner}/${repo}/${number}/timeline`,
+      { withCredentials: true } 
+    )
+
+    timeline.value = res.data
+
   } catch (error) {
     console.error('Error fetching timeline:', error)
   } finally {
