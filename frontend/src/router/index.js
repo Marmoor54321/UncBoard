@@ -16,7 +16,7 @@ const routes = [
         path: 'issue/:issueId',
         name: 'issue-details',
         props: true,
-        component: () => import('@/components/IssueDetails.vue')
+        component: () => import('@/components/Issues/IssueDetails.vue')
       }
     ]
   }
