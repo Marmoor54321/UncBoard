@@ -11,9 +11,8 @@
       v-if="!isEditing"
       v-html="body ? renderMarkdown(body) : '<em class=\'text-secondary\'>No description provided</em>'"
       class="markdown-body"
-      style="background: #303236; padding: 1rem; border-radius: 8px; overflow-wrap: break-word;"
+      style="background: #303236; padding: 1rem; border-radius: 8px; overflow-wrap: break-word; height: auto;"
     ></div>
-
     <div v-else>
       <textarea
         v-model="tempBody"
@@ -31,7 +30,7 @@
 
 <script setup>
 import { ref } from 'vue'
-import { useMarkdown } from '../../composables/useMarkdown' // Import composable
+import { useMarkdown } from '../../composables/useMarkdown'
 import 'github-markdown-css/github-markdown-dark.css'
 
 const props = defineProps({ body: String })
@@ -58,7 +57,15 @@ const save = () => {
 </script>
 
 <style scoped>
-/* Te same style przycisków co w Header, można je wynieść do globalnych styli CSS */
 .btn-save { background: #aa50e7; color: white; border: none; padding: 5px 8px; border-radius: 8px; font-size: small;}
 .btn-cancel { background: transparent; color: #ccc; border: 1px solid #555; padding: 5px 8px; border-radius: 8px; font-size: small;}
+
+/* Dodajemy style dla obrazków wewnątrz v-html. 
+   Używamy :deep(), ponieważ content z v-html nie jest objęty scope'm zwykłego CSS.
+*/
+.markdown-body :deep(img) {
+  max-width: 100%;
+  height: auto;
+  display: block; /* Opcjonalnie: usuwa mały odstęp pod obrazkiem */
+}
 </style>
