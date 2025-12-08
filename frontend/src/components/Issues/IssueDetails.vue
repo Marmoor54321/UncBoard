@@ -95,7 +95,7 @@
                     {{ item.event == "assigned" || item.event == "unassigned" ? item.assigner.login : item.actor.login }}
                   </strong>
                   {{ getEventText(item) }}
-                  <span class="text-muted ms-1" style="font-size: 0.8rem">
+                  <span class="text-white ms-1" style="font-size: 0.8rem">
                     {{ formatDate(item.created_at) }}
                   </span>
                 </span>
@@ -130,7 +130,7 @@
           </div>
 
           <div class="border-top border-secondary pt-3 mt-3">
-            <h6 class="mb-2 text-secondary">Add a comment</h6>
+            <h6 class="mb-2 text-secondary text-white">Add a comment</h6>
             <textarea
               v-model="newCommentBody"
               class="form-control bg-dark text-white border-secondary mb-2"
@@ -560,5 +560,8 @@ onMounted(() => {
   display: inline-block;
   border: 1px solid rgba(255, 255, 255, 0.2);
   flex-shrink: 0;
+}
+textarea::placeholder {
+  color: #666;
 }
 </style>
