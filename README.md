@@ -21,4 +21,6 @@ Kanban UncBoard pozwala na przeglądanie i modyfikację issues z dowolnego repoz
 
 # 📸Zrzuty ekranu 
 
-<img width="1917" height="959" alt="image" src="https://github.com/user-attachments/assets/92ab2500-fed1-4987-8037-c413a14e2155" />
+<img width="1916" height="907" alt="image" src="https://github.com/user-attachments/assets/2420debe-7a51-4329-ad6f-172937f08d14" />
+
+<img width="1919" height="901" alt="image" src="https://github.com/user-attachments/assets/40695ba8-be13-4b3f-a1ae-ce753df6764b" />
