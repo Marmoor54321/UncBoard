@@ -1,14 +1,42 @@
 import { ref, computed } from 'vue'
 import axios from 'axios'
+// USUNIĘTO: import { useToast } from "vue-toastification";
+
+// --- GLOBAL STATE ---
+// Definiujemy to tutaj, tak jak resztę zmiennych, aby stan był zachowany
+const repos = ref([])
+const selectedRepo = ref(null)
+const columns = ref([])
+const issuesByColumn = ref({})
+const repoData = ref({ collaborators: [], labels: [], milestones: [] })
+
+// Nowy stan dla Alertu
+const alert = ref({
+  show: false,
+  message: '',
+  type: 'error' // 'error', 'success', 'warning'
+})
 
 export function useKanban() {
-  const repos = ref([])
-  const selectedRepo = ref(null)
-  const columns = ref([])
-  const issuesByColumn = ref({})
-  const repoData = ref({ collaborators: [], labels: [], milestones: [] })
   
-  // Drag and drop settings
+
+  function triggerAlert(message, type = 'error', timeout = 5000) {
+    alert.value = { show: true, message, type }
+    
+    if (timeout) {
+      setTimeout(() => {
+        if (alert.value.message === message) {
+          closeAlert()
+        }
+      }, timeout)
+    }
+  }
+
+  function closeAlert() {
+    alert.value.show = false
+    alert.value.message = ''
+  }
+
   const groups = { name: 'issues', pull: true, put: true }
 
   function getRepoById(id) {
@@ -21,15 +49,14 @@ export function useKanban() {
       repos.value = res?.data ?? []
     } catch (e) {
       console.error('Error loading repos:', e)
+      triggerAlert('Nie udało się pobrać repozytoriów', 'error')
     }
   }
 
   async function selectRepo(repo) {
     try {
-      // 1. Ensure default statuses exist
       await axios.post("http://localhost:3000/api/statuses/default", { repo_id: repo.id }, { withCredentials: true })
 
-      // 2. Fetch all necessary data in parallel
       const [statusesRes, issuesRes, collaboratorsRes, labelsRes, milestonesRes] = await Promise.all([
         axios.get(`http://localhost:3000/api/statuses/${repo.id}`, { withCredentials: true }),
         axios.get(`http://localhost:3000/api/github/issues/${repo.owner.login}/${repo.name}?repo_id=${repo.id}`, { withCredentials: true }),
@@ -38,7 +65,6 @@ export function useKanban() {
         axios.get(`http://localhost:3000/api/github/repos/milestones?owner=${repo.owner.login}&repo=${repo.name}`, { withCredentials: true }),
       ])
 
-      // 3. Update State
       repoData.value = {
         collaborators: collaboratorsRes.data,
         labels: labelsRes.data,
@@ -52,14 +78,16 @@ export function useKanban() {
         repo_id: repo.id
       }))
 
-      issuesByColumn.value = {}
-      columns.value.forEach(col => {
-        issuesByColumn.value[col.name] = issuesRes.data.filter(issue => issue.status === col.order)
-      })
-
+      const rawIssuesByColumn = {}
+      for (const s of statusesRes.data) {
+        rawIssuesByColumn[s.name] = issuesRes.data.filter(issue => issue.status === s.order)
+      }
+      
+      issuesByColumn.value = rawIssuesByColumn
       selectedRepo.value = repo
     } catch (error) {
       console.error("Error selecting repo:", error)
+      triggerAlert('Błąd podczas wybierania repozytorium', 'error')
     }
   }
 
@@ -67,13 +95,16 @@ export function useKanban() {
 
   async function addColumn(repoId, name, userId) {
     try {
+      
       const res = await axios.post("http://localhost:3000/api/statuses", { repo_id: repoId, name, user_id: userId }, { withCredentials: true })
       const newStatus = res.data
-      
+
       columns.value.push({ id: newStatus._id, name: newStatus.name, repo_id: newStatus.repo_id, order: newStatus.order })
       issuesByColumn.value[newStatus.name] = []
     } catch (err) {
-      alert(err.response?.data?.message || "Error creating column")
+      const message = err.response?.data?.message || err.message || "Nie udało się utworzyć kolumny";
+      
+      triggerAlert(message, 'error'); 
     }
   }
 
@@ -83,28 +114,31 @@ export function useKanban() {
         data: { repo_id: column.repo_id }, withCredentials: true
       })
       
-      // Update UI: Move issues locally
       const { targetStatusId } = res.data
       const targetCol = columns.value.find(c => c.id === targetStatusId)
       
-      if (targetCol) {
-        if (!issuesByColumn.value[targetCol.name]) issuesByColumn.value[targetCol.name] = []
-        issuesByColumn.value[targetCol.name].push(...(issuesByColumn.value[column.name] || []))
+       if (targetCol) {
+        issuesByColumn.value[targetCol.name] ??= []
+        
+        const issuesToMove = issuesByColumn.value[column.name] ?? []
+        issuesByColumn.value[targetCol.name].push(...issuesToMove)
       }
       
       delete issuesByColumn.value[column.name]
       columns.value = columns.value.filter(c => c.id !== column.id)
     } catch (err) {
-      alert(err.response?.data || "Error deleting column")
+      const msg = err.response?.data.message || "Error deleting column";
+      triggerAlert(msg, 'error');
     }
   }
 
   async function editColumn(columnId, newName) {
     try {
       await axios.put(`http://localhost:3000/api/statuses/${columnId}`, { name: newName }, { withCredentials: true })
-      if (selectedRepo.value) await selectRepo(selectedRepo.value) // Refresh to be safe or update local state
+      if (selectedRepo.value) await selectRepo(selectedRepo.value) 
     } catch (err) {
       console.error(err)
+      triggerAlert('Nie udało się edytować kolumny', 'error')
     }
   }
 
@@ -135,13 +169,12 @@ export function useKanban() {
       }, { withCredentials: true })
     } catch (err) {
       console.error("Drag sync error", err)
+      triggerAlert('Błąd synchronizacji statusu zadania', 'error')
     }
   }
 
   function addIssueToBoard(newIssue) {
-    if (issuesByColumn.value[newIssue.status]) {
-      issuesByColumn.value[newIssue.status].unshift(newIssue)
-    }
+    issuesByColumn.value[newIssue.status]?.unshift(newIssue)
   }
 
   async function updateIssue(issueNumber, updates) {
@@ -151,15 +184,15 @@ export function useKanban() {
     try {
       const res = await axios.patch(`http://localhost:3000/api/github/issues/${owner.login}/${name}/${issueNumber}`, updates, { withCredentials: true })
       
-      // Update local state reactivity
-      for (const colName in issuesByColumn.value) {
-        const index = issuesByColumn.value[colName].findIndex(i => i.number === issueNumber)
-        if (index !== -1) {
-          Object.assign(issuesByColumn.value[colName][index], res.data)
-          break
-        }
+      for (const col of Object.values(issuesByColumn.value)) {
+        const issue = col.find(i => i.number === issueNumber)
+        if (!issue) continue
+        
+        Object.assign(issue, res.data)
+        break
       }
     } catch (err) {
+      triggerAlert('Nie udało się zaktualizować zadania', 'error')
       throw err
     }
   }
@@ -170,7 +203,9 @@ export function useKanban() {
     columns,
     issuesByColumn,
     repoData,
-    groups, // draggable options
+    groups,
+    alert, 
+    closeAlert, 
     loadRepos,
     selectRepo,
     getRepoById,

@@ -1,8 +1,9 @@
 import { ref } from 'vue'
 import axios from 'axios'
 
+const groupsList = ref([])
+
 export function useGroups(user) {
-  const groupsList = ref([])
 
   async function loadGroups() {
     if (!user.value) return

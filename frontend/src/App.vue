@@ -6,12 +6,10 @@
       <Sidebar
         :user="user"
         :loginWithGithub="loginWithGithub"
-        
         :repos="repos"
         :selectedRepo="selectedRepo"
         :getRepoById="getRepoById"
         :selectRepo="handleRepoSelect"
-        
         :groupsList="groupsList"
         @addRepoToGroup="handleAddRepoToGroup"
         @deleteRepoFromGroup="handleDeleteRepoFromGroup"
@@ -21,9 +19,20 @@
 
       <main
         ref="scrollContainer"
-        class="flex-grow-1 p-4 overflow-hidden d-flex flex-column"
+        class="flex-grow-1 p-4 overflow-hidden d-flex flex-column position-relative" 
         style="scrollbar-color: #303236 #1d1e20; min-width: 0"
       >
+        <transition name="alert-fade">
+          <div v-if="alert.show" class="custom-alert" :class="`alert-${alert.type}`">
+            <div class="alert-content">
+              <span v-if="alert.type === 'error'" class="alert-icon">⚠️</span>
+              <span v-else class="alert-icon">✅</span>
+              
+              <span class="alert-message">{{ alert.message }}</span>
+            </div>
+            <button class="alert-close" @click="closeAlert">&times;</button>
+          </div>
+        </transition>
         <KanbanBoard
           :selectedRepo="selectedRepo"
           :columns="columns"
@@ -31,7 +40,6 @@
           :scrollContainer="scrollContainer"
           :groups="dragOptions"
           :repoData="repoData"
-          
           :onDragEnd="onDragEnd"
           :openIssue="openIssue"
           :onMoveLeft="onMoveLeft"
@@ -39,7 +47,6 @@
           :delete-column="deleteColumn"
           :edit-column="editColumn"
           :add-column="addColumn"
-          
           @add-issue="showAddIssueModal"
         />
 
@@ -91,7 +98,7 @@ const router = useRouter()
 // 1. Auth & User
 const { user, loginWithGithub, loadUser } = useAuth()
 
-// 2. Groups (Dependent on User)
+// 2. Groups
 const { 
   groupsList, loadGroups, 
   handleAddGroup, handleDeleteGroup, 
@@ -102,6 +109,8 @@ const {
 const {
   repos, selectedRepo, columns, issuesByColumn, repoData, 
   groups: dragOptions, 
+  alert,         
+  closeAlert,    
   loadRepos, selectRepo, getRepoById,
   onDragEnd, onMoveLeft, onMoveRight, 
   addColumn, deleteColumn, editColumn, 
@@ -127,7 +136,6 @@ const selectedIssue = computed(() => {
 
 // --- ACTIONS ---
 
-// Navigation
 function openIssue(issue) {
   router.push({
     name: 'issue-details',
@@ -149,12 +157,11 @@ const handleRepoSelect = (repo) => {
   })
 }
 
-// Issue Management
 async function handleIssueUpdate({ number, updates }) {
   try {
     await updateIssue(number, updates)
   } catch (error) {
-    alert('Failed to update issue')
+    console.error('Issue update failed locally', error)
   }
 }
 
@@ -176,15 +183,12 @@ function handleAddIssueSubmit(data) {
 }
 
 // --- INITIALIZATION & WATCHERS ---
-
 const syncStateWithUrl = () => {
   if (!repos.value.length) return
   const { owner, repo } = route.params
   if (!owner || !repo) return
 
   const repoFromUrl = repos.value.find((r) => r.owner.login === owner && r.name === repo)
-  
-  // Only select if it's different to prevent loops/re-renders
   if (repoFromUrl && selectedRepo.value?.id !== repoFromUrl.id) {
     selectRepo(repoFromUrl)
   }
@@ -197,10 +201,8 @@ onMounted(async () => {
   }
 })
 
-// Watch for URL changes to switch repo
 watch(() => [route.params.owner, route.params.repo], syncStateWithUrl)
 
-// Watch for Repo load to sync initial URL
 watch(repos, (newRepos) => {
   if (newRepos.length > 0) syncStateWithUrl()
 })
@@ -208,6 +210,70 @@ watch(repos, (newRepos) => {
 </script>
 
 <style scoped>
+/* --- STYL ALERTA --- */
+.custom-alert {
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  
+  min-width: 300px;
+  padding: 12px 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  font-weight: 500;
+  backdrop-filter: blur(10px);
+}
+
+.alert-content {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.alert-error {
+  background-color: rgba(220, 53, 69, 0.9); 
+  color: white;
+  border: 1px solid #b02a37;
+}
+
+.alert-success {
+  background-color: rgba(25, 135, 84, 0.9); 
+  color: white;
+  border: 1px solid #146c43;
+}
+
+.alert-close {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 0 0 0 15px;
+  line-height: 1;
+  opacity: 0.8;
+}
+
+.alert-close:hover {
+  opacity: 1;
+}
+
+.alert-fade-enter-active,
+.alert-fade-leave-active {
+  transition: all 0.3s ease;
+}
+
+.alert-fade-enter-from,
+.alert-fade-leave-to {
+  opacity: 0;
+  transform: translate(-50%, -20px);
+}
+
 .slide-enter-active, .slide-leave-active { transition: all 0.2s ease; }
 .slide-enter-from, .slide-leave-to { opacity: 0; }
 
