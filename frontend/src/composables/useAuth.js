@@ -1,11 +1,8 @@
 import { ref } from 'vue'
 import axios from 'axios'
-
+import { getApiBaseUrl } from '../api/getApiBaseUrl.js'
 const user = ref(null)
 
-export const getApiBaseUrl = () => {
-  return import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3000'
-}
 
 
 export function useAuth() {
@@ -14,9 +11,10 @@ export function useAuth() {
   function loginWithGithub() {
     window.location.href = `${apiBase}/auth/github`
   }
+
   async function loadUser() {
     try {
-      const res = await axios.get('http://localhost:3000/api/github/user', { withCredentials: true })
+      const res = await axios.get(`${apiBase}/api/github/user`, { withCredentials: true })
       user.value = res.data ?? null
       return user.value
     } catch (e) {

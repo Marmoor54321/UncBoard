@@ -1,14 +1,16 @@
 import { ref } from 'vue'
 import axios from 'axios'
+import { getApiBaseUrl } from '../api/getApiBaseUrl.js' 
 
 const groupsList = ref([])
 
 export function useGroups(user) {
+  const apiBase = getApiBaseUrl()
 
   async function loadGroups() {
     if (!user.value) return
     try {
-      const res = await axios.get(`http://localhost:3000/api/groups/${user.value._id}`, { withCredentials: true })
+      const res = await axios.get(`${apiBase}/api/groups/${user.value._id}`, { withCredentials: true })
       groupsList.value = res.data
     } catch (e) {
       console.error("Error loading groups:", e)
@@ -16,7 +18,7 @@ export function useGroups(user) {
   }
 
   async function handleAddRepoToGroup({ repoId, groupId }) {
-    await fetch(`http://localhost:3000/api/group/${groupId}/add-repo`, {
+    await fetch(`${apiBase}/api/group/${groupId}/add-repo`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ repo_id: repoId })
@@ -25,7 +27,7 @@ export function useGroups(user) {
   }
 
   async function handleDeleteRepoFromGroup({ repoId, groupId }) {
-    await fetch(`http://localhost:3000/api/group/${groupId}/remove-repo`, {
+    await fetch(`${apiBase}/api/group/${groupId}/remove-repo`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ repo_id: repoId })
@@ -34,7 +36,7 @@ export function useGroups(user) {
   }
 
   async function handleAddGroup({ name, created_by }) {
-    await fetch(`http://localhost:3000/api/group/create`, {
+    await fetch(`${apiBase}/api/group/create`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name, created_by })
@@ -43,7 +45,7 @@ export function useGroups(user) {
   }
 
   async function handleDeleteGroup({ groupId }) {
-    await fetch(`http://localhost:3000/api/group/${groupId}/delete`, { method: "DELETE" })
+    await fetch(`${apiBase}/api/group/${groupId}/delete`, { method: "DELETE" })
     await loadGroups()
   }
 

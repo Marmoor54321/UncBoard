@@ -1,28 +1,24 @@
 import { ref, computed } from 'vue'
 import axios from 'axios'
-// USUNIĘTO: import { useToast } from "vue-toastification";
+import { getApiBaseUrl } from '../api/getApiBaseUrl.js'
 
-// --- GLOBAL STATE ---
-// Definiujemy to tutaj, tak jak resztę zmiennych, aby stan był zachowany
 const repos = ref([])
 const selectedRepo = ref(null)
 const columns = ref([])
 const issuesByColumn = ref({})
 const repoData = ref({ collaborators: [], labels: [], milestones: [] })
 
-// Nowy stan dla Alertu
 const alert = ref({
   show: false,
   message: '',
-  type: 'error' // 'error', 'success', 'warning'
+  type: 'error'
 })
 
 export function useKanban() {
-  
+  const apiBase = getApiBaseUrl()
 
   function triggerAlert(message, type = 'error', timeout = 5000) {
     alert.value = { show: true, message, type }
-    
     if (timeout) {
       setTimeout(() => {
         if (alert.value.message === message) {
@@ -45,7 +41,7 @@ export function useKanban() {
 
   async function loadRepos() {
     try {
-      const res = await axios.get('http://localhost:3000/api/github/repos', { withCredentials: true })
+      const res = await axios.get(`${apiBase}/api/github/repos`, { withCredentials: true })
       repos.value = res?.data ?? []
     } catch (e) {
       console.error('Error loading repos:', e)
@@ -55,14 +51,14 @@ export function useKanban() {
 
   async function selectRepo(repo) {
     try {
-      await axios.post("http://localhost:3000/api/statuses/default", { repo_id: repo.id }, { withCredentials: true })
+      await axios.post(`${apiBase}/api/statuses/default`, { repo_id: repo.id }, { withCredentials: true })
 
       const [statusesRes, issuesRes, collaboratorsRes, labelsRes, milestonesRes] = await Promise.all([
-        axios.get(`http://localhost:3000/api/statuses/${repo.id}`, { withCredentials: true }),
-        axios.get(`http://localhost:3000/api/github/issues/${repo.owner.login}/${repo.name}?repo_id=${repo.id}`, { withCredentials: true }),
-        axios.get(`http://localhost:3000/api/github/repos/collaborators?owner=${repo.owner.login}&repo=${repo.name}`, { withCredentials: true }),
-        axios.get(`http://localhost:3000/api/github/repos/labels?owner=${repo.owner.login}&repo=${repo.name}`, { withCredentials: true }),
-        axios.get(`http://localhost:3000/api/github/repos/milestones?owner=${repo.owner.login}&repo=${repo.name}`, { withCredentials: true }),
+        axios.get(`${apiBase}/api/statuses/${repo.id}`, { withCredentials: true }),
+        axios.get(`${apiBase}/api/github/issues/${repo.owner.login}/${repo.name}?repo_id=${repo.id}`, { withCredentials: true }),
+        axios.get(`${apiBase}/api/github/repos/collaborators?owner=${repo.owner.login}&repo=${repo.name}`, { withCredentials: true }),
+        axios.get(`${apiBase}/api/github/repos/labels?owner=${repo.owner.login}&repo=${repo.name}`, { withCredentials: true }),
+        axios.get(`${apiBase}/api/github/repos/milestones?owner=${repo.owner.login}&repo=${repo.name}`, { withCredentials: true }),
       ])
 
       repoData.value = {
@@ -91,26 +87,23 @@ export function useKanban() {
     }
   }
 
-  // --- COLUMN ACTIONS ---
 
   async function addColumn(repoId, name, userId) {
     try {
-      
-      const res = await axios.post("http://localhost:3000/api/statuses", { repo_id: repoId, name, user_id: userId }, { withCredentials: true })
+      const res = await axios.post(`${apiBase}/api/statuses`, { repo_id: repoId, name, user_id: userId }, { withCredentials: true })
       const newStatus = res.data
 
       columns.value.push({ id: newStatus._id, name: newStatus.name, repo_id: newStatus.repo_id, order: newStatus.order })
       issuesByColumn.value[newStatus.name] = []
     } catch (err) {
       const message = err.response?.data?.message || err.message || "Nie udało się utworzyć kolumny";
-      
       triggerAlert(message, 'error'); 
     }
   }
 
   async function deleteColumn(column) {
     try {
-      const res = await axios.delete(`http://localhost:3000/api/statuses/${column.id}`, {
+      const res = await axios.delete(`${apiBase}/api/statuses/${column.id}`, {
         data: { repo_id: column.repo_id }, withCredentials: true
       })
       
@@ -119,7 +112,6 @@ export function useKanban() {
       
        if (targetCol) {
         issuesByColumn.value[targetCol.name] ??= []
-        
         const issuesToMove = issuesByColumn.value[column.name] ?? []
         issuesByColumn.value[targetCol.name].push(...issuesToMove)
       }
@@ -134,7 +126,7 @@ export function useKanban() {
 
   async function editColumn(columnId, newName) {
     try {
-      await axios.put(`http://localhost:3000/api/statuses/${columnId}`, { name: newName }, { withCredentials: true })
+      await axios.put(`${apiBase}/api/statuses/${columnId}`, { name: newName }, { withCredentials: true })
       if (selectedRepo.value) await selectRepo(selectedRepo.value) 
     } catch (err) {
       console.error(err)
@@ -144,14 +136,13 @@ export function useKanban() {
 
   async function moveColumn(column, direction) {
     try {
-      await axios.put(`http://localhost:3000/api/statuses/${column.repo_id}/${column.id}/move`, { direction }, { withCredentials: true })
+      await axios.put(`${apiBase}/api/statuses/${column.repo_id}/${column.id}/move`, { direction }, { withCredentials: true })
       if (selectedRepo.value) await selectRepo(selectedRepo.value)
     } catch (err) {
       console.error("Error moving column", err)
     }
   }
 
-  // --- ISSUE ACTIONS ---
 
   async function onDragEnd(event) {
     const { item, to } = event
@@ -162,7 +153,7 @@ export function useKanban() {
     if (!newStatus) return
 
     try {
-      await axios.put("http://localhost:3000/api/issue-status", {
+      await axios.put(`${apiBase}/api/issue-status`, {
         issue_id: parseInt(issueId),
         repo_id: selectedRepo.value.id,
         status_id: newStatus.id
@@ -182,7 +173,7 @@ export function useKanban() {
     const { owner, name } = selectedRepo.value
     
     try {
-      const res = await axios.patch(`http://localhost:3000/api/github/issues/${owner.login}/${name}/${issueNumber}`, updates, { withCredentials: true })
+      const res = await axios.patch(`${apiBase}/api/github/issues/${owner.login}/${name}/${issueNumber}`, updates, { withCredentials: true })
       
       for (const col of Object.values(issuesByColumn.value)) {
         const issue = col.find(i => i.number === issueNumber)
