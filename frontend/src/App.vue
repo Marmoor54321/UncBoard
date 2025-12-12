@@ -2,31 +2,44 @@
   <div class="container-fluid vh-100 d-flex flex-column p-0" style="background-color: #1d1e20">
     <Header />
     <div class="flex-grow-1 d-flex overflow-hidden">
+      
       <Sidebar
         :user="user"
+        :loginWithGithub="loginWithGithub"
         :repos="repos"
         :selectedRepo="selectedRepo"
-        :loginWithGithub="loginWithGithub"
+        :getRepoById="getRepoById"
         :selectRepo="handleRepoSelect"
         :groupsList="groupsList"
-        :expandedGroups="expandedGroups"
-        :getRepoById="getRepoById"
         @addRepoToGroup="handleAddRepoToGroup"
         @deleteRepoFromGroup="handleDeleteRepoFromGroup"
         @addGroup="handleAddGroup"
         @deleteGroup="handleDeleteGroup"
       />
+
       <main
         ref="scrollContainer"
-        class="flex-grow-1 p-4 overflow-hidden d-flex flex-column"
+        class="flex-grow-1 p-4 overflow-hidden d-flex flex-column position-relative" 
         style="scrollbar-color: #303236 #1d1e20; min-width: 0"
       >
+        <transition name="alert-fade">
+          <div v-if="alert.show" class="custom-alert" :class="`alert-${alert.type}`">
+            <div class="alert-content">
+              <span v-if="alert.type === 'error'" class="alert-icon">⚠️</span>
+              <span v-else class="alert-icon">✅</span>
+              
+              <span class="alert-message">{{ alert.message }}</span>
+            </div>
+            <button class="alert-close" @click="closeAlert">&times;</button>
+          </div>
+        </transition>
         <KanbanBoard
           :selectedRepo="selectedRepo"
           :columns="columns"
           :issuesByColumn="issuesByColumn"
           :scrollContainer="scrollContainer"
-          :groups="groups"
+          :groups="dragOptions"
+          :repoData="repoData"
           :onDragEnd="onDragEnd"
           :openIssue="openIssue"
           :onMoveLeft="onMoveLeft"
@@ -40,10 +53,10 @@
         <transition name="slide">
           <IssueDetails
             v-if="selectedIssue"
+            class="details-panel"
             :issue="selectedIssue"
             :repo-data="repoData"
             @close="closeIssuePanel"
-            class="details-panel"
             @update-issue="handleIssueUpdate"
           />
         </transition>
@@ -62,138 +75,94 @@
 </template>
 
 <script setup>
-import { useGithubBoard } from '@/composables/useGithubBoard.js'
-import IssueDetails from '@/components/Issues/IssueDetails.vue'
+import { ref, computed, watch, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+
+// Components
 import Header from '@/components/Header.vue'
 import Sidebar from '@/components/Sidebar/Sidebar.vue'
-import { ref, computed, watch } from 'vue' // Dodano computed i watch
-import { useRoute, useRouter } from 'vue-router' // Import routera
 import KanbanBoard from './components/Kanban/KanbanBoard.vue'
+import IssueDetails from '@/components/Issues/IssueDetails.vue'
 import AddIssueModal from './components/Issues/AddIssueModal.vue'
-import { addIssue } from './api/issues.js'
 
-async function handleIssueUpdate({ number, updates }) {
-  try {
-    await updateIssue(number, updates)
-    // The 'issue' prop passed to IssueDetails is reactive,
-    // so updating the store inside updateIssue() will automatically
-    // update the modal content and the card on the board.
-  } catch (error) {
-    alert('Failed to update issue')
-  }
-}
-// Inicjalizacja Routera
+// API & Composables
+import { addIssue } from './api/issues.js'
+import { useAuth } from '@/composables/useAuth.js'
+import { useGroups } from '@/composables/useGroups.js'
+import { useKanban } from '@/composables/useKanban.js'
+
+// --- SETUP COMPOSABLES ---
 const route = useRoute()
 const router = useRouter()
 
-const {
-  user,
-  repos,
-  selectedRepo,
-  scrollContainer,
-  columns,
-  issuesByColumn,
-  loginWithGithub,
-  selectRepo,
-  onDragEnd,
-  groups,
-  onMoveLeft,
-  onMoveRight,
-  deleteColumn,
-  editColumn,
-  addColumn,
-  groupsList,
-  expandedGroups,
-  getRepoById,
-  handleAddRepoToGroup,
-  handleDeleteRepoFromGroup,
-  handleAddGroup,
-  handleDeleteGroup,
-  repoData,
-  addIssueToBoard,
-  updateIssue,
-} = useGithubBoard()
+// 1. Auth & User
+const { user, loginWithGithub, loadUser } = useAuth()
 
+// 2. Groups
+const { 
+  groupsList, loadGroups, 
+  handleAddGroup, handleDeleteGroup, 
+  handleAddRepoToGroup, handleDeleteRepoFromGroup 
+} = useGroups(user)
+
+// 3. Kanban & Repos
+const {
+  repos, selectedRepo, columns, issuesByColumn, repoData, 
+  groups: dragOptions, 
+  alert,         
+  closeAlert,    
+  loadRepos, selectRepo, getRepoById,
+  onDragEnd, onMoveLeft, onMoveRight, 
+  addColumn, deleteColumn, editColumn, 
+  addIssueToBoard, updateIssue
+} = useKanban()
+
+// --- UI STATE ---
+const scrollContainer = ref(null)
 const showAddIssue = ref(false)
 const targetColumn = ref(null)
 
-// 1. Computed property, która szuka issue na podstawie URL
+// --- COMPUTED: URL SYNC ---
 const selectedIssue = computed(() => {
   const issueId = route.params.issueId
   if (!issueId || !issuesByColumn.value) return null
 
   for (const colId in issuesByColumn.value) {
-    const issues = issuesByColumn.value[colId]
-    const found = issues.find((i) => i.number == issueId)
+    const found = issuesByColumn.value[colId].find((i) => i.number == issueId)
     if (found) return found
   }
   return null
 })
 
-// 2. Funkcja otwierająca - teraz zmienia URL
+// --- ACTIONS ---
+
 function openIssue(issue) {
   router.push({
     name: 'issue-details',
-    params: {
-      owner: route.params.owner,
-      repo: route.params.repo,
-      issueId: issue.number,
-    },
+    params: { owner: route.params.owner, repo: route.params.repo, issueId: issue.number },
   })
 }
 
-// 3. Funkcja zamykająca - czyści URL
 function closeIssuePanel() {
   router.push({
     name: 'repo-board',
-    params: {
-      owner: route.params.owner,
-      repo: route.params.repo,
-    },
+    params: { owner: route.params.owner, repo: route.params.repo },
   })
 }
 
-const syncStateWithUrl = () => {
-  // Jeśli nie ma listy repozytoriów, nie mamy czego szukać. Czekamy.
-  if (!repos.value || repos.value.length === 0) return
-
-  const { owner, repo, issueId } = route.params
-
-  // Jeśli w URL nie ma parametrów repozytorium, nic nie robimy
-  if (!owner || !repo) return
-
-  // Szukamy repozytorium pasującego do URL
-  const repoFromUrl = repos.value.find((r) => r.owner.login === owner && r.name === repo)
-
-  // Jeśli znaleźliśmy repo i nie jest ono obecnie wybrane -> wybieramy je
-  if (repoFromUrl && selectedRepo.value?.id !== repoFromUrl.id) {
-    console.log('Synchronizacja: Ustawiam repo z URL:', repoFromUrl.full_name)
-    selectRepo(repoFromUrl)
-  }
-}
-watch(
-  () => [route.params.owner, route.params.repo],
-  () => {
-    syncStateWithUrl()
-  },
-)
-watch(
-  repos,
-  (newRepos) => {
-    if (newRepos && newRepos.length > 0) {
-      syncStateWithUrl()
-    }
-  },
-  { immediate: true },
-)
 const handleRepoSelect = (repo) => {
   router.push({
     name: 'repo-board',
-    params: {
-      owner: repo.owner.login,
-      repo: repo.name,
-    },
+    params: { owner: repo.owner.login, repo: repo.name },
   })
+}
+
+async function handleIssueUpdate({ number, updates }) {
+  try {
+    await updateIssue(number, updates)
+  } catch (error) {
+    console.error('Issue update failed locally', error)
+  }
 }
 
 function showAddIssueModal(column) {
@@ -204,59 +173,118 @@ function showAddIssueModal(column) {
 function handleAddIssueSubmit(data) {
   addIssue(selectedRepo, data, targetColumn)
     .then((newIssue) => {
-      if (newIssue) {
-        addIssueToBoard(newIssue)
-      }
+      if (newIssue) addIssueToBoard(newIssue)
     })
-    .catch((error) => {
-      console.error('Failed to add issue to board:', error)
-    })
+    .catch((error) => console.error('Failed to add issue:', error))
     .finally(() => {
       showAddIssue.value = false
       targetColumn.value = null
     })
 }
+
+// --- INITIALIZATION & WATCHERS ---
+const syncStateWithUrl = () => {
+  if (!repos.value.length) return
+  const { owner, repo } = route.params
+  if (!owner || !repo) return
+
+  const repoFromUrl = repos.value.find((r) => r.owner.login === owner && r.name === repo)
+  if (repoFromUrl && selectedRepo.value?.id !== repoFromUrl.id) {
+    selectRepo(repoFromUrl)
+  }
+}
+
+onMounted(async () => {
+  await loadUser()
+  if (user.value) {
+    await Promise.all([loadRepos(), loadGroups()])
+  }
+})
+
+watch(() => [route.params.owner, route.params.repo], syncStateWithUrl)
+
+watch(repos, (newRepos) => {
+  if (newRepos.length > 0) syncStateWithUrl()
+})
+
 </script>
 
 <style scoped>
-/* Twoje style bez zmian */
-.slide-enter-active,
-.slide-leave-active {
-  transition: all 0.2s ease;
+/* --- STYL ALERTA --- */
+.custom-alert {
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  
+  min-width: 300px;
+  padding: 12px 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  font-weight: 500;
+  backdrop-filter: blur(10px);
 }
-.slide-enter-from,
-.slide-leave-to {
+
+.alert-content {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.alert-error {
+  background-color: rgba(220, 53, 69, 0.9); 
+  color: white;
+  border: 1px solid #b02a37;
+}
+
+.alert-success {
+  background-color: rgba(25, 135, 84, 0.9); 
+  color: white;
+  border: 1px solid #146c43;
+}
+
+.alert-close {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 0 0 0 15px;
+  line-height: 1;
+  opacity: 0.8;
+}
+
+.alert-close:hover {
+  opacity: 1;
+}
+
+.alert-fade-enter-active,
+.alert-fade-leave-active {
+  transition: all 0.3s ease;
+}
+
+.alert-fade-enter-from,
+.alert-fade-leave-to {
   opacity: 0;
+  transform: translate(-50%, -20px);
 }
+
+.slide-enter-active, .slide-leave-active { transition: all 0.2s ease; }
+.slide-enter-from, .slide-leave-to { opacity: 0; }
 
 .details-panel {
-  position: absolute;
-  right: 0;
-  top: 0;
-  width: 67%;
-  height: 100%;
-  z-index: 10;
-  box-shadow: -3px 0 10px rgba(0, 0, 0, 0.5);
-  background-color: #1d1e20; /* Ważne: tło musi być nieprzezroczyste */
+  position: absolute; right: 0; top: 0; width: 67%; height: 100%;
+  z-index: 10; box-shadow: -3px 0 10px rgba(0, 0, 0, 0.5);
+  background-color: #1d1e20;
 }
 
-.modal-pop-enter-active,
-.modal-pop-leave-active {
-  transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.modal-pop-enter-from,
-.modal-pop-leave-to {
-  opacity: 0;
-}
-
-.modal-pop-enter-active :deep(.modal-window),
-.modal-pop-leave-active :deep(.modal-window) {
-  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.modal-pop-enter-from :deep(.modal-window),
-.modal-pop-leave-to :deep(.modal-window) {
-  transform: scale(0.96);
-}
+.modal-pop-enter-active, .modal-pop-leave-active { transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1); }
+.modal-pop-enter-from, .modal-pop-leave-to { opacity: 0; }
+.modal-pop-enter-active :deep(.modal-window), .modal-pop-leave-active :deep(.modal-window) { transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1); }
+.modal-pop-enter-from :deep(.modal-window), .modal-pop-leave-to :deep(.modal-window) { transform: scale(0.96); }
 </style>
