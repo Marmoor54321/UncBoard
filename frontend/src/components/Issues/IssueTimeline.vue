@@ -49,7 +49,7 @@
               <div class="dropdown-item-custom" @click="startEdit(item)">
                 <i class="bi bi-pencil me-2"></i> Edit
               </div>
-              <div class="dropdown-item-custom text-danger" @click="confirmDelete(item.id)">
+              <div class="dropdown-item-custom text-danger" @click="openDeleteModal(item.id)">
                 <i class="bi bi-trash me-2"></i> Delete
               </div>
             </div>
@@ -77,11 +77,27 @@
 
     </div>
   </div>
+
+  <Teleport to="body">
+    <BaseModal
+      :show="showDeleteModal"
+      default-title="Delete comment?"
+      :is-delete="true"
+      @close="closeDeleteModal"
+      @confirm="handleDeleteConfirm"
+    >
+      <p class="text-white-50 mb-4">
+        Are you sure you want to delete this comment? <br />
+        This action cannot be undone.
+      </p>
+    </BaseModal>
+  </Teleport>
 </template>
 
 <script setup>
 import { ref } from 'vue'
 import { useMarkdown } from '../../composables/useMarkdown'
+import BaseModal from '../Modals/BaseModal.vue'
 
 const vClickOutside = {
   mounted(el, binding) {
@@ -111,6 +127,9 @@ const activeMenuId = ref(null)
 const editingId = ref(null)
 const editContent = ref('')
 
+const showDeleteModal = ref(false)
+const commentToDeleteId = ref(null)
+
 // --- Metody Menu ---
 const toggleMenu = (id) => {
   activeMenuId.value = activeMenuId.value === id ? null : id
@@ -137,12 +156,23 @@ const saveEdit = (id) => {
   editingId.value = null // Zamknij edycję (aktualizacja przyjdzie z propsów po chwili, ale UI od razu reaguje)
 }
 
-// --- Metody Usuwania ---
-const confirmDelete = (id) => {
-  if(confirm("Are you sure you want to delete this comment?")) {
-    emit('delete-comment', id)
-  }
+//usuwanie komentarza
+const openDeleteModal = (id) => {
+  commentToDeleteId.value = id
+  showDeleteModal.value = true
   closeMenu()
+}
+
+const closeDeleteModal = () => {
+  showDeleteModal.value = false
+  commentToDeleteId.value = null
+}
+
+const handleDeleteConfirm = () => {
+  if (commentToDeleteId.value) {
+    emit('delete-comment', commentToDeleteId.value)
+  }
+  closeDeleteModal()
 }
 
 // --- Helpery (Formatowanie daty i ikony) ---
