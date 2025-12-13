@@ -658,4 +658,79 @@ app.get("/api/github/issues/:owner/:repo/:number/timeline", async (req, res) => 
     res.status(err.response?.status || 500).json({ message: "Failed to fetch timeline" });
   }
 });
+
+// Edytuj komentarz
+app.patch("/api/github/issues/:owner/:repo/comments/:commentId", async (req, res) => {
+  let token = req.session.token;
+  if (!token && req.headers.authorization) {
+    const authHeader = req.headers.authorization;
+    if (authHeader.startsWith('Bearer ')) {
+      token = authHeader.split(' ')[1];
+    }
+  }
+  if (!token) return res.status(401).json({ message: "Not authenticated" });
+
+  const { owner, repo, commentId } = req.params;
+  const { body } = req.body; 
+
+  if (!body) {
+    return res.status(400).json({ message: "Comment body is required" });
+  }
+
+  try {
+    const response = await axios.patch(
+      `https://api.github.com/repos/${owner}/${repo}/issues/comments/${commentId}`,
+      { body: body },
+      {
+        headers: {
+          Authorization: `token ${token}`,
+          Accept: "application/vnd.github+json",
+        },
+      }
+    );
+
+    res.json(response.data);
+  } catch (err) {
+    console.error("Error updating comment:", err.response?.data || err.message);
+    res.status(err.response?.status || 500).json({ 
+      message: "Failed to update comment", 
+      details: err.response?.data 
+    });
+  }
+});
+
+// Usuń komentarz
+app.delete("/api/github/issues/:owner/:repo/comments/:commentId", async (req, res) => {
+  let token = req.session.token;
+  if (!token && req.headers.authorization) {
+    const authHeader = req.headers.authorization;
+    if (authHeader.startsWith('Bearer ')) {
+      token = authHeader.split(' ')[1];
+    }
+  }
+  if (!token) return res.status(401).json({ message: "Not authenticated" });
+
+  const { owner, repo, commentId } = req.params;
+
+  try {
+    await axios.delete(
+      `https://api.github.com/repos/${owner}/${repo}/issues/comments/${commentId}`,
+      {
+        headers: {
+          Authorization: `token ${token}`,
+          Accept: "application/vnd.github+json",
+        },
+      }
+    );
+
+    res.status(204).send();
+  } catch (err) {
+    console.error("Error deleting comment:", err.response?.data || err.message);
+    res.status(err.response?.status || 500).json({ 
+      message: "Failed to delete comment", 
+      details: err.response?.data 
+    });
+  }
+});
+
 app.listen(3000, () => console.log("Server running on http://localhost:3000"));
