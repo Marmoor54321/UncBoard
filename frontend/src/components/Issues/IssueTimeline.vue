@@ -39,25 +39,29 @@
             Author
           </span>
 
-          <div class="ms-auto position-relative">
-            <i 
-              class="bi bi-three-dots-vertical text-secondary cursor-pointer three-dots-icon"
-              @click.stop="toggleMenu(item.id)"
-            ></i>
+          <div class="ms-auto">
+            <UniversalDropdown 
+              placement="bottom" 
+              class="action-dropdown"
+              :ref="(el) => setDropdownRef(el, item.id)"
+            >
+              <template #trigger>
+                <i class="bi bi-three-dots-vertical text-secondary cursor-pointer three-dots-icon"></i>
+              </template>
 
-            <div v-if="activeMenuId === item.id" class="dropdown-menu-custom" v-click-outside="closeMenu">
-              <div class="dropdown-item-custom" @click="startEdit(item)">
-                <i class="bi bi-pencil me-2"></i> Edit
+              <div class="d-flex flex-column py-1">
+                <div class="dropdown-item-custom" @click="startEdit(item)">
+                  <i class="bi bi-pencil me-2"></i> Edit
+                </div>
+                <div class="dropdown-item-custom text-danger" @click="openDeleteModal(item.id)">
+                  <i class="bi bi-trash me-2"></i> Delete
+                </div>
               </div>
-              <div class="dropdown-item-custom text-danger" @click="openDeleteModal(item.id)">
-                <i class="bi bi-trash me-2"></i> Delete
-              </div>
-            </div>
+            </UniversalDropdown>
           </div>
-        </div>
+          </div>
 
         <div class="comment-body p-3">
-          
           <div v-if="editingId === item.id">
             <textarea 
               v-model="editContent" 
@@ -66,12 +70,10 @@
             ></textarea>
             <div class="d-flex gap-2 justify-content-end">
               <button class="btn btn-sm btn-outline-secondary" @click="cancelEdit">Cancel</button>
-              <button class="btn btn-sm btn-primary" @click="saveEdit(item.id)">Update comment</button>
+              <button class="btn-update" @click="saveEdit(item.id)">Update comment</button>
             </div>
           </div>
-
           <div v-else v-html="renderMarkdown(item.body)"></div>
-
         </div>
       </div>
 
@@ -98,20 +100,7 @@
 import { ref } from 'vue'
 import { useMarkdown } from '../../composables/useMarkdown'
 import BaseModal from '../Modals/BaseModal.vue'
-
-const vClickOutside = {
-  mounted(el, binding) {
-    el.clickOutsideEvent = function(event) {
-      if (!(el === event.target || el.contains(event.target))) {
-        binding.value(event, el);
-      }
-    };
-    document.body.addEventListener('click', el.clickOutsideEvent);
-  },
-  unmounted(el) {
-    document.body.removeEventListener('click', el.clickOutsideEvent);
-  }
-};
+import UniversalDropdown from '../Dropdown/UniversalDropdown.vue' // Upewnij się co do ścieżki
 
 const props = defineProps({
   items: { type: Array, default: () => [] },
@@ -122,28 +111,38 @@ const emit = defineEmits(['edit-comment', 'delete-comment'])
 
 const { renderMarkdown } = useMarkdown()
 
-// --- Stan Menu i Edycji ---
-const activeMenuId = ref(null)
+// --- Refs dla Dropdownów ---
+const dropdownRefs = ref(new Map())
+
+const setDropdownRef = (el, id) => {
+  if (el) {
+    dropdownRefs.value.set(id, el)
+  } else {
+    dropdownRefs.value.delete(id)
+  }
+}
+
+// Funkcja pomocnicza do zamykania konkretnego dropdowna
+const closeDropdown = (id) => {
+  const dropdown = dropdownRefs.value.get(id)
+  if (dropdown && dropdown.close) {
+    dropdown.close()
+  }
+}
+
+// --- Stan Edycji ---
 const editingId = ref(null)
 const editContent = ref('')
 
+// --- Stan Modala ---
 const showDeleteModal = ref(false)
 const commentToDeleteId = ref(null)
-
-// --- Metody Menu ---
-const toggleMenu = (id) => {
-  activeMenuId.value = activeMenuId.value === id ? null : id
-}
-
-const closeMenu = () => {
-  activeMenuId.value = null
-}
 
 // --- Metody Edycji ---
 const startEdit = (item) => {
   editingId.value = item.id
   editContent.value = item.body
-  closeMenu()
+  closeDropdown(item.id) 
 }
 
 const cancelEdit = () => {
@@ -153,14 +152,14 @@ const cancelEdit = () => {
 
 const saveEdit = (id) => {
   emit('edit-comment', { id, body: editContent.value })
-  editingId.value = null // Zamknij edycję (aktualizacja przyjdzie z propsów po chwili, ale UI od razu reaguje)
+  editingId.value = null
 }
 
-//usuwanie komentarza
+// --- Metody Usuwania ---
 const openDeleteModal = (id) => {
   commentToDeleteId.value = id
   showDeleteModal.value = true
-  closeMenu()
+  closeDropdown(id) 
 }
 
 const closeDeleteModal = () => {
@@ -175,7 +174,7 @@ const handleDeleteConfirm = () => {
   closeDeleteModal()
 }
 
-// --- Helpery (Formatowanie daty i ikony) ---
+// --- Helpery ---
 const formatDate = (dateString) => {
   return new Date(dateString).toLocaleDateString(undefined, {
     month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
@@ -230,31 +229,29 @@ const getEventText = (item) => {
   color: white !important;
 }
 
-/* --- Menu Rozwijane --- */
-.dropdown-menu-custom {
-  position: absolute;
-  top: 100%;
-  right: 0;
-  background-color: #25262a;
-  border: 1px solid #444;
-  border-radius: 6px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
-  z-index: 1000;
-  min-width: 120px;
-  overflow: hidden;
-  margin-top: 4px;
-}
-
+/* --- Style dla Dropdown Items --- */
 .dropdown-item-custom {
   padding: 8px 12px;
   cursor: pointer;
   font-size: 0.9rem;
   color: #e6edf3;
-  transition: background-color 0.2s;
+  transition: all 0.2s ease;
+  border: 1px solid transparent; 
+  border-radius: 4px; 
+  margin: 2px 4px;    
 }
 
 .dropdown-item-custom:hover {
-  background-color: #aa50e7; 
+  background-color: #3b3e42; 
+  border-color: #aa50e7;    
   color: white;
 }
+
+.action-dropdown :deep(.dropdown-panel) {
+  width: 140px !important; 
+  right: 0 !important;    
+  left: auto !important;   
+}
+
+.btn-update { background: #aa50e7; color: white; border: none; padding: 5px 8px; border-radius: 8px; font-size: small;}
 </style>
