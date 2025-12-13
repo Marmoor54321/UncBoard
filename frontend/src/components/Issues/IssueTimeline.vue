@@ -21,7 +21,7 @@
             {{ item.event == "assigned" || item.event == "unassigned" ? item.assigner?.login : item.actor?.login }}
           </strong>
           {{ getEventText(item) }}
-          <span class="text-muted ms-1" style="font-size: 0.8rem">
+          <span class=" text-white ms-1" style="font-size: 0.8rem">
             {{ formatDate(item.created_at) }}
           </span>
         </span>
