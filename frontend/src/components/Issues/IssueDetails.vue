@@ -24,6 +24,8 @@
           <IssueTimeline 
             :items="timeline"
             :loading="loadingTimeline"
+            @edit-comment="handleEditComment"
+            @delete-comment="handleDeleteComment"
           />
 
           <NewCommentForm 
@@ -46,15 +48,14 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { ref, watch } from 'vue'
 import axios from 'axios'
 
-// Importujemy nasze małe klocki
 import IssueHeader from './IssueHeader.vue'
 import IssueDescription from './IssueDescription.vue'
 import IssueTimeline from './IssueTimeline.vue'
 import NewCommentForm from './NewCommentForm.vue'
-import IssueSidebar from './IssueSidebar.vue' // Zakładam, że kod z poprzedniej odpowiedzi wkleiłeś tutaj
+import IssueSidebar from './IssueSidebar.vue'
 
 const props = defineProps({
   issue: { type: Object, required: true },
@@ -67,15 +68,17 @@ const timeline = ref([])
 const loadingTimeline = ref(false)
 const submittingComment = ref(false)
 
-// --- API LOGIC ---
+// Helper do wyciągania owner/repo
+const getRepoInfo = () => {
+  const parts = props.issue.url.split('/')
+  return { owner: parts[4], repo: parts[5] }
+}
 
 const fetchTimeline = async () => {
   loadingTimeline.value = true
   timeline.value = []
   try {
-    const parts = props.issue.url.split('/')
-    const owner = parts[4]
-    const repo = parts[5]
+    const { owner, repo } = getRepoInfo()
     const res = await axios.get(
       `http://localhost:3000/api/github/issues/${owner}/${repo}/${props.issue.number}/timeline`,
       { withCredentials: true }
@@ -91,22 +94,59 @@ const fetchTimeline = async () => {
 const postComment = async (body) => {
   submittingComment.value = true
   try {
-    const parts = props.issue.url.split('/')
-    const owner = parts[4]
-    const repo = parts[5]
-    
+    const { owner, repo } = getRepoInfo()
     const res = await axios.post(
       `http://localhost:3000/api/github/issues/${owner}/${repo}/${props.issue.number}/comments`,
       { body },
       { withCredentials: true }
     )
-    // Dodaj nowy komentarz do listy lokalnie
     timeline.value.push(res.data)
   } catch (error) {
     console.error('Comment error:', error)
     alert('Failed to post comment')
   } finally {
     submittingComment.value = false
+  }
+}
+
+const handleEditComment = async ({ id, body }) => {
+  try {
+    const { owner, repo } = getRepoInfo()
+    
+    // 1. API Call
+    const res = await axios.patch(
+      `http://localhost:3000/api/github/issues/${owner}/${repo}/comments/${id}`,
+      { body },
+      { withCredentials: true }
+    )
+    
+    // 2. Aktualizacja lokalna (bez odświeżania całej listy)
+    const index = timeline.value.findIndex(item => item.id === id)
+    if (index !== -1) {
+      // Zastępujemy stary obiekt nowym z serwera (ma zaktualizowany body i updated_at)
+      timeline.value[index] = res.data
+    }
+  } catch (error) {
+    console.error('Edit error:', error)
+    alert('Failed to edit comment')
+  }
+}
+
+const handleDeleteComment = async (id) => {
+  try {
+    const { owner, repo } = getRepoInfo()
+    
+    // 1. API Call
+    await axios.delete(
+      `http://localhost:3000/api/github/issues/${owner}/${repo}/comments/${id}`,
+      { withCredentials: true }
+    )
+    
+    // 2. Usunięcie z listy lokalnej
+    timeline.value = timeline.value.filter(item => item.id !== id)
+  } catch (error) {
+    console.error('Delete error:', error)
+    alert('Failed to delete comment')
   }
 }
 
@@ -120,7 +160,6 @@ const updateBody = (newBody) => {
   emit('update-issue', { number: props.issue.number, updates: { body: newBody } })
 }
 
-// Logika sidebaru przekazuje całą tablicę obiektów, musimy wyciągnąć loginy/nazwy
 const updateAssignees = (assigneesObjects) => {
   const logins = assigneesObjects.map(u => u.login)
   emit('update-issue', { number: props.issue.number, updates: { assignees: logins } })
