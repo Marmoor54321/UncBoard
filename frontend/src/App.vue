@@ -37,6 +37,7 @@
           :selectedRepo="selectedRepo"
           :columns="columns"
           :issuesByColumn="issuesByColumn"
+          :milestones="repoData.milestones"
           :scrollContainer="scrollContainer"
           :groups="dragOptions"
           :repoData="repoData"

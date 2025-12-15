@@ -13,7 +13,42 @@
           </a>
         </span>
       </h3>
-      <button class="btn btn-dark" @click="openAddColumnModal">Add column</button>
+        <div class="d-flex gap-2">
+          <UniversalDropdown placement="bottom-end">
+            <template #trigger>
+              <button class="btn btn-dark d-flex align-items-center gap-2">
+                Milestones
+                <span v-if="selectedMilestones.length > 0" class="badge bg-primary rounded-pill">
+                  {{ selectedMilestones.length }}
+                </span>
+              </button>
+            </template>
+
+            <template #header>
+              <DropdownSearch 
+                v-model="milestoneSearch" 
+                placeholder="Filter milestones..." 
+              />
+            </template>
+
+            <DropdownList
+              :items="filteredDropdownMilestones"
+              :selected="selectedMilestones"
+              :multiple="true"
+              id-key="id"
+              label-key="title"
+              @select="toggleMilestoneFilter"
+            >
+              <template #item="{ item }">
+                <div class="dropdown-row d-flex align-items-center gap-2">
+                  <span>{{ item.title }}</span>
+                </div>
+              </template>
+            </DropdownList>
+          </UniversalDropdown>
+          
+          <button class="btn btn-dark" @click="openAddColumnModal">Add column</button> 
+      </div>
     </div>
 
     <div class="kanban-board pb-3">
@@ -21,7 +56,7 @@
         v-for="column in columns"
         :key="column._id || column.id"
         :column="column"
-        :issues-by-column="issuesByColumn"
+        :issues-by-column="filteredIssuesByColumn"
         :scroll-container="scrollContainer"
         :groups="groups"
         :on-drag-end="onDragEnd"
@@ -88,14 +123,18 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import KanbanColumn from './KanbanColumn.vue'
 import BaseModal from '../Modals/BaseModal.vue'
+import UniversalDropdown from '../Dropdown/UniversalDropdown.vue'
+import DropdownSearch from '../Dropdown/DropdownSearch.vue'
+import DropdownList from '../Dropdown/DropdownList.vue'
 
 const props = defineProps({
   selectedRepo: Object,
   columns: Array,
   issuesByColumn: Object,
+  milestones: { type: Array, default: () => [] },
   scrollContainer: Object,
   groups: Object,
   onDragEnd: Function,
@@ -109,6 +148,46 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['add-issue'])
+
+// Logika filtrowania po milestone
+
+const milestoneSearch = ref('')
+const selectedMilestones = ref([])
+
+const filteredDropdownMilestones = computed(() => {
+  const q = milestoneSearch.value.toLowerCase()
+  return (props.milestones || []).filter(m => m.title.toLowerCase().includes(q))
+})
+
+const toggleMilestoneFilter = (milestone) => {
+  const index = selectedMilestones.value.findIndex(m => m.id === milestone.id)
+  if (index !== -1) {
+    selectedMilestones.value.splice(index, 1)
+  } else {
+    selectedMilestones.value.push(milestone)
+  }
+}
+
+const filteredIssuesByColumn = computed(() => {
+  if (selectedMilestones.value.length === 0) {
+    return props.issuesByColumn
+  }
+
+  const result = {}
+  
+  Object.keys(props.issuesByColumn).forEach(colKey => {
+    const issues = props.issuesByColumn[colKey]
+    
+    result[colKey] = issues.filter(issue => {
+      if (!issue.milestone) return false
+      return selectedMilestones.value.some(m => m.id === issue.milestone.id)
+    })
+  })
+
+  return result
+})
+
+
 
 const activeColumn = ref(null) 
 
