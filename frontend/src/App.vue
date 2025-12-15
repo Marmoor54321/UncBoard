@@ -38,6 +38,7 @@
           :columns="columns"
           :issuesByColumn="issuesByColumn"
           :milestones="repoData.milestones"
+          :labels="repoData.labels"
           :scrollContainer="scrollContainer"
           :groups="dragOptions"
           :repoData="repoData"

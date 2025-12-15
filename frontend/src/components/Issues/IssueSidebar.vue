@@ -150,7 +150,6 @@
           >
             <template #item="{ item }">
               <div class="dropdown-row">
-                <i class="bi bi-signpost-split me-2"></i>
                 <span>{{ item.title }}</span>
               </div>
             </template>
@@ -164,7 +163,7 @@
         </span>
         <div v-else>
           <div class="fw-bold mb-1" style="font-size: 0.9rem;">
-             <i class="bi bi-signpost-split me-1"></i> {{ issue.milestone.title }}
+              {{ issue.milestone.title }}
           </div>
 
           <div class="progress" style="height: 8px;">
