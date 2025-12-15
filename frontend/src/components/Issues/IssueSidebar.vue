@@ -142,7 +142,7 @@
 
           <DropdownList
             :items="filteredMilestones"
-            :selected="issue.milestones ? [issue.milestone] : []"
+            :selected="issue.milestone ? [issue.milestone] : []"
             :multiple="false"
             id-key="id"
             label-key="title"
@@ -232,7 +232,7 @@ const filteredLabels = computed(() => {
 
 const filteredMilestones = computed(() => {
   const q = searchQueries.milestone.toLowerCase()
-  return (props.repoData.milestones || []).filter((m) => m.name.toLowerCase().includes(q))
+  return (props.repoData.milestones || []).filter((m) => m.title.toLowerCase().includes(q))
 })
 
 // --- Assignee Handler ---
