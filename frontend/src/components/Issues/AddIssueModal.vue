@@ -39,10 +39,16 @@
           <div class="variable-buttons">
             <UniversalDropdown placement="top" ref="assigneeDropdownRef">
               <template #trigger>
-                <div class="dropdown-trigger-btn" :class="{ 'has-value': data.assignee }">
-                  <template v-if="data.assignee">
-                    <img :src="data.assignee.avatar_url" class="avatar-small" />
-                    <span class="truncate-text">{{ data.assignee.login }}</span>
+                <div
+                  class="dropdown-trigger-btn"
+                  :class="{ 'has-value': data.assignees.length > 0 }"
+                >
+                  <template v-if="data.assignees.length > 0">
+                    <img :src="data.assignees[0].avatar_url" class="avatar-small" />
+                    <span class="truncate-text">{{ data.assignees[0].login }}</span>
+                    <span v-if="data.assignees.length > 1" class="more-counter">
+                      +{{ data.assignees.length - 1 }}
+                    </span>
                   </template>
                   <template v-else> Assignee </template>
                 </div>
@@ -54,10 +60,11 @@
 
               <DropdownList
                 :items="filteredAssignees"
-                :selected="data.assignee"
+                :selected="data.assignees"
+                :multiple="true"
                 id-key="id"
                 label-key="login"
-                @select="selectAssignee"
+                @select="toggleAssignee"
               >
                 <template #item="{ item }">
                   <div class="dropdown-row">
@@ -171,7 +178,7 @@ const labelsDropdownRef = ref(null)
 const data = reactive({
   title: '',
   description: '',
-  assignee: null,
+  assignees: [], // Zmieniono z assignee: null na tablicę
   labels: [],
   milestone: null,
 })
@@ -197,14 +204,15 @@ const filteredMilestones = computed(() => {
   return (props.repoData.milestones || []).filter((m) => m.title.toLowerCase().includes(q))
 })
 
-const selectAssignee = (item) => {
-  if (data.assignee && data.assignee.id === item.id) {
-    data.assignee = null
+// Logika multiselect dla assignee
+const toggleAssignee = (item) => {
+  const index = data.assignees.findIndex((u) => u.id === item.id)
+  if (index > -1) {
+    data.assignees.splice(index, 1)
   } else {
-    data.assignee = item
+    data.assignees.push(item)
   }
-  assigneeDropdownRef.value?.close()
-  searchQueries.assignee = ''
+  // Usuwamy assigneeDropdownRef.value?.close(), aby pozwolić na wybranie wielu bez zamykania
 }
 
 const selectMilestone = (item) => {
@@ -216,7 +224,7 @@ const selectMilestone = (item) => {
   milestoneDropdownRef.value?.close()
   searchQueries.milestone = ''
 }
-//multiselect
+
 const toggleLabel = (item) => {
   const index = data.labels.findIndex((l) => l.id === item.id)
   if (index > -1) {
@@ -254,16 +262,17 @@ const submit = () => {
   const payload = {
     title: data.title,
     description: data.description,
-    assignees: data.assignee ? [data.assignee.login] : [],
+    assignees: data.assignees.map((u) => u.login), // Mapujemy tablicę obiektów na tablicę loginów
     labels: data.labels.map((l) => l.name),
     milestone: data.milestone ? data.milestone.number : null,
   }
 
   emit('submit', payload)
 
+  // Resetowanie danych
   data.title = ''
   data.description = ''
-  data.assignee = null
+  data.assignees = []
   data.labels = []
   data.milestone = null
 
