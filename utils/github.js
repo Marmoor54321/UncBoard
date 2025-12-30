@@ -1,7 +1,19 @@
+// utils/github.js (lub tam gdzie masz tę funkcję)
 import axios from "axios";
 
 export async function githubRequest(req, githubUrl, method = "GET", data = null) {
-  const token = req.session.token;
+  // 1. Sprawdzamy sesję
+  let token = req.session?.token;
+
+  // 2. Jeśli nie ma w sesji, sprawdzamy nagłówek Authorization (dla Postmana)
+  if (!token && req.headers.authorization) {
+    const authHeader = req.headers.authorization;
+    if (authHeader.startsWith("Bearer ")) {
+      token = authHeader.split(" ")[1];
+    }
+  }
+
+  // Jeśli nadal brak tokena -> błąd
   if (!token) throw { status: 401, message: "Not authenticated" };
 
   try {
@@ -10,7 +22,7 @@ export async function githubRequest(req, githubUrl, method = "GET", data = null)
       method,
       data,
       headers: {
-        Authorization: `token ${token}`,
+        Authorization: `token ${token}`, // Tu wstawiamy znaleziony token
         Accept: "application/vnd.github+json",
       },
     });

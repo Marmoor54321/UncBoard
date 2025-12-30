@@ -74,6 +74,24 @@ createGitHubEndpoint(
   (req) => `/repos/${req.query.owner}/${req.query.repo}/milestones`
 );
 
+createGitHubEndpoint(
+  app,
+  "/api/github/user/orgs",
+  "GET",
+  () => "/user/orgs"
+);
+
+createGitHubEndpoint(
+  app,
+  "/api/github/orgs/repos",
+  "GET",
+  (req) => {
+    const org = req.query.org;
+    if (!org) throw { status: 400, message: "Organization name is required" };
+    // Dodajemy parametry: sortowanie po aktualizacji i limit 100
+    return `/orgs/${org}/repos?sort=updated&direction=desc&per_page=100`;
+  }
+);
 
   app.get("/api/github/repo-data", async (req, res) => {
   const token = req.session.token;
