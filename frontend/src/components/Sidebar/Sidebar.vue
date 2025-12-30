@@ -22,6 +22,15 @@
         @toggle-expand="onToggleGroupExpand"
       />
 
+      <SidebarOrganizations
+        :organizations="organizations"
+        :org-repos="orgRepos"
+        :expanded-orgs="expandedOrgs"
+        :selected-repo="selectedRepo"
+        @toggle-expand="onToggleOrgExpand"
+        @select-repo="selectRepo"
+      />
+
       <SidebarRepositories
         :repos="repos"
         :selected-repo="selectedRepo"
@@ -55,12 +64,15 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted, onBeforeUnmount } from 'vue'
+import { ref, reactive, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import SidebarModals from './SidebarModals.vue'
 import SidebarContextMenus from './SidebarContextMenus.vue'
 import SidebarProfile from './SidebarProfile.vue'
 import SidebarGroups from './SidebarGroups.vue'
 import SidebarRepositories from './SidebarRepositories.vue'
+
+import SidebarOrganizations from './SidebarOrganizations.vue'
+import { useOrganizations } from '../../composables/useOrganizations.js'
 
 // --- PROPS & EMITS ---
 const emit = defineEmits(['addRepoToGroup', 'deleteRepoFromGroup', 'addGroup', 'deleteGroup'])
@@ -83,6 +95,27 @@ const expandedGroups = reactive({})
 function onToggleGroupExpand(groupId) {
   // Tutaj bezpiecznie zmieniamy stan lokalny
   expandedGroups[groupId] = !expandedGroups[groupId]
+}
+
+const { organizations, orgRepos, loadOrganizations, loadOrgRepos } = useOrganizations()
+const expandedOrgs = reactive({}) // Stan rozwinięcia: { 'nazwa-org': true }
+
+watch(() => props.user, async (newUser) => {
+  if (newUser) {
+    console.log("Użytkownik załadowany, pobieram organizacje...");
+    await loadOrganizations() // Nie musisz podawać loginu, endpoint backendowy bierze go z tokena w sesji
+  }
+}, { immediate: true })
+
+// Funkcja obsługująca rozwijanie organizacji
+async function onToggleOrgExpand(orgLogin) {
+  // 1. Przełącz stan UI (rozwiń/zwiń)
+  expandedOrgs[orgLogin] = !expandedOrgs[orgLogin]
+  
+  // 2. Jeśli rozwijamy, pobierz repozytoria tej organizacji (lazy loading)
+  if (expandedOrgs[orgLogin]) {
+    await loadOrgRepos(orgLogin)
+  }
 }
 
 // --- RESZTA LOGIKI BEZ ZMIAN ---
