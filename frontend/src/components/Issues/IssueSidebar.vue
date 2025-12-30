@@ -119,6 +119,79 @@
       </div>
     </div>
 
+
+    <div class="mb-3 border-bottom border-secondary pb-3">
+      <div class="d-flex justify-content-between align-items-center mb-1">
+         <UniversalDropdown
+          placement="bottom-end"
+          class="w-100"
+        >
+          <template #trigger>
+             <div class="sidebar-trigger d-flex justify-content-between align-items-center w-100">
+              <strong>Milestone</strong>
+              <i class="bi bi-gear text-secondary gear-icon"></i>
+            </div>
+          </template>
+
+          <template #header>
+            <DropdownSearch 
+              v-model="searchQueries.milestone" 
+              placeholder="Filter milestones..." 
+            />
+          </template>
+
+          <DropdownList
+            :items="filteredMilestones"
+            :selected="issue.milestone ? [issue.milestone] : []"
+            :multiple="false"
+            id-key="id"
+            label-key="title"
+            @select="toggleMilestone"
+          >
+            <template #item="{ item }">
+              <div class="dropdown-row">
+                <span>{{ item.title }}</span>
+              </div>
+            </template>
+          </DropdownList>
+        </UniversalDropdown>
+      </div>
+
+      <div class="mt-2">
+        <span v-if="!issue.milestone" class="text-secondary small">
+          No milestone
+        </span>
+        <div v-else>
+          <div class="fw-bold mb-1" style="font-size: 0.9rem;">
+              {{ issue.milestone.title }}
+          </div>
+
+          <div class="progress" style="height: 8px;">
+            <div 
+              class="progress-bar bg-success" 
+              role="progressbar" 
+              :style="{ width: getMilestoneProgress(issue.milestone) + '%' }"
+            ></div>
+          </div>
+          
+          <div class="d-flex justify-content-between align-items-center mt-1">
+            <small class="text-secondary" style="font-size: 0.75rem;">
+              {{ getMilestoneProgress(issue.milestone) }}% complete
+            </small>
+
+            <small 
+              v-if="issue.milestone.due_on" 
+              :class="isPastDue(issue.milestone.due_on) ? 'text-danger' : 'text-secondary'" 
+              style="font-size: 0.75rem;"
+            >
+              <i class="bi me-1"></i>
+              Due by: {{ formatDate(issue.milestone.due_on) }}
+            </small>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div>
 </template>
 
@@ -137,12 +210,13 @@ const props = defineProps({
 })
 
 // Emitujemy eventy, a Rodzic (Parent) zajmuje się wysłaniem do API
-const emit = defineEmits(['update-assignees', 'update-labels'])
+const emit = defineEmits(['update-assignees', 'update-labels', 'update-milestone'])
 
 // --- Search Logic ---
 const searchQueries = reactive({
   assignee: '',
-  labels: ''
+  labels: '',
+  milestone: ''
 })
 
 const filteredAssignees = computed(() => {
@@ -153,6 +227,11 @@ const filteredAssignees = computed(() => {
 const filteredLabels = computed(() => {
   const q = searchQueries.labels.toLowerCase()
   return (props.repoData.labels || []).filter((l) => l.name.toLowerCase().includes(q))
+})
+
+const filteredMilestones = computed(() => {
+  const q = searchQueries.milestone.toLowerCase()
+  return (props.repoData.milestones || []).filter((m) => m.title.toLowerCase().includes(q))
 })
 
 // --- Assignee Handler ---
@@ -185,6 +264,19 @@ const toggleLabel = (label) => {
   emit('update-labels', currentLabels)
 }
 
+// --- Milestone Handler ---
+const toggleMilestone = (milestone) => {
+  // Sprawdź, czy kliknięto milestone, który jest już ustawiony
+  if (props.issue.milestone && props.issue.milestone.id === milestone.id) {
+    // Jeśli tak, odznaczamy go (wysyłamy null)
+    emit('update-milestone', null)
+  } else {
+    // Jeśli nie, odznaczamy nowy
+    emit('update-milestone', milestone)
+  }
+  
+}
+
 // --- Utils ---
 const getContrastColor = (hex) => {
   const r = parseInt(hex.substr(0, 2), 16)
@@ -192,6 +284,28 @@ const getContrastColor = (hex) => {
   const b = parseInt(hex.substr(4, 2), 16)
   const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000
   return yiq >= 128 ? 'black' : 'white'
+}
+
+// Obliczanie postępu milestone (na podstawie zwroconych open_issues i closed_issues)
+const getMilestoneProgress = (milestone) => {
+  if (!milestone) return 0
+  const open = milestone.open_issues || 0
+  const closed = milestone.closed_issues || 0
+  const total = open + closed
+  if (total === 0) return 0
+  
+  return Math.round((closed / total) * 100)
+}
+
+const formatDate = (dateString) => {
+  if (!dateString) return ''
+  return new Date(dateString).toLocaleDateString() 
+}
+
+// Sprawdzenie czy data minęła (dla koloru czerwonego)
+const isPastDue = (dateString) => {
+  if (!dateString) return false
+  return new Date(dateString) < new Date()
 }
 </script>
 

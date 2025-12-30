@@ -13,7 +13,76 @@
           </a>
         </span>
       </h3>
-      <button class="btn btn-dark" @click="openAddColumnModal">Add column</button>
+      <div class="d-flex gap-2">
+        <UniversalDropdown placement="bottom-end">
+          <template #trigger>
+            <button class="btn btn-dark d-flex align-items-center gap-2">
+              Milestones
+              <span v-if="selectedMilestones.length > 0" class="badge bg-primary rounded-pill">
+                {{ selectedMilestones.length }}
+              </span>
+            </button>
+          </template>
+
+          <template #header>
+            <DropdownSearch 
+              v-model="milestoneSearch" 
+              placeholder="Filter milestones..." 
+            />
+          </template>
+
+          <DropdownList
+            :items="filteredDropdownMilestones"
+            :selected="selectedMilestones"
+            :multiple="true"
+            id-key="id"
+            label-key="title"
+            @select="toggleMilestoneFilter"
+          >
+            <template #item="{ item }">
+              <div class="dropdown-row d-flex align-items-center gap-2">
+                <span>{{ item.title }}</span>
+              </div>
+            </template>
+          </DropdownList>
+        </UniversalDropdown>
+        
+        <UniversalDropdown placement="bottom-end">
+          <template #trigger>
+            <button class="btn btn-dark d-flex align-items-center gap-2">
+              Labels
+              <span v-if="selectedLabels.length > 0" class="badge bg-primary rounded-pill">
+                {{ selectedLabels.length }}
+              </span>
+            </button>
+          </template>
+
+          <template #header>
+            <DropdownSearch 
+              v-model="labelSearch" 
+              placeholder="Filter labels..." 
+            />
+          </template>
+
+          <DropdownList
+            :items="filteredDropdownLabels"
+            :selected="selectedLabels"
+            :multiple="true"
+            id-key="id"
+            label-key="name"
+            @select="toggleLabelFilter"
+          >
+            <template #item="{ item }">
+              <div class="dropdown-row d-flex align-items-center gap-2">
+                <span class="color-dot" :style="{ backgroundColor: '#' + item.color }"></span>
+                <span>{{ item.name }}</span>
+              </div>
+            </template>
+          </DropdownList>
+        </UniversalDropdown>
+
+        <button class="btn btn-dark" @click="openAddColumnModal">Add column</button> 
+      </div>
     </div>
 
     <div class="kanban-board pb-3">
@@ -21,7 +90,7 @@
         v-for="column in columns"
         :key="column._id || column.id"
         :column="column"
-        :issues-by-column="issuesByColumn"
+        :issues-by-column="filteredIssuesByColumn"
         :scroll-container="scrollContainer"
         :groups="groups"
         :on-drag-end="onDragEnd"
@@ -88,14 +157,19 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import KanbanColumn from './KanbanColumn.vue'
 import BaseModal from '../Modals/BaseModal.vue'
+import UniversalDropdown from '../Dropdown/UniversalDropdown.vue'
+import DropdownSearch from '../Dropdown/DropdownSearch.vue'
+import DropdownList from '../Dropdown/DropdownList.vue'
 
 const props = defineProps({
   selectedRepo: Object,
   columns: Array,
   issuesByColumn: Object,
+  milestones: { type: Array, default: () => [] },
+  labels: { type: Array, default: () => [] }, 
   scrollContainer: Object,
   groups: Object,
   onDragEnd: Function,
@@ -109,6 +183,74 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['add-issue'])
+
+// Logika filtrowania po milestone
+
+const milestoneSearch = ref('')
+const selectedMilestones = ref([])
+
+const filteredDropdownMilestones = computed(() => {
+  const q = milestoneSearch.value.toLowerCase()
+  return (props.milestones || []).filter(m => m.title.toLowerCase().includes(q))
+})
+
+const toggleMilestoneFilter = (milestone) => {
+  const index = selectedMilestones.value.findIndex(m => m.id === milestone.id)
+  if (index !== -1) {
+    selectedMilestones.value.splice(index, 1)
+  } else {
+    selectedMilestones.value.push(milestone)
+  }
+}
+
+// Logika filtrowania po labels
+const labelSearch = ref('')
+const selectedLabels = ref([])
+
+const filteredDropdownLabels = computed(() => {
+  const q = labelSearch.value.toLowerCase()
+  return (props.labels || []).filter(l => l.name.toLowerCase().includes(q))
+})
+
+const toggleLabelFilter = (label) => {
+  const index = selectedLabels.value.findIndex(l => l.id === label.id)
+  if (index !== -1) {
+    selectedLabels.value.splice(index, 1)
+  } else {
+    selectedLabels.value.push(label)
+  }
+}
+
+const filteredIssuesByColumn = computed(() => {
+  const hasMilestoneFilter = selectedMilestones.value.length > 0
+  const hasLabelFilter = selectedLabels.value.length > 0
+
+  // Jeśli żaden filtr nie jest aktywny, zwracamy wszystko
+  if (!hasMilestoneFilter && !hasLabelFilter) {
+    return props.issuesByColumn
+  }
+
+  const result = {}
+  
+  Object.keys(props.issuesByColumn).forEach(colKey => {
+    const issues = props.issuesByColumn[colKey]
+    
+    result[colKey] = issues.filter(issue => {
+      const matchesMilestone = !hasMilestoneFilter || (
+        issue.milestone && selectedMilestones.value.some(m => m.id === issue.milestone.id)
+      )
+      const matchesLabel = !hasLabelFilter || (
+        issue.labels && 
+        issue.labels.some(issueLabel => selectedLabels.value.some(sel => sel.id === issueLabel.id))
+      )
+      return matchesMilestone && matchesLabel
+    })
+  })
+
+  return result
+})
+
+
 
 const activeColumn = ref(null) 
 
@@ -183,5 +325,14 @@ function handleAddIssue(column) {
   padding-bottom: 0.5rem;
   scrollbar-width: thin;
   scrollbar-color: #2b2d31 transparent;
+}
+
+.color-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: inline-block;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  flex-shrink: 0;
 }
 </style>

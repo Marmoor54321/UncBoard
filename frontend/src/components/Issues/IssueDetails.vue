@@ -41,6 +41,7 @@
           :repo-data="repoData"
           @update-assignees="updateAssignees"
           @update-labels="updateLabels"
+          @update-milestone="updateMilestone"
         />
       </div>
     </div>
@@ -168,6 +169,11 @@ const updateAssignees = (assigneesObjects) => {
 const updateLabels = (labelsObjects) => {
   const names = labelsObjects.map(l => l.name)
   emit('update-issue', { number: props.issue.number, updates: { labels: names } })
+}
+
+const updateMilestone = (milestoneObject) => {
+  const milestoneNumber = milestoneObject ? milestoneObject.number : null
+  emit('update-issue', { number: props.issue.number, updates: { milestone: milestoneNumber } })
 }
 
 // --- INIT ---
