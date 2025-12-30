@@ -53,16 +53,31 @@ export function useKanban() {
     try {
       await axios.post(`${apiBase}/api/statuses/default`, { repo_id: repo.id }, { withCredentials: true })
 
-      const [statusesRes, issuesRes, collaboratorsRes, labelsRes, milestonesRes] = await Promise.all([
+     const fetchPeople = async () => {
+        try {
+          // Próba 1: Pełna lista collaborators
+          return await axios.get(`${apiBase}/api/github/repos/collaborators?owner=${repo.owner.login}&repo=${repo.name}`, { withCredentials: true });
+        } catch (err) {
+          // Jeśli błąd to 403 Forbidden (lub 500 z backendu proxy oznaczające błąd GitHub)
+          // To oznacza, że nie mamy uprawnień admina. Robimy fallback do assignees.
+          console.warn("Brak dostępu do collaborators, pobieram assignees.");
+          return await axios.get(`${apiBase}/api/github/repos/assignees?owner=${repo.owner.login}&repo=${repo.name}`, { withCredentials: true });
+        }
+      };
+
+      const [statusesRes, issuesRes, peopleRes, labelsRes, milestonesRes] = await Promise.all([
         axios.get(`${apiBase}/api/statuses/${repo.id}`, { withCredentials: true }),
         axios.get(`${apiBase}/api/github/issues/${repo.owner.login}/${repo.name}?repo_id=${repo.id}`, { withCredentials: true }),
-        axios.get(`${apiBase}/api/github/repos/collaborators?owner=${repo.owner.login}&repo=${repo.name}`, { withCredentials: true }),
+        
+        // Wywołujemy naszą inteligentną funkcję
+        fetchPeople(),
+        
         axios.get(`${apiBase}/api/github/repos/labels?owner=${repo.owner.login}&repo=${repo.name}`, { withCredentials: true }),
         axios.get(`${apiBase}/api/github/repos/milestones?owner=${repo.owner.login}&repo=${repo.name}`, { withCredentials: true }),
       ])
 
       repoData.value = {
-        collaborators: collaboratorsRes.data,
+        collaborators: peopleRes.data,
         labels: labelsRes.data,
         milestones: milestonesRes.data
       }

@@ -93,6 +93,13 @@ createGitHubEndpoint(
   }
 );
 
+createGitHubEndpoint(
+  app,
+  "/api/github/repos/assignees",
+  "GET",
+  (req) => `/repos/${req.query.owner}/${req.query.repo}/assignees`
+);
+
   app.get("/api/github/repo-data", async (req, res) => {
   const token = req.session.token;
   if (!token) return res.status(401).send("Not authenticated");
