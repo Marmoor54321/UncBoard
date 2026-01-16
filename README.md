@@ -1,5 +1,6 @@
-# 📋UncBoard (WIP)
-<img width="1919" height="960" alt="image" src="https://github.com/user-attachments/assets/03aabfef-1df6-4914-b1b3-7902cc92bfdc" />
+# 📋UncBoard
+<img width="1919" height="962" alt="image" src="https://github.com/user-attachments/assets/9468f4a1-f7d9-474e-bdbd-1db682a93b76" />
+
 
 ## O projekcie  
 
@@ -21,6 +22,7 @@ Kanban UncBoard pozwala na przeglądanie i modyfikację issues z dowolnego repoz
 
 # 📸Zrzuty ekranu 
 
-<img width="1916" height="907" alt="image" src="https://github.com/user-attachments/assets/2420debe-7a51-4329-ad6f-172937f08d14" />
+<img width="1919" height="960" alt="image" src="https://github.com/user-attachments/assets/68bb95fa-9d6f-4a47-9047-80a3f1f979ae" />
+
 
 <img width="1919" height="901" alt="image" src="https://github.com/user-attachments/assets/40695ba8-be13-4b3f-a1ae-ce753df6764b" />
