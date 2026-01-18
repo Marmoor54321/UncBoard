@@ -9,11 +9,23 @@ import Status from "./models/Status.js";
 import IssueStatus from "./models/IssueStatus.js";
 import Group from "./models/Group.js";
 import { createGitHubEndpoint } from "./utils/githubEndpoint.js";
+import http from "http";
+import { Server } from "socket.io";
+import Message from "./models/Message.js";
 
 
 
 dotenv.config();
 const app = express();
+
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: "http://localhost:5173", // URL Twojego frontendu (Vite)
+    methods: ["GET", "POST"],
+    credentials: true
+  }
+});
 
 app.use(cors({ origin: "http://localhost:5173", credentials: true }));
 app.use(session({ secret: "secret", resave: false, saveUninitialized: true }));
@@ -34,6 +46,58 @@ mongoose.connect('mongodb://localhost:27017/uncboard', {
 })
 .then(() => console.log("✅ Połączono z MongoDB"))
 .catch(err => console.log(err));
+
+app.get("/api/chat/:orgId", async (req, res) => {
+  try {
+    const { orgId } = req.params;
+    // Pobierz 50 ostatnich wiadomości dla danej organizacji
+    const messages = await Message.find({ org_id: orgId })
+      .sort({ timestamp: -1 })
+      .limit(50);
+    
+    res.json(messages.reverse()); // Zwracamy w kolejności chronologicznej
+  } catch (err) {
+    res.status(500).json({ message: "Błąd serwera przy pobieraniu czatu" });
+  }
+});
+
+// 3. Logika Socket.io (Komunikacja Real-time)
+io.on("connection", (socket) => {
+  console.log("⚡ Użytkownik połączony:", socket.id);
+
+  // Użytkownik wchodzi do czatu konkretnej organizacji
+  socket.on("join_room", (orgId) => {
+    String(orgId)
+    socket.join(orgId);
+    console.log(`👤 Użytkownik dołączył do pokoju organizacji: ${orgId}`);
+  });
+
+  // Obsługa wysyłania wiadomości
+  socket.on("send_message", async (data) => {
+    const { org_id, sender, text } = data;
+    const room = String(org_id);
+
+    try {
+      // Zapisz wiadomość w MongoDB
+      const newMessage = new Message({
+        org_id,
+        sender,
+        text
+      });
+      await newMessage.save();
+
+      // Rozślij wiadomość do wszystkich w TYM SAMYM pokoju (organizacji)
+      io.to(org_id).emit("receive_message", newMessage);
+    } catch (err) {
+      console.error("Błąd zapisu wiadomości:", err);
+    }
+  });
+
+  socket.on("disconnect", () => {
+    console.log("❌ Użytkownik rozłączony");
+  });
+});
+
 
 
 createGitHubEndpoint(app, "/api/github/repos", "GET", () => "/user/repos");
@@ -81,17 +145,52 @@ createGitHubEndpoint(
   () => "/user/orgs"
 );
 
-createGitHubEndpoint(
-  app,
-  "/api/github/orgs/repos",
-  "GET",
-  (req) => {
-    const org = req.query.org;
-    if (!org) throw { status: 400, message: "Organization name is required" };
-    // Dodajemy parametry: sortowanie po aktualizacji i limit 100
-    return `/orgs/${org}/repos?sort=updated&direction=desc&per_page=100`;
+// createGitHubEndpoint(
+//   app,
+//   "/api/github/orgs/repos",
+//   "GET",
+//   (req) => {
+//     const org = req.query.org;
+//     console.log(req.query.org);
+//     if (!org) throw { status: 400, message: "Organization name is required" };
+//     // Dodajemy parametry: sortowanie po aktualizacji i limit 100
+//     return `/orgs/${org}/repos?sort=updated&direction=desc&per_page=100`;
+//   }
+// );
+
+app.get("/api/github/orgs/repos", async (req, res) => {
+  const token = req.session.token;
+  const org = req.query.org;
+
+  if (!token) return res.status(401).send("Not authenticated");
+  if (!org) return res.status(400).send("Organization name is required");
+
+  try {
+    const response = await axios.get(`https://api.github.com/orgs/${org}/repos?sort=updated&direction=desc&per_page=100`, {
+      headers: { 
+        Authorization: `token ${token}`,
+        Accept: "application/vnd.github+json"
+      },
+    });
+
+    // SPRAWDZANIE ID ORGANIZACJI:
+    // Pobieramy ID z pierwszego lepszego repozytorium na liście
+    if (response.data && response.data.length > 0) {
+      const org_id = response.data[0].owner.id;
+      console.log(`-----------------------------------`);
+      console.log(`🏢 Organizacja: ${org}`);
+      console.log(`🆔 ID Organizacji (org_id): ${org_id}`);
+      console.log(`-----------------------------------`);
+    } else {
+      console.log(`⚠️ Organizacja ${org} nie ma repozytoriów lub nie mam do nich dostępu.`);
+    }
+
+    res.json(response.data);
+  } catch (err) {
+    console.error("Błąd podczas pobierania repozytoriów organizacji:", err.response?.data || err.message);
+    res.status(500).send("Failed to fetch organization repositories");
   }
-);
+});
 
 createGitHubEndpoint(
   app,
@@ -758,4 +857,9 @@ app.delete("/api/github/issues/:owner/:repo/comments/:commentId", async (req, re
   }
 });
 
-app.listen(3000, () => console.log("Server running on http://localhost:3000"));
+//app.listen(3000, () => console.log("Server running on http://localhost:3000"));
+
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => {
+  console.log(`✅ Server running on http://localhost:${PORT}`);
+});
