@@ -15,6 +15,7 @@
         @deleteRepoFromGroup="handleDeleteRepoFromGroup"
         @addGroup="handleAddGroup"
         @deleteGroup="handleDeleteGroup"
+        @openChat="handleOpenChat"
       />
 
       <main
@@ -63,6 +64,16 @@
           />
         </transition>
 
+        <transition name="slide">
+          <OrgChat
+            v-if="selectedOrgChat"
+            class="details-panel"
+            :org="selectedOrgChat"
+            :user="user"
+            @close="closeOrgChat"
+          />
+        </transition>
+
         <transition name="modal-pop">
           <AddIssueModal
             v-if="showAddIssue"
@@ -86,6 +97,7 @@ import Sidebar from '@/components/Sidebar/Sidebar.vue'
 import KanbanBoard from './components/Kanban/KanbanBoard.vue'
 import IssueDetails from '@/components/Issues/IssueDetails.vue'
 import AddIssueModal from './components/Issues/AddIssueModal.vue'
+import OrgChat from '@/components/Organization/OrgChat.vue'
 
 // API & Composables
 import { addIssue } from './api/issues.js'
@@ -96,6 +108,7 @@ import { useKanban } from '@/composables/useKanban.js'
 // --- SETUP COMPOSABLES ---
 const route = useRoute()
 const router = useRouter()
+
 
 // 1. Auth & User
 const { user, loginWithGithub, loadUser } = useAuth()
@@ -119,6 +132,8 @@ const {
   addIssueToBoard, updateIssue
 } = useKanban()
 
+const selectedOrgChat = ref(null)
+
 // --- UI STATE ---
 const scrollContainer = ref(null)
 const showAddIssue = ref(false)
@@ -137,6 +152,20 @@ const selectedIssue = computed(() => {
 })
 
 // --- ACTIONS ---
+
+// 3. Funkcja otwierająca czat
+function handleOpenChat(org) {
+  // Jeśli otwarte są detale issue, zamknij je (przekierowując router)
+  if (selectedIssue.value) {
+    closeIssuePanel()
+  }
+  selectedOrgChat.value = org
+}
+
+// 4. Funkcja zamykająca czat
+function closeOrgChat() {
+  selectedOrgChat.value = null
+}
 
 function openIssue(issue) {
   router.push({

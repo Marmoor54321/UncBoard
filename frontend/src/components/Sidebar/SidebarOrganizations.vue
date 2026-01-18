@@ -24,6 +24,11 @@
 
         <transition name="slide">
           <ul v-if="expandedOrgs[org.login]" class="list-group nested-repo-list">
+            <i 
+              class="bi bi-chat-dots-fill chat-icon ms-2" 
+              title="Open Organization Chat"
+              @click.stop="$emit('openChat', org)"
+            ></i>
             
             <li v-if="!orgRepos[org.login]" class="list-group-item text-muted small fst-italic ps-4">
               Loading repos...
@@ -58,7 +63,7 @@ defineProps({
   selectedRepo: Object
 })
 
-const emit = defineEmits(['toggleExpand', 'selectRepo'])
+const emit = defineEmits(['toggleExpand', 'selectRepo', 'openChat'])
 
 function toggleExpand(orgLogin) {
   emit('toggleExpand', orgLogin)
@@ -101,4 +106,13 @@ function toggleExpand(orgLogin) {
 .slide-enter-active, .slide-leave-active { transition: all 0.3s ease; overflow: hidden;}
 .slide-enter-from, .slide-leave-to { opacity: 0; max-height: 0; }
 .slide-enter-to { max-height: 500px; opacity: 1; }
+
+.chat-icon {
+  color: #6c757d;
+  transition: color 0.2s, transform 0.2s;
+}
+.chat-icon:hover {
+  color: #aa50e7 !important;
+  transform: scale(1.2);
+}
 </style>

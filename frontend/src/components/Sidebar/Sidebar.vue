@@ -29,6 +29,7 @@
         :selected-repo="selectedRepo"
         @toggle-expand="onToggleOrgExpand"
         @select-repo="selectRepo"
+        @open-chat="$emit('openChat', $event)"
       />
 
       <SidebarRepositories
@@ -75,7 +76,7 @@ import SidebarOrganizations from './SidebarOrganizations.vue'
 import { useOrganizations } from '../../composables/useOrganizations.js'
 
 // --- PROPS & EMITS ---
-const emit = defineEmits(['addRepoToGroup', 'deleteRepoFromGroup', 'addGroup', 'deleteGroup'])
+const emit = defineEmits(['addRepoToGroup', 'deleteRepoFromGroup', 'addGroup', 'deleteGroup', 'openChat'])
 const props = defineProps({
   user: Object,
   repos: Array,
