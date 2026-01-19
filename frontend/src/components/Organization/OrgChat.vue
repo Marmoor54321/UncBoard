@@ -91,7 +91,12 @@ const fetchHistory = async () => {
 const sendMessage = () => {
   if (!newMessage.value.trim()) return
 
+  if (!props.currentUser) {
+    console.error("Błąd: Nie przekazano currentUser do komponentu OrgChat!");
+    return;
+  }
   const messageData = {
+
     org_id: String(props.org.id),
     sender: {
       github_id: String(props.currentUser.id),

@@ -66,10 +66,10 @@
 
         <transition name="slide">
           <OrgChat
-            v-if="selectedOrgChat"
+            v-if="selectedOrgChat && user"
             class="details-panel"
             :org="selectedOrgChat"
-            :user="user"
+            :current-user="user"
             @close="closeOrgChat"
           />
         </transition>
