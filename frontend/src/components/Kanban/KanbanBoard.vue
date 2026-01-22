@@ -8,8 +8,12 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
       <h3 class="text-white">
         Issues for
-        <span class="text-primary">
-          <a :href="selectedRepo.html_url" target="_blank" rel="noopener noreferrer">
+        <span>
+          <a :href="selectedRepo.html_url" 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            style="color: #aa50e7; text-decoration: none; font-weight: bold;"
+          >
             {{ selectedRepo.name }}
           </a>
         </span>
@@ -21,7 +25,9 @@
           <template #trigger>
             <button class="btn btn-dark d-flex align-items-center gap-2">
               Milestones
-              <span v-if="selectedMilestones.length > 0" class="badge bg-primary rounded-pill">
+              <span v-if="selectedMilestones.length > 0" 
+                    class="badge rounded-pill" 
+                    style="background-color: #aa50e7 !important;">
                 {{ selectedMilestones.length }}
               </span>
             </button>
@@ -54,7 +60,9 @@
           <template #trigger>
             <button class="btn btn-dark d-flex align-items-center gap-2">
               Labels
-              <span v-if="selectedLabels.length > 0" class="badge bg-primary rounded-pill">
+              <span v-if="selectedMilestones.length > 0" 
+                  class="badge rounded-pill" 
+                  style="background-color: #aa50e7 !important;">
                 {{ selectedLabels.length }}
               </span>
             </button>

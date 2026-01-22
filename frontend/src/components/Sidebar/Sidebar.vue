@@ -1,6 +1,6 @@
 <template>
   <aside
-    class="sidebar-container border-end p-3 offcanvas-lg offcanvas-start"
+    class="sidebar-container p-3 offcanvas-lg offcanvas-start"
     tabindex="-1"
     style="scrollbar-color: #303236 #1d1e20"
   >

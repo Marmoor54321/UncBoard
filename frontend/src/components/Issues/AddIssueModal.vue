@@ -380,8 +380,9 @@ form {
 .form-control:focus {
   background-color: #151515 !important;
   color: white !important;
-  border-color: #58a6ff;
+  border-color: #aa50e7;
   outline: none;
+  box-shadow: none !important;
 }
 .form-control::-webkit-input-placeholder {
   color: #666 !important;
@@ -518,7 +519,7 @@ form {
   transition: color 0.2s;
 }
 .footer-action:hover {
-  color: #58a6ff;
+  color: #aa50e7;
   text-decoration: underline;
 }
 

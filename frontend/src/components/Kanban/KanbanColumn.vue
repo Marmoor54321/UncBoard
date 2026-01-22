@@ -40,6 +40,8 @@
             <KanbanTaskCard 
               :title="element.title"
               :body="element.body"
+              :labels="element.labels"
+              :assignees="element.assignees"
               :data-item-id="element.id"
               @click="openIssue(element)"
             />

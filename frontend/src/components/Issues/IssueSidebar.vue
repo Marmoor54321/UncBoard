@@ -111,7 +111,7 @@
         <span
           v-for="(label, i) in issue.labels"
           :key="i"
-          class="badge text-white border border-secondary"
+          class="badge border border-secondary"
           :style="{ backgroundColor: '#' + label.color, color: getContrastColor(label.color) }"
         >
           {{ label.name }}
@@ -278,12 +278,13 @@ const toggleMilestone = (milestone) => {
 }
 
 // --- Utils ---
-const getContrastColor = (hex) => {
-  const r = parseInt(hex.substr(0, 2), 16)
-  const g = parseInt(hex.substr(2, 2), 16)
-  const b = parseInt(hex.substr(4, 2), 16)
-  const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000
-  return yiq >= 128 ? 'black' : 'white'
+function getContrastColor(hexcolor) {
+  hexcolor = hexcolor.replace("#", "");
+  var r = parseInt(hexcolor.substr(0, 2), 16);
+  var g = parseInt(hexcolor.substr(2, 2), 16);
+  var b = parseInt(hexcolor.substr(4, 2), 16);
+  var yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
+  return (yiq >= 128) ? 'black' : 'white';
 }
 
 // Obliczanie postępu milestone (na podstawie zwroconych open_issues i closed_issues)
