@@ -173,7 +173,6 @@ import { useRouter, useRoute } from 'vue-router'
 import { useKanban } from '@/composables/useKanban.js'
 import { useKanbanFilters } from '@/composables/useKanbanFilters.js'
 
-// Komponenty
 import KanbanColumn from './KanbanColumn.vue'
 import BaseModal from '../Modals/BaseModal.vue'
 import UniversalDropdown from '../Dropdown/UniversalDropdown.vue'
@@ -226,7 +225,7 @@ function openIssue(issue) {
   })
 }
 
-// --- ZARZĄDZANIE KOLUMNAMI (Modale) ---
+// --- ZARZĄDZANIE KOLUMNAMI  ---
 const activeColumn = ref(null) 
 
 // Add Column

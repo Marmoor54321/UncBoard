@@ -71,7 +71,6 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
-/* Input wyszukiwania */
 .search-input {
   background: #1f2023; border: 1px solid #555; color: white; padding: 8px 12px;
   border-radius: 6px; outline: none; transition: border-color 0.2s;
@@ -80,7 +79,6 @@ onBeforeUnmount(() => {
 
 .custom-list { list-style: none; padding: 0; margin: 0; }
 
-/* Baza dla elementu listy - przezroczysta ramka rezerwuje miejsce */
 .custom-list .list-group-item {
   background-color: #303236;
   color: white;
@@ -91,30 +89,25 @@ onBeforeUnmount(() => {
 
 /* --- STYL DLA REPOZYTORIUM --- */
 
-/* Hover na repozytorium -> Fioletowa ramka */
 .repo-item:hover {
   background-color: #3b3e42 !important;
   border-color: #aa50e7 !important;
 }
 
-/* Wybrane repozytorium (Active) -> Fioletowa ramka */
 .repo-item.active {
   border: 1px solid #aa50e7 !important;
   background-color: #3b3e42 !important;
 }
 
 /* --- TRZY KROPKI --- */
-/* Domyślnie ukryte */
 .repo-item .bi-three-dots-vertical { 
     opacity: 0; 
     transition: opacity 0.1s ease; 
 }
-/* Widoczne po najechaniu na wiersz */
 .repo-item:hover .bi-three-dots-vertical { 
     opacity: 1; 
 }
 
-/* Animacje listy */
 .list-move, .list-enter-active, .list-leave-active { transition: all 0.3s ease; }
 .list-enter-from, .list-leave-to { opacity: 0; max-height: 0; }
 </style>

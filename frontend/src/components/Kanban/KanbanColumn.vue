@@ -55,7 +55,7 @@
 <script setup>
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 import draggable from 'vuedraggable'
-import KanbanTaskCard from './KanbanIssueCard.vue' // Pamiętaj o imporcie
+import KanbanTaskCard from './KanbanIssueCard.vue' 
 
 const props = defineProps({
   column: Object,

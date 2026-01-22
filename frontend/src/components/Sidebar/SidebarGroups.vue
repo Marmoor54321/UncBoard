@@ -57,11 +57,9 @@ const props = defineProps({
   selectedRepo: Object
 })
 
-// Dodano 'toggleExpand' do emits
 const emit = defineEmits(['openCreateGroup', 'openDeleteGroup', 'selectRepo', 'toggleMenu', 'toggleExpand'])
 
 function toggleExpand(groupId) {
-  // POPRAWKA: Zamiast mutować props, wysyłamy sygnał do rodzica
   emit('toggleExpand', groupId)
 }
 </script>
@@ -69,7 +67,6 @@ function toggleExpand(groupId) {
 <style scoped>
 .custom-list { list-style: none; padding: 0; margin: 0; }
 
-/* Baza dla elementów listy */
 .custom-list .list-group-item {
   background-color: #303236;
   color: white;
@@ -78,7 +75,6 @@ function toggleExpand(groupId) {
   transition: background-color 0.2s ease, border-color 0.2s ease;
 }
 
-/* --- STYL DLA GRUPY (RODZIC) --- */
 .list-group-item.expanded {
     border-color: #aa50e7 !important;
 }
@@ -88,28 +84,24 @@ function toggleExpand(groupId) {
   border-color: #aa50e7 !important;
 }
 
-/* --- STYL DLA REPOZYTORIUM (DZIECKO) --- */
 
-/* Hover na repozytorium -> Fioletowa ramka */
 .group-repo-item:hover {
   background-color: #3b3e42 !important;
   border-color: #aa50e7 !important;
 }
 
-/* Wybrane repozytorium (Active) */
 .group-repo-item.active { 
   border: 1px solid #aa50e7 !important; 
   background-color: #3b3e42 !important; 
 }
 
-/* --- PRZYCISKI I IKONY --- */
 .add-group-btn {
   background: none; color: white; width: 32px; height: 32px; border: none;
   display: flex; justify-content: center; align-items: center; transition: 0.15s;
 }
 .add-group-btn:hover { transform: scale(1.08); }
 
-/* --- TRZY KROPKI (widoczne tylko przy hoverze na repo) --- */
+/* --- TRZY KROPKI --- */
 .group-repo-item .bi-three-dots-vertical { 
     opacity: 0; 
     transition: opacity 0.1s ease; 

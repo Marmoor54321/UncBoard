@@ -141,7 +141,6 @@ const syncStateWithUrl = () => {
 
   const repoFromUrl = repos.value.find((r) => r.owner.login === owner && r.name === repo)
   
-  // Zmieniamy repo jeśli jest inne niż aktualne
   if (repoFromUrl && selectedRepo.value?.id !== repoFromUrl.id) {
     selectRepo(repoFromUrl)
   }
@@ -154,7 +153,6 @@ onMounted(async () => {
   }
 })
 
-// Obserwujemy zmiany w URL i załadowanych repozytoriach
 watch(() => [route.params.owner, route.params.repo], syncStateWithUrl)
 watch(repos, (newRepos) => {
   if (newRepos.length > 0) syncStateWithUrl()

@@ -44,7 +44,6 @@ const emit = defineEmits(['closeCreate', 'confirmCreate', 'closeDelete', 'confir
 
 const localGroupName = ref('');
 
-// Reset input when modal opens/closes
 watch(() => props.showCreate, (val) => {
   if (!val) localGroupName.value = '';
 });

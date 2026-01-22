@@ -5,7 +5,7 @@ import cors from "cors";
 
 import connectDB from "./config/db.js";
 import createGitHubRoutes from "./routes/auth.js";
-import githubRoutes from "./routes/github.js"; // Nowy import
+import githubRoutes from "./routes/github.js";
 import statusRoutes from "./routes/statuses.js";
 import issueRoutes from "./routes/issues.js";
 import groupRoutes from "./routes/groups.js";
@@ -26,19 +26,17 @@ app.use(session({
 // Baza danych
 connectDB();
 
-// Konfiguracja OAuth (Zostaje bez prefiksu, bo ma wewnątrz /auth/github)
+// Konfiguracja OAuth GitHub
 const CLIENT_ID = process.env.GITHUB_CLIENT_ID;
 const CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET;
 app.use(createGitHubRoutes(CLIENT_ID, CLIENT_SECRET));
 
 // Routing - Wszystkie grupy tras
-app.use("/api/github", githubRoutes);   // Obsługuje /api/github/repos itp.
+app.use("/api/github", githubRoutes); 
 app.use("/api/github/issues", issueRoutes);
 app.use("/api/statuses", statusRoutes);
 app.use("/api/group", groupRoutes);
 
-// Fix dla frontendu: Zmiana statusu pojedynczego issue w DB
-// Zostawiamy tutaj, żeby URL /api/issue-status nadal działał bez zmian na froncie
 app.put("/api/issue-status", async (req, res) => {
   try {
     const { issue_id, repo_id, status_id } = req.body;

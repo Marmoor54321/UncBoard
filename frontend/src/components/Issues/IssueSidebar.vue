@@ -197,9 +197,6 @@
 
 <script setup>
 import { reactive, computed } from 'vue'
-
-// Zakładam, że dropdowny są w folderze wyżej w strukturze (np. components/Dropdown)
-// Dostosuj ścieżkę, jeśli struktura folderów jest inna
 import UniversalDropdown from '../Dropdown/UniversalDropdown.vue'
 import DropdownSearch from '../Dropdown/DropdownSearch.vue'
 import DropdownList from '../Dropdown/DropdownList.vue'
@@ -209,7 +206,6 @@ const props = defineProps({
   repoData: { type: Object, required: true }
 })
 
-// Emitujemy eventy, a Rodzic (Parent) zajmuje się wysłaniem do API
 const emit = defineEmits(['update-assignees', 'update-labels', 'update-milestone'])
 
 // --- Search Logic ---
@@ -244,8 +240,6 @@ const toggleAssignee = (user) => {
   } else {
     currentAssignees.push(user)
   }
-  
-  // Wysyłamy całą nową tablicę obiektów do rodzica
   emit('update-assignees', currentAssignees)
 }
 
@@ -260,18 +254,14 @@ const toggleLabel = (label) => {
     currentLabels.push(label)
   }
 
-  // Wysyłamy całą nową tablicę obiektów do rodzica
   emit('update-labels', currentLabels)
 }
 
 // --- Milestone Handler ---
 const toggleMilestone = (milestone) => {
-  // Sprawdź, czy kliknięto milestone, który jest już ustawiony
   if (props.issue.milestone && props.issue.milestone.id === milestone.id) {
-    // Jeśli tak, odznaczamy go (wysyłamy null)
     emit('update-milestone', null)
   } else {
-    // Jeśli nie, odznaczamy nowy
     emit('update-milestone', milestone)
   }
   
@@ -311,7 +301,6 @@ const isPastDue = (dateString) => {
 </script>
 
 <style scoped>
-/* Te style są specyficzne tylko dla tego Sidebara i Dropdownów w nim */
 .sidebar-trigger {
   cursor: pointer;
   padding: 4px 0;

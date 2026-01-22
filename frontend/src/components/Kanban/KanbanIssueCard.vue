@@ -66,17 +66,15 @@ function getContrastColor(hexcolor) {
   background-color: #50545b;
 }
 
-/* Układ nagłówka */
 .header-row {
   display: flex;
   gap: 10px;
 }
 
 .issuetitle {
-  flex: 1; /* Zajmuje całą dostępną przestrzeń */
+  flex: 1; 
   font-size: 0.95rem;
   line-height: 1.2;
-  /* Ucinanie tekstu */
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap; 
@@ -109,8 +107,8 @@ function getContrastColor(hexcolor) {
 
 /* Awatary w prawym górnym rogu */
 .assignees-container {
-  flex-shrink: 0; /* Zapobiega ściskaniu awatarów */
-  padding-left: 8px; /* Odstęp od uciętego tytułu */
+  flex-shrink: 0; 
+  padding-left: 8px; 
 }
 
 .avatar-circle {

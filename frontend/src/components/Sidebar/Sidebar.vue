@@ -104,7 +104,6 @@ function handleCreateGroup(name) {
 }
 
 async function onPickerSelect(groupId) {
-  // pickerRepo.value jest ustawiane w momencie otwierania menu (openPickerFromMenu)
   if (pickerRepo.value && groupId) {
     await handleAddRepoToGroup({ 
       repoId: pickerRepo.value, 
@@ -177,7 +176,6 @@ function openPickerFromMenu(event) {
   if (!event || !event.target) return;
   activePicker.value = 'picker'
   
-  // Ustawiamy ID repozytorium, które chcemy dodać
   pickerRepo.value = menuRepoId.value
   pickerGroup.value = menuGroupId.value
 

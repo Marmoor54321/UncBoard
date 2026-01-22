@@ -178,7 +178,7 @@ const labelsDropdownRef = ref(null)
 const data = reactive({
   title: '',
   description: '',
-  assignees: [], // Zmieniono z assignee: null na tablicę
+  assignees: [],
   labels: [],
   milestone: null,
 })
@@ -212,7 +212,6 @@ const toggleAssignee = (item) => {
   } else {
     data.assignees.push(item)
   }
-  // Usuwamy assigneeDropdownRef.value?.close(), aby pozwolić na wybranie wielu bez zamykania
 }
 
 const selectMilestone = (item) => {
@@ -269,7 +268,6 @@ const submit = () => {
 
   emit('submit', payload)
 
-  // Resetowanie danych
   data.title = ''
   data.description = ''
   data.assignees = []
