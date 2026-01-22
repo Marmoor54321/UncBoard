@@ -60,12 +60,9 @@ const save = () => {
 .btn-save { background: #aa50e7; color: white; border: none; padding: 5px 8px; border-radius: 8px; font-size: small;}
 .btn-cancel { background: transparent; color: #ccc; border: 1px solid #555; padding: 5px 8px; border-radius: 8px; font-size: small;}
 
-/* Dodajemy style dla obrazków wewnątrz v-html. 
-   Używamy :deep(), ponieważ content z v-html nie jest objęty scope'm zwykłego CSS.
-*/
 .markdown-body :deep(img) {
   max-width: 100%;
   height: auto;
-  display: block; /* Opcjonalnie: usuwa mały odstęp pod obrazkiem */
+  display: block;
 }
 </style>

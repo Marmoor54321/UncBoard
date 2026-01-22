@@ -100,7 +100,7 @@
 import { ref } from 'vue'
 import { useMarkdown } from '../../composables/useMarkdown'
 import BaseModal from '../Modals/BaseModal.vue'
-import UniversalDropdown from '../Dropdown/UniversalDropdown.vue' // Upewnij się co do ścieżki
+import UniversalDropdown from '../Dropdown/UniversalDropdown.vue'
 
 const props = defineProps({
   items: { type: Array, default: () => [] },
@@ -110,8 +110,6 @@ const props = defineProps({
 const emit = defineEmits(['edit-comment', 'delete-comment'])
 
 const { renderMarkdown } = useMarkdown()
-
-// --- Refs dla Dropdownów ---
 const dropdownRefs = ref(new Map())
 
 const setDropdownRef = (el, id) => {
@@ -122,7 +120,6 @@ const setDropdownRef = (el, id) => {
   }
 }
 
-// Funkcja pomocnicza do zamykania konkretnego dropdowna
 const closeDropdown = (id) => {
   const dropdown = dropdownRefs.value.get(id)
   if (dropdown && dropdown.close) {
@@ -130,11 +127,9 @@ const closeDropdown = (id) => {
   }
 }
 
-// --- Stan Edycji ---
 const editingId = ref(null)
 const editContent = ref('')
 
-// --- Stan Modala ---
 const showDeleteModal = ref(false)
 const commentToDeleteId = ref(null)
 
@@ -214,7 +209,6 @@ const getEventText = (item) => {
 .comment-body { background-color: #303236; border-bottom-left-radius: 6px; border-bottom-right-radius: 6px; color: #e6edf3; overflow-wrap: break-word; }
 .comment-body :deep(img) { max-width: 100%; }
 
-/* --- Ikona Trzech Kropek --- */
 .three-dots-icon {
   opacity: 0;
   transition: opacity 0.2s, color 0.2s;
@@ -229,7 +223,6 @@ const getEventText = (item) => {
   color: white !important;
 }
 
-/* --- Style dla Dropdown Items --- */
 .dropdown-item-custom {
   padding: 8px 12px;
   cursor: pointer;

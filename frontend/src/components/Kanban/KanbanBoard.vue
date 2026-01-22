@@ -4,21 +4,30 @@
   </div>
 
   <div v-else class="flex-grow-1 d-flex flex-column overflow-hidden">
+    
     <div class="d-flex justify-content-between align-items-center mb-4">
       <h3 class="text-white">
         Issues for
-        <span class="text-primary">
-          <a :href="selectedRepo.html_url" target="_blank" rel="noopener noreferrer">
+        <span>
+          <a :href="selectedRepo.html_url" 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            style="color: #aa50e7; text-decoration: none; font-weight: bold;"
+          >
             {{ selectedRepo.name }}
           </a>
         </span>
       </h3>
+      
       <div class="d-flex gap-2">
+        
         <UniversalDropdown placement="bottom-end">
           <template #trigger>
             <button class="btn btn-dark d-flex align-items-center gap-2">
               Milestones
-              <span v-if="selectedMilestones.length > 0" class="badge bg-primary rounded-pill">
+              <span v-if="selectedMilestones.length > 0" 
+                    class="badge rounded-pill" 
+                    style="background-color: #aa50e7 !important;">
                 {{ selectedMilestones.length }}
               </span>
             </button>
@@ -51,7 +60,9 @@
           <template #trigger>
             <button class="btn btn-dark d-flex align-items-center gap-2">
               Labels
-              <span v-if="selectedLabels.length > 0" class="badge bg-primary rounded-pill">
+              <span v-if="selectedMilestones.length > 0" 
+                  class="badge rounded-pill" 
+                  style="background-color: #aa50e7 !important;">
                 {{ selectedLabels.length }}
               </span>
             </button>
@@ -157,103 +168,67 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, reactive } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
+import { useKanban } from '@/composables/useKanban.js'
+import { useKanbanFilters } from '@/composables/useKanbanFilters.js'
+
 import KanbanColumn from './KanbanColumn.vue'
 import BaseModal from '../Modals/BaseModal.vue'
 import UniversalDropdown from '../Dropdown/UniversalDropdown.vue'
 import DropdownSearch from '../Dropdown/DropdownSearch.vue'
 import DropdownList from '../Dropdown/DropdownList.vue'
 
-const props = defineProps({
-  selectedRepo: Object,
-  columns: Array,
-  issuesByColumn: Object,
-  milestones: { type: Array, default: () => [] },
-  labels: { type: Array, default: () => [] }, 
+const { 
+  selectedRepo, 
+  columns, 
+  issuesByColumn,
+  repoData,
+  groups, 
+  onDragEnd, 
+  onMoveLeft, 
+  onMoveRight, 
+  addColumn, 
+  deleteColumn, 
+  editColumn 
+} = useKanban()
+
+const {
+  milestoneSearch,
+  selectedMilestones,
+  filteredDropdownMilestones,
+  toggleMilestoneFilter,
+  
+  labelSearch,
+  selectedLabels,
+  filteredDropdownLabels,
+  toggleLabelFilter,
+  
+  filteredIssuesByColumn
+} = useKanbanFilters(repoData, issuesByColumn)
+
+
+const router = useRouter()
+const route = useRoute()
+
+defineProps({
   scrollContainer: Object,
-  groups: Object,
-  onDragEnd: Function,
-  openIssue: Function,
-  onMoveLeft: Function,
-  onMoveRight: Function,
-  // Funkcje API przekazywane z góry
-  deleteColumn: Function,
-  editColumn: Function,
-  addColumn: Function,
 })
 
 const emit = defineEmits(['add-issue'])
 
-// Logika filtrowania po milestone
-
-const milestoneSearch = ref('')
-const selectedMilestones = ref([])
-
-const filteredDropdownMilestones = computed(() => {
-  const q = milestoneSearch.value.toLowerCase()
-  return (props.milestones || []).filter(m => m.title.toLowerCase().includes(q))
-})
-
-const toggleMilestoneFilter = (milestone) => {
-  const index = selectedMilestones.value.findIndex(m => m.id === milestone.id)
-  if (index !== -1) {
-    selectedMilestones.value.splice(index, 1)
-  } else {
-    selectedMilestones.value.push(milestone)
-  }
-}
-
-// Logika filtrowania po labels
-const labelSearch = ref('')
-const selectedLabels = ref([])
-
-const filteredDropdownLabels = computed(() => {
-  const q = labelSearch.value.toLowerCase()
-  return (props.labels || []).filter(l => l.name.toLowerCase().includes(q))
-})
-
-const toggleLabelFilter = (label) => {
-  const index = selectedLabels.value.findIndex(l => l.id === label.id)
-  if (index !== -1) {
-    selectedLabels.value.splice(index, 1)
-  } else {
-    selectedLabels.value.push(label)
-  }
-}
-
-const filteredIssuesByColumn = computed(() => {
-  const hasMilestoneFilter = selectedMilestones.value.length > 0
-  const hasLabelFilter = selectedLabels.value.length > 0
-
-  // Jeśli żaden filtr nie jest aktywny, zwracamy wszystko
-  if (!hasMilestoneFilter && !hasLabelFilter) {
-    return props.issuesByColumn
-  }
-
-  const result = {}
-  
-  Object.keys(props.issuesByColumn).forEach(colKey => {
-    const issues = props.issuesByColumn[colKey]
-    
-    result[colKey] = issues.filter(issue => {
-      const matchesMilestone = !hasMilestoneFilter || (
-        issue.milestone && selectedMilestones.value.some(m => m.id === issue.milestone.id)
-      )
-      const matchesLabel = !hasLabelFilter || (
-        issue.labels && 
-        issue.labels.some(issueLabel => selectedLabels.value.some(sel => sel.id === issueLabel.id))
-      )
-      return matchesMilestone && matchesLabel
-    })
+// --- NAVIGATION ---
+function openIssue(issue) {
+  router.push({
+    name: 'issue-details',
+    params: { owner: route.params.owner, repo: route.params.repo, issueId: issue.number },
   })
+}
 
-  return result
-})
-
-
-
+// --- ZARZĄDZANIE KOLUMNAMI  ---
 const activeColumn = ref(null) 
 
+// Add Column
 const showModalAddColumn = ref(false)
 const newColumnName = ref('')
 
@@ -266,11 +241,12 @@ function closeAddColumnModal() {
 }
 function confirmAddColumn() {
   const name = newColumnName.value.trim()
-  if (!name) return
-  props.addColumn(props.selectedRepo.id, name, null)
+  if (!name || !selectedRepo.value) return
+  addColumn(selectedRepo.value.id, name, null)
   closeAddColumnModal()
 }
 
+// Rename Column
 const showModalRename = ref(false)
 const renameColumnName = ref('')
 
@@ -286,11 +262,12 @@ function closeRenameModal() {
 function confirmRename() {
   const trimmedName = renameColumnName.value.trim()
   if (trimmedName && activeColumn.value) {
-    props.editColumn(activeColumn.value.id || activeColumn.value._id, trimmedName)
+    editColumn(activeColumn.value.id || activeColumn.value._id, trimmedName)
   }
   closeRenameModal()
 }
 
+// Delete Column
 const showModalDelete = ref(false)
 
 function openDeleteModal(column) {
@@ -303,7 +280,7 @@ function closeDeleteModal() {
 }
 function confirmDelete() {
   if (activeColumn.value) {
-    props.deleteColumn(activeColumn.value)
+    deleteColumn(activeColumn.value)
   }
   closeDeleteModal()
 }

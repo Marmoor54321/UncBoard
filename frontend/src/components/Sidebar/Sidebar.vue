@@ -1,6 +1,6 @@
 <template>
   <aside
-    class="sidebar-container border-end p-3 offcanvas-lg offcanvas-start"
+    class="sidebar-container p-3 offcanvas-lg offcanvas-start"
     tabindex="-1"
     style="scrollbar-color: #303236 #1d1e20"
   >
@@ -15,25 +15,25 @@
         :expanded-groups="expandedGroups"
         :repo-map="repoMap"
         :selected-repo="selectedRepo"
-        @open-create-group="showModalCreateGroup = true"
-        @open-delete-group="openDeleteGroupModal"
-        @select-repo="selectRepo"
+        @open-create-group="modals.createGroup = true"
+        @open-delete-group="(id) => { modals.deleteGroup = true; modals.groupId = id }"
+        @select-repo="handleSelectRepo"
+        @toggle-expand="toggleGroupExpand"
         @toggle-menu="toggleMenu"
-        @toggle-expand="onToggleGroupExpand"
       />
 
       <SidebarRepositories
         :repos="repos"
         :selected-repo="selectedRepo"
-        @select-repo="selectRepo"
+        @select-repo="handleSelectRepo"
         @toggle-menu="toggleMenu"
       />
     </div>
 
     <SidebarModals
-      :show-create="showModalCreateGroup"
-      :show-delete="showModalDeleteGroup"
-      @close-create="showModalCreateGroup = false"
+      :show-create="modals.createGroup"
+      :show-delete="modals.deleteGroup"
+      @close-create="modals.createGroup = false"
       @confirm-create="handleCreateGroup"
       @close-delete="closeModalDeleteGroup"
       @confirm-delete="onConfirmDeleteGroup"
@@ -49,43 +49,83 @@
       @close-picker="closePicker"
       @keep-picker-open="keepPickerOpen"
       @delete-from-group="onDeleteFromGroupForMenu"
-      @picker-select="onPickerSelect"
+      @picker-select="onPickerSelect" 
     />
   </aside>
 </template>
 
 <script setup>
 import { ref, reactive, computed, onMounted, onBeforeUnmount } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAuth } from '@/composables/useAuth.js'
+import { useGroups } from '@/composables/useGroups.js'
+import { useKanban } from '@/composables/useKanban.js'
+
 import SidebarModals from './SidebarModals.vue'
 import SidebarContextMenus from './SidebarContextMenus.vue'
 import SidebarProfile from './SidebarProfile.vue'
 import SidebarGroups from './SidebarGroups.vue'
 import SidebarRepositories from './SidebarRepositories.vue'
 
-// --- PROPS & EMITS ---
+const router = useRouter()
+
+const { user, loginWithGithub } = useAuth()
+
+const { 
+  groupsList, 
+  handleAddGroup, 
+  handleDeleteGroup, 
+  handleAddRepoToGroup, 
+  handleDeleteRepoFromGroup 
+} = useGroups(user)
+
+const { repos, selectedRepo, selectRepo } = useKanban()
+
 const emit = defineEmits(['addRepoToGroup', 'deleteRepoFromGroup', 'addGroup', 'deleteGroup'])
-const props = defineProps({
-  user: Object,
-  repos: Array,
-  selectedRepo: Object,
-  loginWithGithub: Function,
-  selectRepo: Function,
-  groupsList: Array,
-  // USUNIĘTO: expandedGroups z props, ponieważ Sidebar powinien zarządzać tym stanem
-})
 
-const repoMap = computed(() => Object.fromEntries(props.repos.map((r) => [r.id, r])))
-
-// --- LOKALNY STAN: EXPANDED GROUPS ---
-// Tworzymy reaktywny obiekt do przechowywania stanu otwartych grup
+const repoMap = computed(() => Object.fromEntries(repos.value.map((r) => [r.id, r])))
+const modals = reactive({ createGroup: false, deleteGroup: false, groupId: null })
 const expandedGroups = reactive({})
 
-function onToggleGroupExpand(groupId) {
-  // Tutaj bezpiecznie zmieniamy stan lokalny
+// --- HANDLERS ---
+
+function handleSelectRepo(repo) {
+  selectRepo(repo)
+  router.push({ name: 'repo-board', params: { owner: repo.owner.login, repo: repo.name } })
+}
+
+function toggleGroupExpand(groupId) {
   expandedGroups[groupId] = !expandedGroups[groupId]
 }
 
-// --- RESZTA LOGIKI BEZ ZMIAN ---
+function handleCreateGroup(name) {
+  handleAddGroup({ name, created_by: user.value._id })
+  modals.createGroup = false
+}
+
+async function onPickerSelect(groupId) {
+  if (pickerRepo.value && groupId) {
+    await handleAddRepoToGroup({ 
+      repoId: pickerRepo.value, 
+      groupId: groupId 
+    })
+  }
+  closeMenu()
+}
+
+function closeModalDeleteGroup() {
+  modals.deleteGroup = false
+  modals.groupId = null
+}
+
+function onConfirmDeleteGroup() {
+  if (modals.groupId) {
+    handleDeleteGroup({ groupId: modals.groupId })
+  }
+  closeModalDeleteGroup()
+}
+
+// --- CONTEXT MENU LOGIC ---
 const activeMenu = ref(null)
 const activePicker = ref(null)
 const menuRepoId = ref(null)
@@ -94,33 +134,6 @@ const pickerRepo = ref(null)
 const pickerGroup = ref(null)
 const menuStyle = ref({ top: '0px', left: '0px', position: 'fixed', zIndex: 9999 })
 const pickerStyle = ref({ top: '0px', left: '0px', position: 'fixed', zIndex: 9999 })
-let lastMenuEventTarget = null 
-
-const showModalCreateGroup = ref(false)
-const showModalDeleteGroup = ref(false)
-const groupToDeleteId = ref(null)
-
-function handleCreateGroup(name) {
-  emit('addGroup', { name, created_by: props.user._id })
-  showModalCreateGroup.value = false
-}
-
-function openDeleteGroupModal(groupId) {
-  groupToDeleteId.value = groupId
-  showModalDeleteGroup.value = true
-}
-
-function closeModalDeleteGroup() {
-  showModalDeleteGroup.value = false
-  groupToDeleteId.value = null
-}
-
-function onConfirmDeleteGroup() {
-  if (groupToDeleteId.value) {
-    emit('deleteGroup', { groupId: groupToDeleteId.value })
-  }
-  closeModalDeleteGroup()
-}
 
 function toggleMenu(id, event) {
   if (activeMenu.value === id) {
@@ -129,8 +142,7 @@ function toggleMenu(id, event) {
   }
   activeMenu.value = id
   activePicker.value = null
-  lastMenuEventTarget = event.target 
-
+  
   const rect = event.target.getBoundingClientRect()
   const windowHeight = window.innerHeight
   const estimatedMenuHeight = 120
@@ -144,6 +156,7 @@ function toggleMenu(id, event) {
   }
   menuStyle.value = newStyle
 
+  // Parsowanie ID
   if (id.startsWith('repo-')) {
     menuRepoId.value = parseInt(id.split('-')[1])
     menuGroupId.value = null
@@ -162,6 +175,7 @@ function closeMenu() {
 function openPickerFromMenu(event) {
   if (!event || !event.target) return;
   activePicker.value = 'picker'
+  
   pickerRepo.value = menuRepoId.value
   pickerGroup.value = menuGroupId.value
 
@@ -188,13 +202,11 @@ function openPickerFromMenu(event) {
 function keepPickerOpen() {}
 function closePicker() { activePicker.value = null }
 
-function onPickerSelect(groupId) {
-  emit('addRepoToGroup', { repoId: pickerRepo.value, groupId })
-  closeMenu()
-}
-
 function onDeleteFromGroupForMenu() {
-  emit('deleteRepoFromGroup', { repoId: menuRepoId.value, groupId: menuGroupId.value })
+  handleDeleteRepoFromGroup({ 
+    repoId: menuRepoId.value, 
+    groupId: menuGroupId.value 
+  })
   closeMenu()
 }
 

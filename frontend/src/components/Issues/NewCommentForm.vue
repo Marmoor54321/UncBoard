@@ -31,8 +31,6 @@ const commentBody = ref('')
 
 const submit = () => {
   emit('submit', commentBody.value)
-  // Opcjonalnie czyszczenie dopiero po sukcesie (wymagałoby zmiany komunikacji),
-  // ale dla uproszczenia czyścimy tutaj lub rodzic czyści refa przy sukcesie.
   commentBody.value = '' 
 }
 </script>
