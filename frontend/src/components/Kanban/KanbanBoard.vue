@@ -160,9 +160,10 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, reactive } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useKanban } from '@/composables/useKanban.js'
+import { useKanbanFilters } from '@/composables/useKanbanFilters.js'
 
 // Komponenty
 import KanbanColumn from './KanbanColumn.vue'
@@ -174,7 +175,7 @@ import DropdownList from '../Dropdown/DropdownList.vue'
 const { 
   selectedRepo, 
   columns, 
-  issuesByColumn, 
+  issuesByColumn,
   repoData,
   groups, 
   onDragEnd, 
@@ -185,10 +186,24 @@ const {
   editColumn 
 } = useKanban()
 
+const {
+  milestoneSearch,
+  selectedMilestones,
+  filteredDropdownMilestones,
+  toggleMilestoneFilter,
+  
+  labelSearch,
+  selectedLabels,
+  filteredDropdownLabels,
+  toggleLabelFilter,
+  
+  filteredIssuesByColumn
+} = useKanbanFilters(repoData, issuesByColumn)
+
+
 const router = useRouter()
 const route = useRoute()
 
-// --- PROPS ---
 defineProps({
   scrollContainer: Object,
 })
@@ -202,71 +217,6 @@ function openIssue(issue) {
     params: { owner: route.params.owner, repo: route.params.repo, issueId: issue.number },
   })
 }
-
-// --- FILTROWANIE (Milestones) ---
-const milestoneSearch = ref('')
-const selectedMilestones = ref([])
-
-const filteredDropdownMilestones = computed(() => {
-  const q = milestoneSearch.value.toLowerCase()
-  return (repoData.value.milestones || []).filter(m => m.title.toLowerCase().includes(q))
-})
-
-const toggleMilestoneFilter = (milestone) => {
-  const index = selectedMilestones.value.findIndex(m => m.id === milestone.id)
-  if (index !== -1) {
-    selectedMilestones.value.splice(index, 1)
-  } else {
-    selectedMilestones.value.push(milestone)
-  }
-}
-
-// --- FILTROWANIE (Labels) ---
-const labelSearch = ref('')
-const selectedLabels = ref([])
-
-const filteredDropdownLabels = computed(() => {
-  const q = labelSearch.value.toLowerCase()
-  return (repoData.value.labels || []).filter(l => l.name.toLowerCase().includes(q))
-})
-
-const toggleLabelFilter = (label) => {
-  const index = selectedLabels.value.findIndex(l => l.id === label.id)
-  if (index !== -1) {
-    selectedLabels.value.splice(index, 1)
-  } else {
-    selectedLabels.value.push(label)
-  }
-}
-
-// --- LOGIKA FILTROWANIA ISSUE ---
-const filteredIssuesByColumn = computed(() => {
-  const hasMilestoneFilter = selectedMilestones.value.length > 0
-  const hasLabelFilter = selectedLabels.value.length > 0
-
-  if (!hasMilestoneFilter && !hasLabelFilter) {
-    return issuesByColumn.value
-  }
-
-  const result = {}
-  
-  Object.keys(issuesByColumn.value).forEach(colKey => {
-    const issues = issuesByColumn.value[colKey]
-    
-    result[colKey] = issues.filter(issue => {
-      const matchesMilestone = !hasMilestoneFilter || (
-        issue.milestone && selectedMilestones.value.some(m => m.id === issue.milestone.id)
-      )
-      const matchesLabel = !hasLabelFilter || (
-        issue.labels && 
-        issue.labels.some(issueLabel => selectedLabels.value.some(sel => sel.id === issueLabel.id))
-      )
-      return matchesMilestone && matchesLabel
-    })
-  })
-
-  return result
-})
 
 // --- ZARZĄDZANIE KOLUMNAMI (Modale) ---
 const activeColumn = ref(null) 
