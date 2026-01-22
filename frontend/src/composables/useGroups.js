@@ -10,7 +10,7 @@ export function useGroups(user) {
   async function loadGroups() {
     if (!user.value) return
     try {
-      const res = await axios.get(`${apiBase}/api/groups/${user.value._id}`, { withCredentials: true })
+      const res = await axios.get(`${apiBase}/api/group/${user.value._id}`, { withCredentials: true })
       groupsList.value = res.data
     } catch (e) {
       console.error("Error loading groups:", e)
