@@ -53,6 +53,42 @@
       </div>
     </div>
 
+    <div v-if="showManageMembers" class="modal-backdrop" @click="$emit('closeManageMembers')">
+      <div class="modal-window members-modal" @click.stop>
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h5 class="text-white m-0">Members: {{ org?.name }}</h5>
+          <button class="btn-close btn-close-white" @click="$emit('closeManageMembers')"></button>
+        </div>
+
+        <div class="members-list mb-4">
+          <div v-for="m in org?.members" :key="m.user._id" class="member-item d-flex align-items-center justify-content-between">
+            <div class="d-flex align-items-center gap-2">
+              <img :src="m.user.avatar_url" class="avatar-sm" alt="avatar" />
+              <div>
+                <div class="text-white small">{{ m.user.login }}</div>
+                <div class="text-muted" style="font-size: 0.7rem;">{{ m.role }}</div>
+              </div>
+            </div>
+            <i v-if="m.role !== 'owner'" 
+               class="bi bi-person-x text-danger action-icon" 
+               @click="$emit('removeMember', { orgId: org._id, userId: m.user._id })"></i>
+          </div>
+        </div>
+
+        <hr class="border-secondary" />
+
+        <h6 class="text-white-50 small mb-2">Add New Member</h6>
+        <div class="d-flex gap-2">
+          <input v-model="memberForm.login" type="text" class="modal-input" placeholder="GitHub login" @keyup.enter="handleAddMember" />
+          <select v-model="memberForm.role" class="modal-input w-auto">
+            <option value="member">Member</option>
+            <option value="admin">Admin</option>
+          </select>
+          <button class="btn btn-primary btn-sm" @click="handleAddMember">Add</button>
+        </div>
+      </div>
+    </div>
+
   </Teleport>
 </template>
 
@@ -62,10 +98,12 @@ import { reactive, watch } from 'vue'
 const props = defineProps({
   showCreate: Boolean,
   showAddMember: Boolean,
-  showDelete: Boolean
+  showDelete: Boolean,
+  showManageMembers: Boolean,
+  org: Object
 })
 
-const emit = defineEmits(['closeCreate', 'confirmCreate', 'closeAddMember', 'confirmAddMember','closeDelete', 'confirmDelete'])
+const emit = defineEmits(['closeCreate', 'confirmCreate', 'closeAddMember', 'confirmAddMember','closeDelete', 'confirmDelete','closeManageMembers','removeMember'])
 
 const form = reactive({ name: '', description: '' })
 const memberForm = reactive({ login: '', role: 'member' })
@@ -79,13 +117,18 @@ function handleCreate() {
 
 function handleAddMember() {
   if (!memberForm.login) return
-  emit('confirmAddMember', { ...memberForm })
+  emit('confirmAddMember', { login: memberForm.login, role: memberForm.role })
   memberForm.login = ''
-  memberForm.role = 'member'
 }
 </script>
 
 <style scoped>
+/* Dodatkowe style dla panelu członków */
+.members-modal { width: 450px; }
+.members-list { max-height: 200px; overflow-y: auto; background: #1d1e20; border-radius: 4px; padding: 5px; }
+.member-item { padding: 8px; border-bottom: 1px solid #333; }
+.member-item:last-child { border-bottom: none; }
+.avatar-sm { width: 32px; height: 32px; border-radius: 50%; }
 /* Te same style co w innych modalach */
 .modal-backdrop {
   position: fixed; top: 0; left: 0; width: 100%; height: 100%;

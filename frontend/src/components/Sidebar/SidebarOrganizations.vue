@@ -33,6 +33,13 @@
                 <i class="bi bi-person-plus action-icon text-primary" 
                    title="Add Member"
                    @click.stop="$emit('openAddMember', org._id)"></i>
+
+                <div class="d-flex gap-2">
+                <i class="bi bi-people action-icon text-primary" 
+                    title="Manage Members"
+                    @click.stop="$emit('openManageMembers', org)"></i>
+                    
+                </div>
                 <i class="bi bi-trash action-icon text-danger" 
                    title="Delete Organization"
                    @click.stop="$emit('openDeleteOrg', org._id)"></i>
@@ -72,7 +79,7 @@ defineProps({
   selectedRepo: Object
 })
 
-const emit = defineEmits(['openCreateOrg', 'openDeleteOrg', 'openAddMember', 'selectRepo', 'toggleMenu', 'toggleExpand'])
+const emit = defineEmits(['openCreateOrg', 'openDeleteOrg', 'openAddMember', 'selectRepo', 'toggleMenu', 'toggleExpand','openManageMembers'])
 
 function toggleExpand(orgId) {
   emit('toggleExpand', orgId)

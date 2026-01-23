@@ -21,6 +21,7 @@
         @select-repo="handleSelectRepo"
         @toggle-expand="toggleOrgExpand"
         @toggle-menu="toggleMenu"
+        @open-manage-members="openManageMembers"
       />
       
       <SidebarGroups
@@ -55,12 +56,16 @@
       :show-create="modals.createOrg"
       :show-add-member="modals.addMember"
       :show-delete="modals.deleteOrg" 
+      :show-manage-members="modals.manageMembers"
+      :org="selectedOrgForMembers"
       @close-create="modals.createOrg = false"
       @confirm-create="handleCreateOrg"
       @close-add-member="modals.addMember = false"
       @confirm-add-member="handleAddMember"
       @close-delete="closeModalDeleteOrg"
       @confirm-delete="onConfirmDeleteOrg"
+      @close-manage-members="modals.manageMembers = false"
+      @remove-member="handleRemoveMember"
     />
 
     <SidebarContextMenus
@@ -117,10 +122,12 @@ const {
 const repoMap = computed(() => Object.fromEntries(repos.value.map((r) => [r.id, r])))
 const modals = reactive({ 
   createGroup: false, deleteGroup: false, groupId: null,
-  createOrg: false, addMember: false, orgId: null, deleteOrg: false
+  createOrg: false, addMember: false, orgId: null, deleteOrg: false,
+  manageMembers: false
 })
 const expandedGroups = reactive({})
 const expandedOrgs = reactive({})
+const selectedOrgForMembers = ref(null)
 
 // Init
 watch(user, async (newUser) => {
@@ -144,10 +151,10 @@ function onConfirmDeleteGroup() { if (modals.groupId) handleDeleteGroup({ groupI
 // Organizacje
 function toggleOrgExpand(orgId) { expandedOrgs[orgId] = !expandedOrgs[orgId] }
 function handleCreateOrg(data) { createOrganization(data); modals.createOrg = false }
-function handleAddMember(data) {
-  if(modals.orgId) addMemberToOrganization({ orgId: modals.orgId, userLogin: data.login, role: data.role })
-  modals.addMember = false
-}
+// function handleAddMember(data) {
+//   if(modals.orgId) addMemberToOrganization({ orgId: modals.orgId, userLogin: data.login, role: data.role })
+//   modals.addMember = false
+// }
 
 // Handlery dla organizacji
 function openDeleteOrgModal(id) {
@@ -164,6 +171,33 @@ async function onConfirmDeleteOrg() {
   if (modals.orgId) {
     await deleteOrganization(modals.orgId);
     closeModalDeleteOrg();
+  }
+}
+
+// --- HANDLERS ---
+function openManageMembers(org) {
+  selectedOrgForMembers.value = org
+  modals.orgId = org._id
+  modals.manageMembers = true
+}
+
+async function handleAddMember(data) {
+  await addMemberToOrganization({ 
+    orgId: modals.orgId, 
+    userLogin: data.login, 
+    role: data.role 
+  })
+  // Odświeżamy lokalny obiekt organizacji, żeby lista w modalu się zaktualizowała
+  // Zakładając, że loadOrganizations aktualizuje orgsList
+  const updatedOrg = orgsList.value.find(o => o._id === modals.orgId)
+  if (updatedOrg) selectedOrgForMembers.value = updatedOrg
+}
+
+async function handleRemoveMember({ orgId, userId }) {
+  if (confirm("Remove this member?")) {
+    await removeMemberFromOrganization({ orgId, userId })
+    const updatedOrg = orgsList.value.find(o => o._id === orgId)
+    if (updatedOrg) selectedOrgForMembers.value = updatedOrg
   }
 }
 
