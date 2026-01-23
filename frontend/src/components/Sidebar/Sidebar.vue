@@ -1,5 +1,10 @@
 <template>
-  <aside class="sidebar-wrapper offcanvas-lg offcanvas-start" tabindex="-1">
+  <aside
+    class="sidebar-wrapper offcanvas-lg offcanvas-start"
+    tabindex="-1"
+    id="sidebarOffcanvas"
+    aria-labelledby="sidebarOffcanvasLabel"
+  >
     <div class="sidebar-header p-3 pb-0">
       <SidebarProfile :user="user" @login="loginWithGithub" />
 
