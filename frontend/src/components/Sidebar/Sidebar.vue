@@ -15,6 +15,7 @@
 
     <div class="sidebar-content p-3 pt-0" v-if="user">
       <SidebarGroups
+        class="flex-section"
         :groups-list="groupsList"
         :expanded-groups="expandedGroups"
         :repo-map="repoMap"
@@ -33,6 +34,7 @@
       />
 
       <SidebarRepositories
+        class="flex-section"
         :repos="repos"
         :selected-repo="selectedRepo"
         :search-query="globalSearch"
@@ -40,7 +42,6 @@
         @toggle-menu="toggleMenu"
       />
     </div>
-
     <SidebarModals
       :show-create="modals.createGroup"
       :show-delete="modals.deleteGroup"
@@ -258,8 +259,17 @@ onBeforeUnmount(() => {
 
 .sidebar-content {
   flex-grow: 1;
-  overflow-y: auto;
-  scrollbar-gutter: stable;
-  scrollbar-color: #303236 #1d1e20;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 10px;
+}
+
+.flex-section {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1;
+  transition: flex 0.3s ease;
 }
 </style>

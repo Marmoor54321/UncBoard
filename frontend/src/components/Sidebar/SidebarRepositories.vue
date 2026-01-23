@@ -1,7 +1,7 @@
 <template>
-  <div class="mt-4">
+  <div :style="{ flex: isSectionOpen ? '1' : '0 auto' }" class="d-flex flex-column h-100">
     <div
-      class="d-flex align-items-center gap-2 mb-2 section-toggle"
+      class="d-flex align-items-center gap-2 mb-2 mt-4 flex-shrink-0 section-toggle"
       title="Kliknij, aby zwinąć lub rozwinąć"
       @click="isSectionOpen = !isSectionOpen"
     >
@@ -9,7 +9,7 @@
       <h6 class="m-0 transition-colors">Your Repositories</h6>
     </div>
 
-    <div v-show="isSectionOpen">
+    <div v-show="isSectionOpen" class="scrollable-list-container">
       <ul class="list-group custom-list">
         <TransitionGroup name="list">
           <li
@@ -20,7 +20,6 @@
             @click="$emit('selectRepo', repo)"
           >
             <span>{{ repo.name }}</span>
-
             <i
               class="bi bi-three-dots-vertical text-white ms-2"
               @click.stop="$emit('toggleMenu', `repo-${repo.id}`, $event)"
@@ -139,5 +138,23 @@ const filteredRepos = computed(() => {
 
 .section-toggle:hover {
   color: #aa50e7 !important;
+}
+
+.scrollable-list-container {
+  overflow-y: auto;
+  flex-grow: 1;
+  min-height: 0;
+  scrollbar-width: thin;
+  scrollbar-color: #444 #1d1e20;
+}
+.scrollable-list-container::-webkit-scrollbar {
+  width: 6px;
+}
+.scrollable-list-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scrollable-list-container::-webkit-scrollbar-thumb {
+  background-color: #444;
+  border-radius: 10px;
 }
 </style>

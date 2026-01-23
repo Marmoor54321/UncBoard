@@ -1,6 +1,6 @@
 <template>
-  <div>
-    <div class="d-flex justify-content-between align-items-center mt-4 mb-2">
+  <div :style="{ flex: isSectionOpen ? '1' : '0 auto' }" class="d-flex flex-column h-100">
+    <div class="d-flex justify-content-between align-items-center mt-4 mb-2 flex-shrink-0">
       <div
         class="d-flex align-items-center gap-2 section-toggle"
         title="Kliknij, aby zwinąć lub rozwinąć"
@@ -15,7 +15,7 @@
       </button>
     </div>
 
-    <div v-show="isSectionOpen">
+    <div v-show="isSectionOpen" class="scrollable-list-container">
       <ul class="list-group custom-list">
         <li
           v-for="group in filteredGroups"
@@ -44,13 +44,11 @@
                 @click="$emit('selectRepo', repoMap[repoId])"
               >
                 <span>{{ repoMap[repoId]?.name || 'Unknown repo' }}</span>
-
                 <i
                   class="bi bi-three-dots-vertical text-white ms-2"
                   @click.stop="$emit('toggleMenu', `group-${group._id}-${repoId}`, $event)"
                 ></i>
               </li>
-
               <div class="delete-group-btn d-flex align-items-center text-danger mt-2">
                 <i
                   class="bi bi-trash ms-auto"
@@ -200,5 +198,24 @@ function toggleExpand(groupId) {
 
 .section-toggle:hover {
   color: #aa50e7 !important;
+}
+
+.scrollable-list-container {
+  overflow-y: auto;
+  flex-grow: 1;
+  min-height: 0;
+  scrollbar-width: thin;
+  scrollbar-color: #444 #1d1e20;
+}
+
+.scrollable-list-container::-webkit-scrollbar {
+  width: 6px;
+}
+.scrollable-list-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scrollable-list-container::-webkit-scrollbar-thumb {
+  background-color: #444;
+  border-radius: 10px;
 }
 </style>
