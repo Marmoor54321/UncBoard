@@ -115,7 +115,8 @@ const {
 
 const { 
   orgsList, loadOrganizations, createOrganization, deleteOrganization, 
-  addRepoToOrganization, removeRepoFromOrganization, addMemberToOrganization 
+  addRepoToOrganization, removeRepoFromOrganization, addMemberToOrganization , 
+  removeMemberFromOrganization
 } = useOrganizations(user)
 
 // --- STATE ---

@@ -26,7 +26,7 @@
           <ul v-if="expandedOrgs[org._id]" class="list-group nested-list">
             
             <div class="d-flex justify-content-between px-2 py-1 mb-1 border-bottom border-secondary">
-              <small class="text-muted" style="font-size: 0.75rem">
+              <small class="text-white" style="font-size: 0.75rem">
                 Members: {{ org.members.length }}
               </small>
               <div class="d-flex gap-2">
@@ -61,7 +61,7 @@
               ></i>
             </li>
             
-            <div v-if="org.repo_ids.length === 0" class="text-center text-muted py-2" style="font-size: 0.8rem">
+            <div v-if="org.repo_ids.length === 0" class="text-center text-white py-2" style="font-size: 0.8rem">
               No repositories
             </div>
           </ul>
