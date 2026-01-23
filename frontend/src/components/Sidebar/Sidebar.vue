@@ -1,22 +1,32 @@
 <template>
-  <aside
-    class="sidebar-container p-3 offcanvas-lg offcanvas-start"
-    tabindex="-1"
-    style="scrollbar-color: #303236 #1d1e20"
-  >
-    <SidebarProfile 
-      :user="user" 
-      @login="loginWithGithub" 
-    />
+  <aside class="sidebar-wrapper offcanvas-lg offcanvas-start" tabindex="-1">
+    <div class="sidebar-header p-3 pb-0">
+      <SidebarProfile :user="user" @login="loginWithGithub" />
 
-    <div v-if="user">
+      <div class="mt-3 mb-2" v-if="user">
+        <input
+          v-model="globalSearch"
+          type="text"
+          class="form-control bg-dark text-white border-secondary"
+          placeholder="Search groups & repos..."
+        />
+      </div>
+    </div>
+
+    <div class="sidebar-content p-3 pt-0" v-if="user">
       <SidebarGroups
         :groups-list="groupsList"
         :expanded-groups="expandedGroups"
         :repo-map="repoMap"
         :selected-repo="selectedRepo"
+        :search-query="globalSearch"
         @open-create-group="modals.createGroup = true"
-        @open-delete-group="(id) => { modals.deleteGroup = true; modals.groupId = id }"
+        @open-delete-group="
+          (id) => {
+            modals.deleteGroup = true
+            modals.groupId = id
+          }
+        "
         @select-repo="handleSelectRepo"
         @toggle-expand="toggleGroupExpand"
         @toggle-menu="toggleMenu"
@@ -25,6 +35,7 @@
       <SidebarRepositories
         :repos="repos"
         :selected-repo="selectedRepo"
+        :search-query="globalSearch"
         @select-repo="handleSelectRepo"
         @toggle-menu="toggleMenu"
       />
@@ -49,7 +60,7 @@
       @close-picker="closePicker"
       @keep-picker-open="keepPickerOpen"
       @delete-from-group="onDeleteFromGroupForMenu"
-      @picker-select="onPickerSelect" 
+      @picker-select="onPickerSelect"
     />
   </aside>
 </template>
@@ -71,12 +82,12 @@ const router = useRouter()
 
 const { user, loginWithGithub } = useAuth()
 
-const { 
-  groupsList, 
-  handleAddGroup, 
-  handleDeleteGroup, 
-  handleAddRepoToGroup, 
-  handleDeleteRepoFromGroup 
+const {
+  groupsList,
+  handleAddGroup,
+  handleDeleteGroup,
+  handleAddRepoToGroup,
+  handleDeleteRepoFromGroup,
 } = useGroups(user)
 
 const { repos, selectedRepo, selectRepo } = useKanban()
@@ -86,6 +97,7 @@ const emit = defineEmits(['addRepoToGroup', 'deleteRepoFromGroup', 'addGroup', '
 const repoMap = computed(() => Object.fromEntries(repos.value.map((r) => [r.id, r])))
 const modals = reactive({ createGroup: false, deleteGroup: false, groupId: null })
 const expandedGroups = reactive({})
+const globalSearch = ref('')
 
 // --- HANDLERS ---
 
@@ -105,9 +117,9 @@ function handleCreateGroup(name) {
 
 async function onPickerSelect(groupId) {
   if (pickerRepo.value && groupId) {
-    await handleAddRepoToGroup({ 
-      repoId: pickerRepo.value, 
-      groupId: groupId 
+    await handleAddRepoToGroup({
+      repoId: pickerRepo.value,
+      groupId: groupId,
     })
   }
   closeMenu()
@@ -142,13 +154,19 @@ function toggleMenu(id, event) {
   }
   activeMenu.value = id
   activePicker.value = null
-  
+
   const rect = event.target.getBoundingClientRect()
   const windowHeight = window.innerHeight
   const estimatedMenuHeight = 120
   const spaceBelow = windowHeight - rect.bottom
 
-  let newStyle = { position: 'fixed', left: rect.right + 12 + 'px', zIndex: 9999, top: rect.top + 'px', bottom: 'auto' }
+  let newStyle = {
+    position: 'fixed',
+    left: rect.right + 12 + 'px',
+    zIndex: 9999,
+    top: rect.top + 'px',
+    bottom: 'auto',
+  }
 
   if (spaceBelow < estimatedMenuHeight) {
     newStyle.top = 'auto'
@@ -173,9 +191,9 @@ function closeMenu() {
 }
 
 function openPickerFromMenu(event) {
-  if (!event || !event.target) return;
+  if (!event || !event.target) return
   activePicker.value = 'picker'
-  
+
   pickerRepo.value = menuRepoId.value
   pickerGroup.value = menuGroupId.value
 
@@ -186,26 +204,28 @@ function openPickerFromMenu(event) {
 
   let newStyle = {
     position: 'fixed',
-    left: (rect.right + 4) + 'px', 
-    zIndex: 10000, 
+    left: rect.right + 4 + 'px',
+    zIndex: 10000,
     top: rect.top + 'px',
     bottom: 'auto',
   }
 
   if (spaceBelow < estimatedPickerHeight) {
     newStyle.top = 'auto'
-    newStyle.bottom = (windowHeight - rect.bottom) + 'px'
+    newStyle.bottom = windowHeight - rect.bottom + 'px'
   }
   pickerStyle.value = newStyle
 }
 
 function keepPickerOpen() {}
-function closePicker() { activePicker.value = null }
+function closePicker() {
+  activePicker.value = null
+}
 
 function onDeleteFromGroupForMenu() {
-  handleDeleteRepoFromGroup({ 
-    repoId: menuRepoId.value, 
-    groupId: menuGroupId.value 
+  handleDeleteRepoFromGroup({
+    repoId: menuRepoId.value,
+    groupId: menuGroupId.value,
   })
   closeMenu()
 }
@@ -221,13 +241,25 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
-.sidebar-container {
-  background-color: #1d1e20; 
-  height: 94vh; 
-  width: 340px; 
+.sidebar-wrapper {
+  background-color: #1d1e20;
+  height: 100vh;
+  width: 340px;
   min-width: 340px;
-  overflow-y: auto; 
-  overflow-x: hidden; 
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.sidebar-header {
+  flex-shrink: 0;
+  border-bottom: 1px solid #2b2d31;
+}
+
+.sidebar-content {
+  flex-grow: 1;
+  overflow-y: auto;
   scrollbar-gutter: stable;
+  scrollbar-color: #303236 #1d1e20;
 }
 </style>
