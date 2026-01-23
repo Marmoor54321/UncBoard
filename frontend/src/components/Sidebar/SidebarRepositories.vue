@@ -1,34 +1,46 @@
 <template>
   <div class="mt-4">
-    <h6 class="text-white">Your Repositories</h6>
+    <div
+      class="d-flex align-items-center gap-2 mb-2 section-toggle"
+      title="Kliknij, aby zwinąć lub rozwinąć"
+      @click="isSectionOpen = !isSectionOpen"
+    >
+      <i class="bi" :class="isSectionOpen ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+      <h6 class="m-0 transition-colors">Your Repositories</h6>
+    </div>
 
-    <ul class="list-group custom-list">
-      <TransitionGroup name="list">
-        <li
-          v-for="repo in filteredRepos"
-          :key="repo.id"
-          class="list-group-item d-flex justify-content-between align-items-center repo-item"
-          :class="{ active: selectedRepo && selectedRepo.id === repo.id }"
-          @click="$emit('selectRepo', repo)"
+    <div v-show="isSectionOpen">
+      <ul class="list-group custom-list">
+        <TransitionGroup name="list">
+          <li
+            v-for="repo in filteredRepos"
+            :key="repo.id"
+            class="list-group-item d-flex justify-content-between align-items-center repo-item"
+            :class="{ active: selectedRepo && selectedRepo.id === repo.id }"
+            @click="$emit('selectRepo', repo)"
+          >
+            <span>{{ repo.name }}</span>
+
+            <i
+              class="bi bi-three-dots-vertical text-white ms-2"
+              @click.stop="$emit('toggleMenu', `repo-${repo.id}`, $event)"
+            ></i>
+          </li>
+        </TransitionGroup>
+
+        <div
+          v-if="filteredRepos.length === 0 && searchQuery"
+          class="text-center text-white-50 mt-3"
         >
-          <span>{{ repo.name }}</span>
-
-          <i
-            class="bi bi-three-dots-vertical text-white ms-2"
-            @click.stop="$emit('toggleMenu', `repo-${repo.id}`, $event)"
-          ></i>
-        </li>
-      </TransitionGroup>
-
-      <div v-if="filteredRepos.length === 0 && searchQuery" class="text-center text-white-50 mt-3">
-        No repositories found.
-      </div>
-    </ul>
+          No repositories found.
+        </div>
+      </ul>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { ref, computed } from 'vue'
 
 const props = defineProps({
   repos: {
@@ -40,6 +52,8 @@ const props = defineProps({
 })
 
 defineEmits(['selectRepo', 'toggleMenu'])
+
+const isSectionOpen = ref(true)
 
 const filteredRepos = computed(() => {
   if (!props.searchQuery || !props.searchQuery.trim()) return props.repos
@@ -109,5 +123,21 @@ const filteredRepos = computed(() => {
 .list-leave-to {
   opacity: 0;
   max-height: 0;
+}
+
+.section-toggle {
+  cursor: pointer;
+  user-select: none;
+  color: white;
+  transition: color 0.2s ease;
+}
+
+.section-toggle h6 {
+  color: inherit;
+  transition: color 0.2s ease;
+}
+
+.section-toggle:hover {
+  color: #aa50e7 !important;
 }
 </style>
