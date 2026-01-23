@@ -262,7 +262,7 @@ onBeforeUnmount(() => {
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  padding-bottom: 10px;
+  min-height: 0;
 }
 
 .flex-section {

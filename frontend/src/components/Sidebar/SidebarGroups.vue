@@ -1,5 +1,5 @@
 <template>
-  <div :style="{ flex: isSectionOpen ? '1' : '0 auto' }" class="d-flex flex-column h-100">
+  <div class="d-flex flex-column group-root" :style="{ flex: isSectionOpen ? '1' : '0 auto' }">
     <div class="d-flex justify-content-between align-items-center mt-4 mb-2 flex-shrink-0">
       <div
         class="d-flex align-items-center gap-2 section-toggle"
@@ -204,6 +204,35 @@ function toggleExpand(groupId) {
   overflow-y: auto;
   flex-grow: 1;
   min-height: 0;
+  scrollbar-width: thin;
+  scrollbar-color: #444 #1d1e20;
+}
+
+.scrollable-list-container::-webkit-scrollbar {
+  width: 6px;
+}
+.scrollable-list-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scrollable-list-container::-webkit-scrollbar-thumb {
+  background-color: #444;
+  border-radius: 10px;
+}
+
+.group-root {
+  min-height: 0;
+  overflow: hidden;
+  transition: flex 0.3s ease;
+}
+
+.scrollable-list-container {
+  overflow-y: auto;
+  flex-grow: 1;
+  height: 100%;
+
+  padding-bottom: 10px;
+  padding-right: 5px;
+
   scrollbar-width: thin;
   scrollbar-color: #444 #1d1e20;
 }

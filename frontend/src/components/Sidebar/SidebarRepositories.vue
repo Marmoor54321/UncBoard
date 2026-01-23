@@ -1,5 +1,5 @@
 <template>
-  <div :style="{ flex: isSectionOpen ? '1' : '0 auto' }" class="d-flex flex-column h-100">
+  <div class="d-flex flex-column repo-root" :style="{ flex: isSectionOpen ? '1' : '0 auto' }">
     <div
       class="d-flex align-items-center gap-2 mb-2 mt-4 flex-shrink-0 section-toggle"
       title="Kliknij, aby zwinąć lub rozwinąć"
@@ -144,9 +144,40 @@ const filteredRepos = computed(() => {
   overflow-y: auto;
   flex-grow: 1;
   min-height: 0;
+  padding-bottom: 40px;
+  padding-right: 5px;
   scrollbar-width: thin;
   scrollbar-color: #444 #1d1e20;
 }
+.scrollable-list-container::-webkit-scrollbar {
+  width: 6px;
+}
+.scrollable-list-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scrollable-list-container::-webkit-scrollbar-thumb {
+  background-color: #444;
+  border-radius: 10px;
+}
+
+.repo-root {
+  min-height: 0;
+  overflow: hidden;
+  transition: flex 0.3s ease;
+}
+
+.scrollable-list-container {
+  overflow-y: auto;
+  flex-grow: 1;
+  height: 100%;
+
+  padding-bottom: 60px;
+  padding-right: 5px;
+
+  scrollbar-width: thin;
+  scrollbar-color: #444 #1d1e20;
+}
+
 .scrollable-list-container::-webkit-scrollbar {
   width: 6px;
 }
