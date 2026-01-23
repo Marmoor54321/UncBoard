@@ -1,59 +1,78 @@
 <template>
+  <BaseModal
+    :show="showCreate"
+    default-title="Create Organization"
+    @close="$emit('closeCreate')"
+    @confirm="handleCreate"
+  >
+    <div class="modal-field">
+      <label>Name</label>
+      <input 
+        v-model="form.name" 
+        type="text" 
+        class="modal-input" 
+        placeholder="My Cool Team" 
+        @keyup.enter="handleCreate"
+      />
+    </div>
+
+    <div class="modal-field">
+      <label>Description</label>
+      <input 
+        v-model="form.description" 
+        type="text" 
+        class="modal-input" 
+        placeholder="Optional description" 
+        @keyup.enter="handleCreate"
+      />
+    </div>
+  </BaseModal>
+
+  <BaseModal
+    :show="showAddMember"
+    default-title="Add Member"
+    @close="$emit('closeAddMember')"
+    @confirm="handleAddMember"
+  >
+    <p class="text-white-50 small mb-3">User must have logged into this app before.</p>
+    
+    <div class="modal-field">
+      <label>GitHub Username</label>
+      <input 
+        v-model="memberForm.login" 
+        type="text" 
+        class="modal-input" 
+        placeholder="e.g. octocat" 
+        @keyup.enter="handleAddMember"
+      />
+    </div>
+    
+    <div class="modal-field">
+      <label>Role</label>
+      <select v-model="memberForm.role" class="modal-input">
+        <option value="member">Member</option>
+        <option value="admin">Admin</option>
+      </select>
+    </div>
+  </BaseModal>
+
+  <BaseModal
+    :show="showDelete"
+    default-title="Delete Organization"
+    :is-delete="true"
+    @close="$emit('closeDelete')"
+    @confirm="$emit('confirmDelete')"
+  >
+    <p class="text-white mb-2">
+      Are you sure you want to delete this organization? 
+    </p>
+    <span class="d-block text-white-50 small">
+      This action cannot be undone. All organization settings and member lists will be lost.
+    </span>
+  </BaseModal>
+
   <Teleport to="body">
-    <div v-if="showCreate" class="modal-backdrop" @click="$emit('closeCreate')">
-      <div class="modal-window" @click.stop>
-        <h5 class="text-white mb-3">Create Organization</h5>
-        
-        <label class="text-white-50 mb-1">Name</label>
-        <input v-model="form.name" type="text" class="modal-input mb-3" placeholder="My Cool Team" />
-
-        <label class="text-white-50 mb-1">Description</label>
-        <input v-model="form.description" type="text" class="modal-input mb-4" placeholder="Optional description" />
-        
-        <div class="d-flex justify-content-end gap-2">
-          <button class="btn btn-secondary" @click="$emit('closeCreate')">Cancel</button>
-          <button class="btn btn-primary" @click="handleCreate">Create</button>
-        </div>
-      </div>
-    </div>
-
-    <div v-if="showAddMember" class="modal-backdrop" @click="$emit('closeAddMember')">
-      <div class="modal-window" @click.stop>
-        <h5 class="text-white mb-3">Add Member</h5>
-        <p class="text-white-50 small">User must have logged into this app before.</p>
-        
-        <label class="text-white-50 mb-1">GitHub Username</label>
-        <input v-model="memberForm.login" type="text" class="modal-input mb-3" placeholder="e.g. octocat" />
-        
-        <label class="text-white-50 mb-1">Role</label>
-        <select v-model="memberForm.role" class="modal-input mb-4">
-          <option value="member">Member</option>
-          <option value="admin">Admin</option>
-        </select>
-
-        <div class="d-flex justify-content-end gap-2">
-          <button class="btn btn-secondary" @click="$emit('closeAddMember')">Cancel</button>
-          <button class="btn btn-primary" @click="handleAddMember">Add</button>
-        </div>
-      </div>
-    </div>
-
-    <div v-if="showDelete" class="modal-backdrop" @click="$emit('closeDelete')">
-      <div class="modal-window border-danger" @click.stop>
-        <h5 class="text-danger mb-3">Delete Organization</h5>
-        <p class="text-white mb-4">
-          Are you sure you want to delete this organization? 
-          <span class="d-block text-white-50 small mt-2">This action cannot be undone. All organization settings and member lists will be lost.</span>
-        </p>
-        
-        <div class="d-flex justify-content-end gap-2">
-          <button class="btn btn-secondary" @click="$emit('closeDelete')">Cancel</button>
-          <button class="btn btn-danger" @click="$emit('confirmDelete')">Delete Permanently</button>
-        </div>
-      </div>
-    </div>
-
-    <div v-if="showManageMembers" class="modal-backdrop" @click="$emit('closeManageMembers')">
+    <div v-if="showManageMembers" class="modal-backdrop custom-backdrop" @click="$emit('closeManageMembers')">
       <div class="modal-window members-modal" @click.stop>
         <div class="d-flex justify-content-between align-items-center mb-3">
           <h5 class="text-white m-0">Members: {{ org?.name }}</h5>
@@ -71,6 +90,7 @@
             </div>
             <i v-if="m.role !== 'owner'" 
                class="bi bi-person-x text-danger action-icon" 
+               style="cursor: pointer;"
                @click="$emit('removeMember', { orgId: org._id, userId: m.user._id })"></i>
           </div>
         </div>
@@ -88,12 +108,12 @@
         </div>
       </div>
     </div>
-
   </Teleport>
 </template>
 
 <script setup>
-import { reactive, watch } from 'vue'
+import { reactive } from 'vue'
+import BaseModal from '../Modals/BaseModal.vue' 
 
 const props = defineProps({
   showCreate: Boolean,
@@ -103,7 +123,12 @@ const props = defineProps({
   org: Object
 })
 
-const emit = defineEmits(['closeCreate', 'confirmCreate', 'closeAddMember', 'confirmAddMember','closeDelete', 'confirmDelete','closeManageMembers','removeMember'])
+const emit = defineEmits([
+  'closeCreate', 'confirmCreate', 
+  'closeAddMember', 'confirmAddMember',
+  'closeDelete', 'confirmDelete',
+  'closeManageMembers','removeMember'
+])
 
 const form = reactive({ name: '', description: '' })
 const memberForm = reactive({ login: '', role: 'member' })
@@ -123,28 +148,26 @@ function handleAddMember() {
 </script>
 
 <style scoped>
-/* Dodatkowe style dla panelu członków */
-.members-modal { width: 450px; }
-.members-list { max-height: 200px; overflow-y: auto; background: #1d1e20; border-radius: 4px; padding: 5px; }
-.member-item { padding: 8px; border-bottom: 1px solid #333; }
-.member-item:last-child { border-bottom: none; }
-.avatar-sm { width: 32px; height: 32px; border-radius: 50%; }
-/* Te same style co w innych modalach */
-.modal-backdrop {
+.custom-backdrop {
   position: fixed; top: 0; left: 0; width: 100%; height: 100%;
   background: rgba(0,0,0,0.6); backdrop-filter: blur(2px);
   display: flex; align-items: center; justify-content: center; z-index: 10000;
 }
+
 .modal-window {
-  background: #2b2d31; padding: 20px; border-radius: 8px; width: 400px;
+  background: #2b2d31; padding: 20px; border-radius: 8px;
   box-shadow: 0 10px 25px rgba(0,0,0,0.5); border: 1px solid #444;
 }
-.border-danger {
-  border-color: #dc3545 !important;
-}
+
+.members-modal { width: 450px; } 
+.members-list { max-height: 200px; overflow-y: auto; background: #1d1e20; border-radius: 4px; padding: 5px; }
+.member-item { padding: 8px; border-bottom: 1px solid #333; }
+.member-item:last-child { border-bottom: none; }
+.avatar-sm { width: 32px; height: 32px; border-radius: 50%; }
+
 .modal-input {
-  width: 100%; background: #1d1e20; border: 1px solid #444; color: white;
-  padding: 8px 12px; border-radius: 4px; outline: none;
+  width: 100%; background: #1f2023; border: 1px solid #555; color: white;
+  padding: 8px 12px; border-radius: 8px; outline: none; transition: 0.15s;
 }
-.modal-input:focus { border-color: #0d6efd; }
+.modal-input:focus { border-color: #aa50e7; }
 </style>

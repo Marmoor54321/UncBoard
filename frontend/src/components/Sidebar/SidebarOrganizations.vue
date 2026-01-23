@@ -97,15 +97,15 @@ function toggleExpand(orgId) {
   transition: background-color 0.2s ease, border-color 0.2s ease;
 }
 
-.list-group-item.expanded { border-color: #0d6efd !important; /* Inny kolor dla org (niebieski) */ }
+.list-group-item.expanded { border-color: #aa50e7 !important; /* Inny kolor dla org (niebieski) */ }
 
 .custom-list > .list-group-item:not(.expanded):hover {
   background-color: #3b3e42 !important;
-  border-color: #0d6efd !important;
+  border-color: #aa50e7 !important;
 }
 
 .repo-item:hover { background-color: #3b3e42 !important; }
-.repo-item.active { border: 1px solid #0d6efd !important; background-color: #3b3e42 !important; }
+.repo-item.active { border: 1px solid #aa50e7 !important; background-color: #3b3e42 !important; }
 
 .add-btn {
   background: none; color: white; width: 32px; height: 32px; border: none;
