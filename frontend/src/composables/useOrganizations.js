@@ -83,20 +83,20 @@ export function useOrganizations(user) {
   }
 
   // Zarządzanie członkami
-  async function addMemberToOrganization({ orgId, userId, role = 'member' }) {
+    async function addMemberToOrganization({ orgId, userLogin, role = 'member' }) {
     try {
-      // Backend: POST /api/organizations/:orgId/members/add
-      // Uwaga: backend oczekuje user_id (z MongoDB)
-      await axios.post(`${apiPath}/${orgId}/members/add`,
-        { user_id: userId, role },
+        // Wysyłamy user_login zamiast userId
+        await axios.post(`${apiPath}/${orgId}/members/add`,
+        { user_login: userLogin, role },
         { withCredentials: true }
-      )
-      await loadOrganizations()
+        )
+        await loadOrganizations()
     } catch (e) {
-      console.error("Error adding member:", e)
+        // Warto dodać alert, jeśli użytkownik nie istnieje
+        alert(e.response?.data?.message || "Error adding member")
+        console.error("Error adding member:", e)
     }
-  }
-
+    }
   async function removeMemberFromOrganization({ orgId, userId }) {
     try {
       // Backend: POST /api/organizations/:orgId/members/remove

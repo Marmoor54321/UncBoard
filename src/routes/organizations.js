@@ -94,18 +94,30 @@ router.delete("/:orgId", async (req, res) => {
 // 4. Dodawanie członka do organizacji
 router.post("/:orgId/members/add", async (req, res) => {
   try {
-    const { user_id, role } = req.body; // role: 'admin' lub 'member'
+    const { user_login, role } = req.body; // Teraz odbieramy login
     const org = await Organization.findById(req.params.orgId);
 
     if (!org) return res.status(404).json({ message: "Organization not found" });
 
-    // Sprawdź czy użytkownik już tam jest
-    const isMember = org.members.some(m => m.user.toString() === user_id);
-    if (isMember) return res.status(400).json({ message: "User is already a member" });
+    // 1. Znajdź użytkownika w bazie po loginie
+    const userToAdd = await User.findOne({ login: user_login });
+    if (!userToAdd) {
+      return res.status(404).json({ message: "User not found. They must login to the app first." });
+    }
 
-    org.members.push({ user: user_id, role: role || "member" });
+    // 2. Sprawdź, czy użytkownik już jest w organizacji
+    const isMember = org.members.some(m => m.user && m.user.toString() === userToAdd._id.toString());
+    if (isMember) {
+      return res.status(400).json({ message: "User is already a member" });
+    }
+
+    // 3. Dodaj ID znalezionego użytkownika
+    org.members.push({ 
+      user: userToAdd._id, 
+      role: role || "member" 
+    });
+
     await org.save();
-
     res.json(org);
   } catch (err) {
     res.status(500).json({ error: err.message });
