@@ -59,11 +59,29 @@ router.get("/:orgId", async (req, res) => {
   }
 });
 
-// Usuwanie organizacji
 router.delete("/:orgId", async (req, res) => {
   try {
-    const org = await Organization.findByIdAndDelete(req.params.orgId);
-    if (!org) return res.status(404).json({ message: "Organization not found" });
+    const { orgId } = req.params;
+    // user_id przesyłamy z frontendu w body lub wyciągamy z sesji/tokena
+    const { user_id } = req.body; 
+
+    // 1. Znajdź organizację (nie usuwaj jej jeszcze)
+    const org = await Organization.findById(orgId); 
+
+    if (!org) {
+      return res.status(404).json({ message: "Organization not found" });
+    }
+
+    // 2. Sprawdź, czy osoba żądająca usunięcia to właściciel
+    // toString() jest ważne, bo w bazie to ObjectId, a z frontu leci String
+    if (org.created_by.toString() !== user_id) {
+      return res.status(403).json({ 
+        message: "Permission denied: Only the owner can delete this organization" 
+      });
+    }
+
+    // 3. Jeśli ID się zgadzają -> usuwamy
+    await Organization.findByIdAndDelete(orgId);
     
     res.status(200).json({ message: "Organization deleted successfully" });
   } catch (err) {

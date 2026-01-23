@@ -38,16 +38,22 @@ export function useOrganizations(user) {
     }
   }
 
-  // ... wewnątrz export function useOrganizations(user)
+
     async function deleteOrganization(orgId) {
-    try {
-        // Backend: DELETE /api/organizations/:orgId
-        await axios.delete(`${apiPath}/${orgId}`, { withCredentials: true });
-        await loadOrganizations(); // Odśwież listę po usunięciu
-    } catch (e) {
-        console.error("Error deleting organization:", e);
-    }
-    }
+  try {
+    if (!user.value?._id) return;
+
+    await axios.delete(`${apiPath}/${orgId}`, { 
+      data: { user_id: user.value._id }, // Przekazujemy kto chce usunąć
+      withCredentials: true 
+    });
+
+    await loadOrganizations();
+  } catch (e) {
+    console.error("Error deleting organization:", e);
+    // Tutaj możesz dodać powiadomienie dla użytkownika, np. "Brak uprawnień"
+  }
+}
 
   // Zarządzanie repozytoriami
   async function addRepoToOrganization({ repoId, orgId }) {
