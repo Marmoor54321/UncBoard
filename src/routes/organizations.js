@@ -59,6 +59,18 @@ router.get("/:orgId", async (req, res) => {
   }
 });
 
+// Usuwanie organizacji
+router.delete("/:orgId", async (req, res) => {
+  try {
+    const org = await Organization.findByIdAndDelete(req.params.orgId);
+    if (!org) return res.status(404).json({ message: "Organization not found" });
+    
+    res.status(200).json({ message: "Organization deleted successfully" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // --- ZARZĄDZANIE CZŁONKAMI ---
 
 // 4. Dodawanie członka do organizacji

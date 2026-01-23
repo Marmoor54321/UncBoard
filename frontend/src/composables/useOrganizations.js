@@ -38,6 +38,17 @@ export function useOrganizations(user) {
     }
   }
 
+  // ... wewnątrz export function useOrganizations(user)
+    async function deleteOrganization(orgId) {
+    try {
+        // Backend: DELETE /api/organizations/:orgId
+        await axios.delete(`${apiPath}/${orgId}`, { withCredentials: true });
+        await loadOrganizations(); // Odśwież listę po usunięciu
+    } catch (e) {
+        console.error("Error deleting organization:", e);
+    }
+    }
+
   // Zarządzanie repozytoriami
   async function addRepoToOrganization({ repoId, orgId }) {
     try {
@@ -100,6 +111,7 @@ export function useOrganizations(user) {
     addRepoToOrganization,
     removeRepoFromOrganization,
     addMemberToOrganization,
-    removeMemberFromOrganization
+    removeMemberFromOrganization,
+    deleteOrganization
   }
 }

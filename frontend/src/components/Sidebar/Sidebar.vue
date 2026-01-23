@@ -17,7 +17,7 @@
         :selected-repo="selectedRepo"
         @open-create-org="modals.createOrg = true"
         @open-add-member="(id) => { modals.addMember = true; modals.orgId = id }"
-        @open-delete-org="(id) => deleteOrganization(id)"
+        @open-delete-org="openDeleteOrgModal"
         @select-repo="handleSelectRepo"
         @toggle-expand="toggleOrgExpand"
         @toggle-menu="toggleMenu"
@@ -54,10 +54,13 @@
     <SidebarOrgModals
       :show-create="modals.createOrg"
       :show-add-member="modals.addMember"
+      :show-delete="modals.deleteOrg" 
       @close-create="modals.createOrg = false"
       @confirm-create="handleCreateOrg"
       @close-add-member="modals.addMember = false"
       @confirm-add-member="handleAddMember"
+      @close-delete="closeModalDeleteOrg"
+      @confirm-delete="onConfirmDeleteOrg"
     />
 
     <SidebarContextMenus
@@ -77,7 +80,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted, onBeforeUnmount } from 'vue'
+import { ref, reactive, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth.js'
 import { useGroups } from '@/composables/useGroups.js'
@@ -114,15 +117,17 @@ const {
 const repoMap = computed(() => Object.fromEntries(repos.value.map((r) => [r.id, r])))
 const modals = reactive({ 
   createGroup: false, deleteGroup: false, groupId: null,
-  createOrg: false, addMember: false, orgId: null
+  createOrg: false, addMember: false, orgId: null, deleteOrg: false
 })
 const expandedGroups = reactive({})
 const expandedOrgs = reactive({})
 
 // Init
-onMounted(async () => {
-   if(user.value) await loadOrganizations() 
-})
+watch(user, async (newUser) => {
+  if (newUser) {
+    await loadOrganizations()
+  }
+}, { immediate: true })
 
 // --- HANDLERS ---
 function handleSelectRepo(repo) {
@@ -142,6 +147,24 @@ function handleCreateOrg(data) { createOrganization(data); modals.createOrg = fa
 function handleAddMember(data) {
   if(modals.orgId) addMemberToOrganization({ orgId: modals.orgId, userLogin: data.login, role: data.role })
   modals.addMember = false
+}
+
+// Handlery dla organizacji
+function openDeleteOrgModal(id) {
+  modals.orgId = id;
+  modals.deleteOrg = true;
+}
+
+function closeModalDeleteOrg() {
+  modals.deleteOrg = false;
+  modals.orgId = null;
+}
+
+async function onConfirmDeleteOrg() {
+  if (modals.orgId) {
+    await deleteOrganization(modals.orgId);
+    closeModalDeleteOrg();
+  }
 }
 
 // --- CONTEXT MENU LOGIC ---

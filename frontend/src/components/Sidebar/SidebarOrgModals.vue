@@ -37,6 +37,22 @@
         </div>
       </div>
     </div>
+
+    <div v-if="showDelete" class="modal-backdrop" @click="$emit('closeDelete')">
+      <div class="modal-window border-danger" @click.stop>
+        <h5 class="text-danger mb-3">Delete Organization</h5>
+        <p class="text-white mb-4">
+          Are you sure you want to delete this organization? 
+          <span class="d-block text-white-50 small mt-2">This action cannot be undone. All organization settings and member lists will be lost.</span>
+        </p>
+        
+        <div class="d-flex justify-content-end gap-2">
+          <button class="btn btn-secondary" @click="$emit('closeDelete')">Cancel</button>
+          <button class="btn btn-danger" @click="$emit('confirmDelete')">Delete Permanently</button>
+        </div>
+      </div>
+    </div>
+
   </Teleport>
 </template>
 
@@ -45,10 +61,11 @@ import { reactive, watch } from 'vue'
 
 const props = defineProps({
   showCreate: Boolean,
-  showAddMember: Boolean
+  showAddMember: Boolean,
+  showDelete: Boolean
 })
 
-const emit = defineEmits(['closeCreate', 'confirmCreate', 'closeAddMember', 'confirmAddMember'])
+const emit = defineEmits(['closeCreate', 'confirmCreate', 'closeAddMember', 'confirmAddMember','closeDelete', 'confirmDelete'])
 
 const form = reactive({ name: '', description: '' })
 const memberForm = reactive({ login: '', role: 'member' })
@@ -78,6 +95,9 @@ function handleAddMember() {
 .modal-window {
   background: #2b2d31; padding: 20px; border-radius: 8px; width: 400px;
   box-shadow: 0 10px 25px rgba(0,0,0,0.5); border: 1px solid #444;
+}
+.border-danger {
+  border-color: #dc3545 !important;
 }
 .modal-input {
   width: 100%; background: #1d1e20; border: 1px solid #444; color: white;
