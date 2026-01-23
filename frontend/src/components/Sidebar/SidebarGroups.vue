@@ -1,5 +1,8 @@
 <template>
-  <div class="d-flex flex-column group-root" :style="{ flex: isSectionOpen ? '1' : '0 auto' }">
+  <div
+    class="d-flex flex-column group-root"
+    :style="{ flex: isSectionOpen ? '1 1 0%' : '0 0 auto' }"
+  >
     <div class="d-flex justify-content-between align-items-center mt-4 mb-2 flex-shrink-0">
       <div
         class="d-flex align-items-center gap-2 section-toggle"

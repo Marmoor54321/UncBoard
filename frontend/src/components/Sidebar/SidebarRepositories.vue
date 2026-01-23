@@ -1,5 +1,8 @@
 <template>
-  <div class="d-flex flex-column repo-root" :style="{ flex: isSectionOpen ? '1' : '0 auto' }">
+  <div
+    class="d-flex flex-column repo-root"
+    :style="{ flex: isSectionOpen ? '1 1 0%' : '0 0 auto' }"
+  >
     <div
       class="d-flex align-items-center gap-2 mb-2 mt-4 flex-shrink-0 section-toggle"
       title="Kliknij, aby zwinąć lub rozwinąć"
