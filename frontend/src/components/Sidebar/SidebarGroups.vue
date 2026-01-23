@@ -2,12 +2,12 @@
   <div>
     <div class="d-flex justify-content-between align-items-center mt-4 mb-2">
       <div
-        class="d-flex align-items-center gap-2"
-        style="cursor: pointer; user-select: none"
+        class="d-flex align-items-center gap-2 section-toggle"
+        title="Kliknij, aby zwinąć lub rozwinąć"
         @click="isSectionOpen = !isSectionOpen"
       >
         <i class="bi" :class="isSectionOpen ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
-        <h6 class="text-white m-0">Your Groups</h6>
+        <h6 class="m-0 transition-colors">Your Groups</h6>
       </div>
 
       <button class="add-group-btn" @click.stop="$emit('openCreateGroup')">
@@ -184,5 +184,21 @@ function toggleExpand(groupId) {
 .slide-enter-to {
   max-height: 2000px;
   opacity: 1;
+}
+
+.section-toggle {
+  cursor: pointer;
+  user-select: none;
+  color: white;
+  transition: color 0.2s ease;
+}
+
+.section-toggle h6 {
+  color: inherit;
+  transition: color 0.2s ease;
+}
+
+.section-toggle:hover {
+  color: #aa50e7 !important;
 }
 </style>
