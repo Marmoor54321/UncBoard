@@ -19,7 +19,10 @@
           @click="toggleExpand(group._id)"
         >
           {{ group.name }}
-          <i class="bi" :class="expandedGroups[group._id] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+          <i
+            class="bi"
+            :class="expandedGroups[group._id] ? 'bi-chevron-down' : 'bi-chevron-right'"
+          ></i>
         </div>
 
         <transition name="slide">
@@ -32,7 +35,7 @@
               @click="$emit('selectRepo', repoMap[repoId])"
             >
               <span>{{ repoMap[repoId]?.name || 'Unknown repo' }}</span>
-              
+
               <i
                 class="bi bi-three-dots-vertical text-white ms-2"
                 @click.stop="$emit('toggleMenu', `group-${group._id}-${repoId}`, $event)"
@@ -52,12 +55,19 @@
 <script setup>
 const props = defineProps({
   groupsList: Array,
-  expandedGroups: Object, 
-  repoMap: Object,        
-  selectedRepo: Object
+  expandedGroups: Object,
+  repoMap: Object,
+  selectedRepo: Object,
+  searchQuery: String,
 })
 
-const emit = defineEmits(['openCreateGroup', 'openDeleteGroup', 'selectRepo', 'toggleMenu', 'toggleExpand'])
+const emit = defineEmits([
+  'openCreateGroup',
+  'openDeleteGroup',
+  'selectRepo',
+  'toggleMenu',
+  'toggleExpand',
+])
 
 function toggleExpand(groupId) {
   emit('toggleExpand', groupId)
@@ -65,18 +75,24 @@ function toggleExpand(groupId) {
 </script>
 
 <style scoped>
-.custom-list { list-style: none; padding: 0; margin: 0; }
+.custom-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
 
 .custom-list .list-group-item {
   background-color: #303236;
   color: white;
   border: 1px solid transparent !important;
   cursor: pointer;
-  transition: background-color 0.2s ease, border-color 0.2s ease;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease;
 }
 
 .list-group-item.expanded {
-    border-color: #aa50e7 !important;
+  border-color: #aa50e7 !important;
 }
 
 .custom-list > .list-group-item:not(.expanded):hover {
@@ -84,35 +100,54 @@ function toggleExpand(groupId) {
   border-color: #aa50e7 !important;
 }
 
-
 .group-repo-item:hover {
   background-color: #3b3e42 !important;
   border-color: #aa50e7 !important;
 }
 
-.group-repo-item.active { 
-  border: 1px solid #aa50e7 !important; 
-  background-color: #3b3e42 !important; 
+.group-repo-item.active {
+  border: 1px solid #aa50e7 !important;
+  background-color: #3b3e42 !important;
 }
 
 .add-group-btn {
-  background: none; color: white; width: 32px; height: 32px; border: none;
-  display: flex; justify-content: center; align-items: center; transition: 0.15s;
+  background: none;
+  color: white;
+  width: 32px;
+  height: 32px;
+  border: none;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: 0.15s;
 }
-.add-group-btn:hover { transform: scale(1.08); }
+.add-group-btn:hover {
+  transform: scale(1.08);
+}
 
 /* --- TRZY KROPKI --- */
-.group-repo-item .bi-three-dots-vertical { 
-    opacity: 0; 
-    transition: opacity 0.1s ease; 
+.group-repo-item .bi-three-dots-vertical {
+  opacity: 0;
+  transition: opacity 0.1s ease;
 }
 
-.group-repo-item:hover .bi-three-dots-vertical { 
-    opacity: 1; 
+.group-repo-item:hover .bi-three-dots-vertical {
+  opacity: 1;
 }
 
 /* Animacje rozwijania */
-.slide-enter-active, .slide-leave-active { transition: all 0.3s ease; overflow: hidden;}
-.slide-enter-from, .slide-leave-to { opacity: 0; max-height: 0; }
-.slide-enter-to { max-height: 500px; opacity: 1; }
+.slide-enter-active,
+.slide-leave-active {
+  transition: all 0.3s ease;
+  overflow: hidden;
+}
+.slide-enter-from,
+.slide-leave-to {
+  opacity: 0;
+  max-height: 0;
+}
+.slide-enter-to {
+  max-height: 2000px;
+  opacity: 1;
+}
 </style>
