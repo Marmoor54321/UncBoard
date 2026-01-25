@@ -62,6 +62,12 @@
               </ul>
             </transition>
           </li>
+          <div
+            v-if="filteredGroups.length === 0 && searchQuery"
+            class="text-center text-white-50 mt-3 small"
+          >
+            No groups found.
+          </div>
         </ul>
       </div>
     </transition>

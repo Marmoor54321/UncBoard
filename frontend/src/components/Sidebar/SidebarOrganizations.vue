@@ -22,7 +22,7 @@
       <div v-show="isSectionOpen" class="scrollable-list-container">
         <ul class="list-group custom-list">
           <li
-            v-for="org in orgsList"
+            v-for="org in filteredOrgs"
             :key="org._id"
             class="list-group-item"
             :class="{ expanded: expandedOrgs[org._id] }"
@@ -47,8 +47,6 @@
                     Members: {{ org.members.length }}
                   </small>
                   <div class="d-flex gap-2">
-
-
                     <div class="d-flex gap-2">
                       <i
                         class="bi bi-chat-dots-fill action-icon" style="color: #aa50e7;"
@@ -94,6 +92,13 @@
               </ul>
             </transition>
           </li>
+          
+          <div
+            v-if="filteredOrgs.length === 0 && searchQuery"
+            class="text-center text-white-50 mt-3 small"
+          >
+            No organizations found.
+          </div>
         </ul>
       </div>
     </transition>
@@ -101,13 +106,14 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue' // Dodano import computed
 
-defineProps({
+const props = defineProps({
   orgsList: Array,
   expandedOrgs: Object,
   repoMap: Object,
   selectedRepo: Object,
+  searchQuery: String, // Dodano prop searchQuery
 })
 
 const emit = defineEmits([
@@ -123,12 +129,34 @@ const emit = defineEmits([
 
 const isSectionOpen = ref(true)
 
+// --- LOGIKA FILTROWANIA ORGANIZACJI ---
+const filteredOrgs = computed(() => {
+  const query = props.searchQuery ? props.searchQuery.toLowerCase().trim() : ''
+
+  if (!query) return props.orgsList
+
+  return props.orgsList.filter((org) => {
+    // 1. Sprawdź czy nazwa organizacji pasuje
+    const orgNameMatch = org.name.toLowerCase().includes(query)
+
+    // 2. Sprawdź czy któreś z repozytoriów wewnątrz organizacji pasuje
+    const hasMatchingRepo = org.repo_ids.some((repoId) => {
+      const repo = props.repoMap[repoId]
+      return repo && repo.name.toLowerCase().includes(query)
+    })
+
+    // Zwróć true jeśli pasuje nazwa org LUB zawiera pasujące repo
+    return orgNameMatch || hasMatchingRepo
+  })
+})
+
 function toggleExpand(orgId) {
   emit('toggleExpand', orgId)
 }
 </script>
 
 <style scoped>
+/* Twoje style pozostają bez zmian */
 .custom-list {
   list-style: none;
   padding: 0;

@@ -21,6 +21,7 @@
         :expanded-orgs="expandedOrgs"
         :repo-map="repoMap"
         :selected-repo="selectedRepo"
+        :search-query="globalSearch"
         @open-create-org="modals.createOrg = true"
         @open-add-member="
           (id) => {
