@@ -1,8 +1,8 @@
 <template>
-  <div class="chat-window card text-white bg-dark border-secondary">
-    <div class="card-header border-secondary d-flex justify-content-between align-items-center py-2">
+  <div class="chat-window card text-white bg-dark"style="border-color: #aa50e7;">
+    <div class="card-header d-flex justify-content-between align-items-center py-2"style="border-color: #aa50e7;">
       <div class="d-flex align-items-center gap-2">
-        <i class="bi bi-chat-quote-fill text-primary"></i>
+        <i class="bi bi-chat-dots-fill " style="color: #aa50e7;"></i>
         <h6 class="m-0 text-truncate" style="max-width: 200px;">{{ orgName }}</h6>
       </div>
       <button class="btn btn-sm btn-link text-white p-0" @click="$emit('close')">
@@ -10,7 +10,7 @@
       </button>
     </div>
 
-    <div class="card-body p-2 chat-body" ref="messagesContainer">
+    <div class="card-body p-2 chat-body scrollable-list-container" ref="messagesContainer">
       <div v-if="loading" class="text-center text-muted mt-4">
         <span class="spinner-border spinner-border-sm"></span> Loading history...
       </div>
@@ -28,7 +28,7 @@
         >
           <div 
             class="message-bubble p-2 rounded"
-            :class="isMyMessage(msg) ? 'bg-primary text-white my-msg' : 'bg-secondary text-light other-msg'"
+            :class="isMyMessage(msg) ? 'text-white my-msg' : 'bg-secondary text-light other-msg'"
           >
             <div v-if="!isMyMessage(msg)" class="d-flex align-items-center gap-1 mb-1 sender-info">
               <img 
@@ -49,16 +49,16 @@
       </ul>
     </div>
 
-    <div class="card-footer border-secondary p-2">
+    <div class="card-footer p-2" style="border-color: #aa50e7;">
       <form @submit.prevent="sendMessage" class="d-flex gap-2">
         <input 
           v-model="newMessage" 
           type="text" 
-          class="form-control form-control-sm bg-dark text-white border-secondary" 
+          class="form-control form-control-sm bg-dark text-white " style="border-color: #aa50e7;"
           placeholder="Type a message..."
           :disabled="!connected"
         >
-        <button type="submit" class="btn btn-sm btn-primary" :disabled="!newMessage.trim() || !connected">
+        <button type="submit" class="btn btn-sm" style="background-color: #aa50e7;">
           <i class="bi bi-send-fill"></i>
         </button>
       </form>
@@ -68,7 +68,7 @@
 
 <script setup>
 import { ref, onMounted, onBeforeUnmount, nextTick, watch } from 'vue';
-import { socket } from '../services/socket'; // Importuj singleton
+import { socket } from '../services/socket'; 
 import axios from 'axios';
 import { getApiBaseUrl } from '../api/getApiBaseUrl';
 
@@ -203,6 +203,8 @@ watch(() => props.orgId, (newId, oldId) => {
 }
 .my-msg {
     border-bottom-right-radius: 0 !important;
+    background-color: #aa50e7; 
+    color: white;
 }
 .other-msg {
     border-bottom-left-radius: 0 !important;
@@ -211,5 +213,19 @@ watch(() => props.orgId, (newId, oldId) => {
 .sender-info {
     font-size: 0.75rem;
     color: #aaa;
+}
+
+.form-control:focus {
+    box-shadow: none;
+}
+
+.scrollable-list-container {
+  overflow-y: auto;
+  flex-grow: 1;
+  min-height: 0;
+  padding-bottom: 20px;
+  padding-right: 5px;
+  scrollbar-width: thin;
+  scrollbar-color: #444 #25272b;
 }
 </style>
