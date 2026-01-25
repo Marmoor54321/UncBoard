@@ -47,13 +47,14 @@
                     Members: {{ org.members.length }}
                   </small>
                   <div class="d-flex gap-2">
-                    <i
-                      class="bi bi-person-plus action-icon text-primary"
-                      title="Add Member"
-                      @click.stop="$emit('openAddMember', org._id)"
-                    ></i>
+
 
                     <div class="d-flex gap-2">
+                      <i
+                        class="bi bi-chat-dots-fill action-icon text-success"
+                        title="Open Chat"
+                        @click.stop="$emit('openChat', org)"
+                      ></i>
                       <i
                         class="bi bi-people action-icon text-primary"
                         title="Manage Members"
@@ -117,6 +118,7 @@ const emit = defineEmits([
   'toggleMenu',
   'toggleExpand',
   'openManageMembers',
+  'openChat',
 ])
 
 const isSectionOpen = ref(true)
