@@ -1,7 +1,10 @@
 <template>
-  <div class="d-flex flex-column repo-root" style="flex: 0 1 auto; min-height: 0">
+  <div
+    class="d-flex flex-column repo-root"
+    :style="{ flex: isSectionOpen ? '0 1 auto' : '0 0 auto', minHeight: '0' }"
+  >
     <div
-      class="d-flex align-items-center gap-2 mb-2 mt-4 flex-shrink-0 section-toggle"
+      class="d-flex align-items-center gap-2 mb-2 mt-2 flex-shrink-0 section-toggle"
       title="Kliknij, aby zwinąć lub rozwinąć"
       @click="isSectionOpen = !isSectionOpen"
     >
@@ -155,7 +158,7 @@ const filteredRepos = computed(() => {
   overflow-y: auto;
   flex-grow: 1;
   min-height: 0;
-  padding-bottom: 20px;
+  padding-bottom: 60px;
   padding-right: 5px;
   scrollbar-width: thin;
   scrollbar-color: #444 #1d1e20;
