@@ -1,6 +1,7 @@
 import express from "express";
 import Organization from "../models/Organization.js";
 import User from "../models/User.js";
+import Message from "../models/Message.js";
 
 const router = express.Router();
 
@@ -184,6 +185,19 @@ router.post("/:orgId/repos/remove", async (req, res) => {
     org.repo_ids = org.repo_ids.filter(id => id !== Number(repo_id));
     await org.save();
     res.json(org);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Pobieranie historii czatu
+router.get("/:orgId/messages", async (req, res) => {
+  try {
+    const messages = await Message.find({ organization: req.params.orgId })
+      .populate("sender", "login avatar_url")
+      .sort({ createdAt: 1 }) // Od najstarszych do najnowszych
+      .limit(50);
+    res.json(messages);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
