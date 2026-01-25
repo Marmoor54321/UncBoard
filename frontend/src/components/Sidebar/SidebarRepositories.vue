@@ -1,8 +1,5 @@
 <template>
-  <div
-    class="d-flex flex-column repo-root"
-    :style="{ flex: isSectionOpen ? '1 1 0%' : '0 0 auto' }"
-  >
+  <div class="d-flex flex-column repo-root" style="flex: 0 1 auto; min-height: 0">
     <div
       class="d-flex align-items-center gap-2 mb-2 mt-4 flex-shrink-0 section-toggle"
       title="Kliknij, aby zwinąć lub rozwinąć"
@@ -12,32 +9,34 @@
       <h6 class="m-0 transition-colors">Your Repositories</h6>
     </div>
 
-    <div v-show="isSectionOpen" class="scrollable-list-container">
-      <ul class="list-group custom-list">
-        <TransitionGroup name="list">
-          <li
-            v-for="repo in filteredRepos"
-            :key="repo.id"
-            class="list-group-item d-flex justify-content-between align-items-center repo-item"
-            :class="{ active: selectedRepo && selectedRepo.id === repo.id }"
-            @click="$emit('selectRepo', repo)"
-          >
-            <span>{{ repo.name }}</span>
-            <i
-              class="bi bi-three-dots-vertical text-white ms-2"
-              @click.stop="$emit('toggleMenu', `repo-${repo.id}`, $event)"
-            ></i>
-          </li>
-        </TransitionGroup>
+    <transition name="section-expand">
+      <div v-show="isSectionOpen" class="scrollable-list-container">
+        <ul class="list-group custom-list">
+          <TransitionGroup name="list">
+            <li
+              v-for="repo in filteredRepos"
+              :key="repo.id"
+              class="list-group-item d-flex justify-content-between align-items-center repo-item"
+              :class="{ active: selectedRepo && selectedRepo.id === repo.id }"
+              @click="$emit('selectRepo', repo)"
+            >
+              <span>{{ repo.name }}</span>
+              <i
+                class="bi bi-three-dots-vertical text-white ms-2"
+                @click.stop="$emit('toggleMenu', `repo-${repo.id}`, $event)"
+              ></i>
+            </li>
+          </TransitionGroup>
 
-        <div
-          v-if="filteredRepos.length === 0 && searchQuery"
-          class="text-center text-white-50 mt-3"
-        >
-          No repositories found.
-        </div>
-      </ul>
-    </div>
+          <div
+            v-if="filteredRepos.length === 0 && searchQuery"
+            class="text-center text-white-50 mt-3"
+          >
+            No repositories found.
+          </div>
+        </ul>
+      </div>
+    </transition>
   </div>
 </template>
 
@@ -116,6 +115,7 @@ const filteredRepos = computed(() => {
   opacity: 1;
 }
 
+/* Animacje listy */
 .list-move,
 .list-enter-active,
 .list-leave-active {
@@ -125,6 +125,14 @@ const filteredRepos = computed(() => {
 .list-leave-to {
   opacity: 0;
   max-height: 0;
+}
+
+/* --- SEKCJA ROZWIJANA --- */
+
+.repo-root {
+  min-height: 0;
+  overflow: hidden;
+  transition: flex 0.3s ease;
 }
 
 .section-toggle {
@@ -147,11 +155,12 @@ const filteredRepos = computed(() => {
   overflow-y: auto;
   flex-grow: 1;
   min-height: 0;
-  padding-bottom: 40px;
+  padding-bottom: 20px;
   padding-right: 5px;
   scrollbar-width: thin;
   scrollbar-color: #444 #1d1e20;
 }
+
 .scrollable-list-container::-webkit-scrollbar {
   width: 6px;
 }
@@ -163,32 +172,22 @@ const filteredRepos = computed(() => {
   border-radius: 10px;
 }
 
-.repo-root {
-  min-height: 0;
+/* Animacja rozwijania całej sekcji */
+.section-expand-enter-active,
+.section-expand-leave-active {
+  transition: all 0.3s ease;
   overflow: hidden;
-  transition: flex 0.3s ease;
+  max-height: 100vh;
 }
 
-.scrollable-list-container {
-  overflow-y: auto;
-  flex-grow: 1;
-  height: 100%;
-
-  padding-bottom: 60px;
-  padding-right: 5px;
-
-  scrollbar-width: thin;
-  scrollbar-color: #444 #1d1e20;
+.section-expand-enter-from,
+.section-expand-leave-to {
+  max-height: 0;
+  opacity: 0;
 }
 
-.scrollable-list-container::-webkit-scrollbar {
-  width: 6px;
-}
-.scrollable-list-container::-webkit-scrollbar-track {
-  background: transparent;
-}
-.scrollable-list-container::-webkit-scrollbar-thumb {
-  background-color: #444;
-  border-radius: 10px;
+.section-expand-enter-to {
+  max-height: 100vh;
+  opacity: 1;
 }
 </style>

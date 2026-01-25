@@ -1,5 +1,5 @@
 <template>
-  <div class="d-flex flex-column org-root" :style="{ flex: isSectionOpen ? '1 1 0%' : '0 0 auto' }">
+  <div class="d-flex flex-column org-root" style="flex: 0 1 auto; min-height: 0">
     <div class="d-flex justify-content-between align-items-center mt-4 mb-2 flex-shrink-0">
       <div
         class="d-flex align-items-center gap-2 section-toggle"
@@ -7,7 +7,7 @@
         @click="isSectionOpen = !isSectionOpen"
       >
         <i class="bi" :class="isSectionOpen ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
-        <h6 class="text-white m-0 transition-colors">Organizations</h6>
+        <h6 class="m-0 transition-colors">Organizations</h6>
       </div>
 
       <button class="add-btn" @click.stop="$emit('openCreateOrg')">
@@ -15,82 +15,84 @@
       </button>
     </div>
 
-    <div v-show="isSectionOpen" class="scrollable-list-container">
-      <ul class="list-group custom-list">
-        <li
-          v-for="org in orgsList"
-          :key="org._id"
-          class="list-group-item"
-          :class="{ expanded: expandedOrgs[org._id] }"
-        >
-          <div
-            class="d-flex justify-content-between align-items-center group-header"
-            @click="toggleExpand(org._id)"
+    <transition name="section-expand">
+      <div v-show="isSectionOpen" class="scrollable-list-container">
+        <ul class="list-group custom-list">
+          <li
+            v-for="org in orgsList"
+            :key="org._id"
+            class="list-group-item"
+            :class="{ expanded: expandedOrgs[org._id] }"
           >
-            <span class="text-truncate" style="max-width: 180px">{{ org.name }}</span>
-            <i
-              class="bi"
-              :class="expandedOrgs[org._id] ? 'bi-chevron-down' : 'bi-chevron-right'"
-            ></i>
-          </div>
+            <div
+              class="d-flex justify-content-between align-items-center group-header"
+              @click="toggleExpand(org._id)"
+            >
+              <span class="text-truncate" style="max-width: 180px">{{ org.name }}</span>
+              <i
+                class="bi"
+                :class="expandedOrgs[org._id] ? 'bi-chevron-down' : 'bi-chevron-right'"
+              ></i>
+            </div>
 
-          <transition name="slide">
-            <ul v-if="expandedOrgs[org._id]" class="list-group nested-list">
-              <div
-                class="d-flex justify-content-between px-2 py-1 mb-1 border-bottom border-secondary"
-              >
-                <small class="text-white" style="font-size: 0.75rem">
-                  Members: {{ org.members.length }}
-                </small>
-                <div class="d-flex gap-2">
-                  <i
-                    class="bi bi-person-plus action-icon text-primary"
-                    title="Add Member"
-                    @click.stop="$emit('openAddMember', org._id)"
-                  ></i>
-
+            <transition name="slide">
+              <ul v-if="expandedOrgs[org._id]" class="list-group nested-list">
+                <div
+                  class="d-flex justify-content-between px-2 py-1 mb-1 border-bottom border-secondary"
+                >
+                  <small class="text-white" style="font-size: 0.75rem">
+                    Members: {{ org.members.length }}
+                  </small>
                   <div class="d-flex gap-2">
                     <i
-                      class="bi bi-people action-icon text-primary"
-                      title="Manage Members"
-                      @click.stop="$emit('openManageMembers', org)"
+                      class="bi bi-person-plus action-icon text-primary"
+                      title="Add Member"
+                      @click.stop="$emit('openAddMember', org._id)"
+                    ></i>
+
+                    <div class="d-flex gap-2">
+                      <i
+                        class="bi bi-people action-icon text-primary"
+                        title="Manage Members"
+                        @click.stop="$emit('openManageMembers', org)"
+                      ></i>
+                    </div>
+                    <i
+                      class="bi bi-trash action-icon text-danger"
+                      title="Delete Organization"
+                      @click.stop="$emit('openDeleteOrg', org._id)"
                     ></i>
                   </div>
-                  <i
-                    class="bi bi-trash action-icon text-danger"
-                    title="Delete Organization"
-                    @click.stop="$emit('openDeleteOrg', org._id)"
-                  ></i>
                 </div>
-              </div>
 
-              <li
-                v-for="repoId in org.repo_ids"
-                :key="repoId"
-                class="list-group-item nested-item d-flex justify-content-between align-items-center repo-item"
-                :class="{ active: selectedRepo && selectedRepo.id === repoId }"
-                @click="$emit('selectRepo', repoMap[repoId])"
-              >
-                <span class="text-truncate">{{ repoMap[repoId]?.name || 'Unknown repo' }}</span>
+                <li
+                  v-for="repoId in org.repo_ids"
+                  :key="repoId"
+                  class="list-group-item nested-item d-flex justify-content-between align-items-center repo-item"
+                  :class="{ active: selectedRepo && selectedRepo.id === repoId }"
+                  @click="$emit('selectRepo', repoMap[repoId])"
+                >
+                  <span class="text-truncate">{{ repoMap[repoId]?.name || 'Unknown repo' }}</span>
 
-                <i
-                  class="bi bi-three-dots-vertical text-white ms-2 dots-icon"
-                  @click.stop="$emit('toggleMenu', `org-${org._id}-${repoId}`, $event)"
-                ></i>
-              </li>
+                  <i
+                    class="bi bi-three-dots-vertical text-white ms-2 dots-icon"
+                    @click.stop="$emit('toggleMenu', `org-${org._id}-${repoId}`, $event)"
+                  ></i>
+                </li>
 
-              <div
-                v-if="org.repo_ids.length === 0"
-                class="text-center text-white py-2"
-                style="font-size: 0.8rem"
-              >
-                No repositories
-              </div>
-            </ul>
-          </transition>
-        </li>
-      </ul>
-    </div>
+                <div
+                  v-if="org.repo_ids.length === 0"
+                  class="text-center text-white py-2"
+                  style="font-size: 0.8rem"
+                >
+                  No repositories
+                </div>
+              </ul>
+            </transition>
+          </li>
+        </ul>
+      </div>
+    </transition>
   </div>
 </template>
 
@@ -139,7 +141,7 @@ function toggleExpand(orgId) {
 }
 
 .list-group-item.expanded {
-  border-color: #aa50e7 !important; /* Inny kolor dla org (niebieski) */
+  border-color: #aa50e7 !important;
 }
 
 .custom-list > .list-group-item:not(.expanded):hover {
@@ -189,7 +191,7 @@ function toggleExpand(orgId) {
   opacity: 1;
 }
 
-/* Animacje */
+/* Animacje wewnętrznej listy */
 .slide-enter-active,
 .slide-leave-active {
   transition: all 0.3s ease;
@@ -205,7 +207,7 @@ function toggleExpand(orgId) {
   opacity: 1;
 }
 
-/* Nowe style do obsługi zwijania sekcji */
+/* --- SEKCJA ROZWIJANA --- */
 
 .org-root {
   min-height: 0;
@@ -220,6 +222,11 @@ function toggleExpand(orgId) {
   transition: color 0.2s ease;
 }
 
+.section-toggle h6 {
+  color: inherit;
+  transition: color 0.2s ease;
+}
+
 .section-toggle:hover {
   color: #aa50e7 !important;
 }
@@ -228,9 +235,8 @@ function toggleExpand(orgId) {
   overflow-y: auto;
   flex-grow: 1;
   min-height: 0;
-  padding-bottom: 10px;
+  padding-bottom: 20px;
   padding-right: 5px;
-
   scrollbar-width: thin;
   scrollbar-color: #444 #1d1e20;
 }
@@ -244,5 +250,24 @@ function toggleExpand(orgId) {
 .scrollable-list-container::-webkit-scrollbar-thumb {
   background-color: #444;
   border-radius: 10px;
+}
+
+/* Animacja rozwijania całej sekcji */
+.section-expand-enter-active,
+.section-expand-leave-active {
+  transition: all 0.3s ease;
+  overflow: hidden;
+  max-height: 100vh;
+}
+
+.section-expand-enter-from,
+.section-expand-leave-to {
+  max-height: 0;
+  opacity: 0;
+}
+
+.section-expand-enter-to {
+  max-height: 100vh;
+  opacity: 1;
 }
 </style>
