@@ -19,7 +19,6 @@
     </div>
     <div class="sidebar-content p-3 pt-0" v-if="user">
       <SidebarOrganizations
-        class="flex-section"
         :orgs-list="orgsList"
         :expanded-orgs="expandedOrgs"
         :repo-map="repoMap"
@@ -39,7 +38,6 @@
       />
 
       <SidebarGroups
-        class="flex-section"
         :groups-list="groupsList"
         :expanded-groups="expandedGroups"
         :repo-map="repoMap"
@@ -58,7 +56,6 @@
       />
 
       <SidebarRepositories
-        class="flex-section"
         :repos="repos"
         :selected-repo="selectedRepo"
         :search-query="globalSearch"

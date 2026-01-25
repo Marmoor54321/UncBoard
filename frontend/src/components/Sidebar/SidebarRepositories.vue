@@ -1,7 +1,7 @@
 <template>
   <div
     class="d-flex flex-column repo-root"
-    :style="{ flex: isSectionOpen ? '0 1 auto' : '0 0 auto', minHeight: '0' }"
+    :style="{ flex: isSectionOpen ? '0 10000 auto' : '0 0 auto', minHeight: '0' }"
   >
     <div
       class="d-flex align-items-center gap-2 mb-2 mt-2 flex-shrink-0 section-toggle"
