@@ -318,12 +318,24 @@ const handleBoardDragEnd = () => {
   stopAutoScroll()
 }
 
-const handleDragAutoScroll = (e) => {
+const handlePointerAutoScroll = (e) => {
   if (!boardRef.value) return
 
-  e.preventDefault()
+  let clientX
 
-  const { clientX } = e
+  if (e.type === 'touchmove') {
+    // Logika dla DOTYKU
+    if (e.touches && e.touches.length > 0) {
+      clientX = e.touches[0].clientX
+    } else {
+      return
+    }
+  } else {
+    // Logika dla MYSZY
+    e.preventDefault()
+    clientX = e.clientX
+  }
+
   const { innerWidth } = window
   const threshold = 150
 
@@ -339,15 +351,26 @@ const handleDragAutoScroll = (e) => {
 }
 
 onMounted(() => {
-  window.addEventListener('dragover', handleDragAutoScroll, true)
+  // Obsługa MYSZY
+  window.addEventListener('dragover', handlePointerAutoScroll, true)
   window.addEventListener('dragend', stopAutoScroll, true)
   window.addEventListener('drop', stopAutoScroll, true)
+
+  // Obsługa DOTYKU
+  window.addEventListener('touchmove', handlePointerAutoScroll, { passive: false })
+  window.addEventListener('touchend', stopAutoScroll)
+  window.addEventListener('touchcancel', stopAutoScroll)
 })
 
 onUnmounted(() => {
-  window.removeEventListener('dragover', handleDragAutoScroll, true)
+  window.removeEventListener('dragover', handlePointerAutoScroll, true)
   window.removeEventListener('dragend', stopAutoScroll, true)
   window.removeEventListener('drop', stopAutoScroll, true)
+
+  window.removeEventListener('touchmove', handlePointerAutoScroll)
+  window.removeEventListener('touchend', stopAutoScroll)
+  window.removeEventListener('touchcancel', stopAutoScroll)
+
   stopAutoScroll()
 })
 </script>
