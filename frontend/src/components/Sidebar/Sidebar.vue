@@ -61,6 +61,7 @@
         @toggle-menu="toggleMenu"
       />
     </div>
+  </div>
     <SidebarModals
       :show-create="modals.createGroup"
       :show-delete="modals.deleteGroup"
@@ -278,8 +279,6 @@ function openPickerFromMenu(event) {
   if (!event || !event.target) return
   activePicker.value = 'picker'
 
-  pickerRepo.value = menuRepoId.value //sprawdzic
-  pickerGroup.value = menuGroupId.value //sprawdzic
 
   // Pozycjonowanie Pickera
   const rect = event.target.getBoundingClientRect()
