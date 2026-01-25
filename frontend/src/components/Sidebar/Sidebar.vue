@@ -1,14 +1,23 @@
 <template>
   <aside
-    class="sidebar-container p-3 offcanvas-lg offcanvas-start"
+    class="sidebar-wrapper offcanvas-lg offcanvas-start"
     tabindex="-1"
-    style="scrollbar-color: #303236 #1d1e20"
+    id="sidebarOffcanvas"
+    aria-labelledby="sidebarOffcanvasLabel"
   >
-    <SidebarProfile 
-      :user="user" 
-      @login="loginWithGithub" 
-    />
+    <div class="sidebar-header p-3 pb-0">
+      <SidebarProfile :user="user" @login="loginWithGithub" />
 
+      <div class="mt-3 mb-2" v-if="user">
+        <input
+          v-model="globalSearch"
+          type="text"
+          class="form-control bg-dark text-white border-secondary"
+          placeholder="Search groups & repos..."
+        />
+      </div>
+    </div>
+<div class="sidebar-content p-3 pt-0" v-if="user">
     <div v-if="user">
       <SidebarOrganizations
         :orgs-list="orgsList"
@@ -25,25 +34,33 @@
       />
       
       <SidebarGroups
+        class="flex-section"
         :groups-list="groupsList"
         :expanded-groups="expandedGroups"
         :repo-map="repoMap"
         :selected-repo="selectedRepo"
+        :search-query="globalSearch"
         @open-create-group="modals.createGroup = true"
-        @open-delete-group="(id) => { modals.deleteGroup = true; modals.groupId = id }"
+        @open-delete-group="
+          (id) => {
+            modals.deleteGroup = true
+            modals.groupId = id
+          }
+        "
         @select-repo="handleSelectRepo"
         @toggle-expand="toggleGroupExpand"
         @toggle-menu="toggleMenu"
       />
 
       <SidebarRepositories
+        class="flex-section"
         :repos="repos"
         :selected-repo="selectedRepo"
+        :search-query="globalSearch"
         @select-repo="handleSelectRepo"
         @toggle-menu="toggleMenu"
       />
     </div>
-
     <SidebarModals
       :show-create="modals.createGroup"
       :show-delete="modals.deleteGroup"
@@ -129,6 +146,7 @@ const modals = reactive({
 const expandedGroups = reactive({})
 const expandedOrgs = reactive({})
 const selectedOrgForMembers = ref(null)
+const globalSearch = ref('')
 
 // Init
 watch(user, async (newUser) => {
@@ -240,8 +258,7 @@ function toggleMenu(id, event) {
 
   activeMenu.value = id
   activePicker.value = null
-  
-  // Pozycjonowanie
+
   const rect = event.target.getBoundingClientRect()
   const windowHeight = window.innerHeight
   const estimatedMenuHeight = 120
@@ -258,8 +275,11 @@ function toggleMenu(id, event) {
 function closeMenu() { activeMenu.value = null; activePicker.value = null }
 
 function openPickerFromMenu(event) {
-  if (!event || !event.target) return;
+  if (!event || !event.target) return
   activePicker.value = 'picker'
+
+  pickerRepo.value = menuRepoId.value //sprawdzic
+  pickerGroup.value = menuGroupId.value //sprawdzic
 
   // Pozycjonowanie Pickera
   const rect = event.target.getBoundingClientRect()
@@ -270,13 +290,15 @@ function openPickerFromMenu(event) {
   let newStyle = { position: 'fixed', left: (rect.right + 4) + 'px', zIndex: 10000, top: rect.top + 'px', bottom: 'auto' }
   if (spaceBelow < estimatedPickerHeight) {
     newStyle.top = 'auto'
-    newStyle.bottom = (windowHeight - rect.bottom) + 'px'
+    newStyle.bottom = windowHeight - rect.bottom + 'px'
   }
   pickerStyle.value = newStyle
 }
 
 function keepPickerOpen() {}
-function closePicker() { activePicker.value = null }
+function closePicker() {
+  activePicker.value = null
+}
 
 // AKCJA: Wybór elementu z Pickera (Dodawanie do grupy/org)
 async function onPickerSelect({ id, type }) {
@@ -311,13 +333,33 @@ onBeforeUnmount(() => document.removeEventListener('click', handleClickOutside))
 </script>
 
 <style scoped>
-.sidebar-container {
-  background-color: #1d1e20; 
-  height: 94vh; 
-  width: 340px; 
+.sidebar-wrapper {
+  background-color: #1d1e20;
+  height: 100vh;
+  width: 340px;
   min-width: 340px;
-  overflow-y: auto; 
-  overflow-x: hidden; 
-  scrollbar-gutter: stable;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.sidebar-header {
+  flex-shrink: 0;
+  border-bottom: 1px solid #2b2d31;
+}
+
+.sidebar-content {
+  flex-grow: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.flex-section {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1;
+  transition: flex 0.3s ease;
 }
 </style>
