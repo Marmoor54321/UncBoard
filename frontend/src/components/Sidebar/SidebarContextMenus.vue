@@ -4,23 +4,23 @@
       
       <template v-if="activeMenu.startsWith('repo-')">
         <div class="dropdown-item-custom" @mouseenter="$emit('openPicker', $event)">
-          Add to group
+          Add to group/org
           <i class="bi bi-chevron-right float-end" style="font-size: 12px; margin-top: 4px;"></i>
         </div>
       </template>
 
       <template v-else>
         <div class="dropdown-item-custom" @mouseenter="$emit('openPicker', $event)">
-           Add to group
+           Add to other...
            <i class="bi bi-chevron-right float-end" style="font-size: 12px; margin-top: 4px;"></i>
         </div>
 
         <div
-          class="dropdown-item-custom"
-          @click="$emit('deleteFromGroup')"
+          class="dropdown-item-custom text-danger"
+          @click="$emit('deleteFromContext')"
           @mouseenter="$emit('closePicker')"
         >
-          Delete
+          Remove form list
         </div>
       </template>
     </div>
@@ -35,17 +35,32 @@
       @mouseleave="$emit('closePicker')"
       @click.stop
     >
-      <h6 class="text-white mb-2">Add to group</h6>
+      <h6 class="text-muted text-uppercase mb-2 mt-1 px-2" style="font-size: 0.7rem;">Organizations</h6>
+      <ul class="list-group mb-2">
+        <li
+          v-for="org in orgsList"
+          :key="org._id"
+          class="list-group-item list-group-item-action text-white"
+          @click="$emit('pickerSelect', { id: org._id, type: 'org' })"
+        >
+          <i class="bi bi-building me-2"></i> {{ org.name }}
+        </li>
+        <li v-if="!orgsList || orgsList.length === 0" class="text-white-50 px-2 small">No organizations</li>
+      </ul>
+
+      <h6 class="text-muted text-uppercase mb-2 px-2" style="font-size: 0.7rem;">Groups</h6>
       <ul class="list-group">
         <li
           v-for="g in groupsList"
           :key="g._id"
           class="list-group-item list-group-item-action text-white"
-          @click="$emit('pickerSelect', g._id)"
+          @click="$emit('pickerSelect', { id: g._id, type: 'group' })"
         >
-          {{ g.name }}
+          <i class="bi bi-folder me-2"></i> {{ g.name }}
         </li>
+        <li v-if="!groupsList || groupsList.length === 0" class="text-white-50 px-2 small">No groups</li>
       </ul>
+
     </div>
   </Teleport>
 </template>
@@ -56,29 +71,41 @@ defineProps({
   menuStyle: Object,
   activePicker: String,
   pickerStyle: Object,
-  groupsList: Array
+  groupsList: Array,
+  orgsList: Array // <--- Dodano prop
 })
 
 defineEmits([
   'openPicker',
   'closePicker',
   'keepPickerOpen',
-  'deleteFromGroup',
+  'deleteFromContext', // Zmieniona nazwa z deleteFromGroup
   'pickerSelect'
 ])
 </script>
 
 <style scoped>
 .popup { position: fixed !important; z-index: 9999; }
+
 .dropdown-menu-custom {
-  background: #222; border: 1px solid #444; padding: 6px; border-radius: 6px; width: 150px;
+  background: #222; border: 1px solid #444; padding: 6px; border-radius: 6px; width: 160px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
 }
-.dropdown-item-custom { padding: 6px; color: #fff; cursor: pointer; border-radius: 4px; }
-.dropdown-item-custom:hover { background: #444; border: 1px solid #aa50e7; }
+.dropdown-item-custom { 
+  padding: 8px 10px; color: #ccc; cursor: pointer; border-radius: 4px; font-size: 0.9rem;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.dropdown-item-custom:hover { background: #0d6efd; color: white; }
+.dropdown-item-custom.text-danger:hover { background: #dc3545; color: white; }
+
 .group-picker-menu {
-  background: #222; border: 1px solid #444; padding: 10px; border-radius: 6px;
-  width: 200px; max-height: 200px; overflow-y: auto; scrollbar-color: #303236 #1d1e20;
+  background: #1e1e1e; border: 1px solid #444; padding: 10px 0; border-radius: 6px;
+  width: 220px; max-height: 300px; overflow-y: auto; scrollbar-color: #303236 #1d1e20;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
 }
-.list-group-item { background: #303236; border: none; cursor: pointer; }
-.group-picker-menu .list-group-item:hover { background: #444 !important; border: 1px solid #aa50e7 !important; }
+
+.list-group-item { 
+  background: transparent; border: none; cursor: pointer; padding: 6px 12px; font-size: 0.9rem;
+}
+.list-group-item:hover { background: #0d6efd !important; color: white !important; }
 </style>

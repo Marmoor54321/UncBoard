@@ -10,6 +10,7 @@ import statusRoutes from "./routes/statuses.js";
 import issueRoutes from "./routes/issues.js";
 import groupRoutes from "./routes/groups.js";
 import IssueStatus from "./models/IssueStatus.js";
+import organizationRoutes from "./routes/organizations.js";
 
 dotenv.config();
 const app = express();
@@ -36,6 +37,7 @@ app.use("/api/github", githubRoutes);
 app.use("/api/github/issues", issueRoutes);
 app.use("/api/statuses", statusRoutes);
 app.use("/api/group", groupRoutes);
+app.use("/api/orgs", organizationRoutes);
 
 app.put("/api/issue-status", async (req, res) => {
   try {
