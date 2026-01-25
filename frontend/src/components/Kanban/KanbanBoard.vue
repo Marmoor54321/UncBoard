@@ -4,40 +4,38 @@
   </div>
 
   <div v-else class="flex-grow-1 d-flex flex-column overflow-hidden">
-    
     <div class="d-flex justify-content-between align-items-center mb-4">
       <h3 class="text-white">
         Issues for
         <span>
-          <a :href="selectedRepo.html_url" 
-            target="_blank" 
-            rel="noopener noreferrer" 
-            style="color: #aa50e7; text-decoration: none; font-weight: bold;"
+          <a
+            :href="selectedRepo.html_url"
+            target="_blank"
+            rel="noopener noreferrer"
+            style="color: #aa50e7; text-decoration: none; font-weight: bold"
           >
             {{ selectedRepo.name }}
           </a>
         </span>
       </h3>
-      
+
       <div class="d-flex gap-2">
-        
         <UniversalDropdown placement="bottom-end">
           <template #trigger>
             <button class="btn btn-dark d-flex align-items-center gap-2">
               Milestones
-              <span v-if="selectedMilestones.length > 0" 
-                    class="badge rounded-pill" 
-                    style="background-color: #aa50e7 !important;">
+              <span
+                v-if="selectedMilestones.length > 0"
+                class="badge rounded-pill"
+                style="background-color: #aa50e7 !important"
+              >
                 {{ selectedMilestones.length }}
               </span>
             </button>
           </template>
 
           <template #header>
-            <DropdownSearch 
-              v-model="milestoneSearch" 
-              placeholder="Filter milestones..." 
-            />
+            <DropdownSearch v-model="milestoneSearch" placeholder="Filter milestones..." />
           </template>
 
           <DropdownList
@@ -55,24 +53,23 @@
             </template>
           </DropdownList>
         </UniversalDropdown>
-        
+
         <UniversalDropdown placement="bottom-end">
           <template #trigger>
             <button class="btn btn-dark d-flex align-items-center gap-2">
               Labels
-              <span v-if="selectedMilestones.length > 0" 
-                  class="badge rounded-pill" 
-                  style="background-color: #aa50e7 !important;">
+              <span
+                v-if="selectedMilestones.length > 0"
+                class="badge rounded-pill"
+                style="background-color: #aa50e7 !important"
+              >
                 {{ selectedLabels.length }}
               </span>
             </button>
           </template>
 
           <template #header>
-            <DropdownSearch 
-              v-model="labelSearch" 
-              placeholder="Filter labels..." 
-            />
+            <DropdownSearch v-model="labelSearch" placeholder="Filter labels..." />
           </template>
 
           <DropdownList
@@ -92,7 +89,7 @@
           </DropdownList>
         </UniversalDropdown>
 
-        <button class="btn btn-dark" @click="openAddColumnModal">Add column</button> 
+        <button class="btn btn-dark" @click="openAddColumnModal">Add column</button>
       </div>
     </div>
 
@@ -169,7 +166,7 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useKanban } from '@/composables/useKanban.js'
 import { useKanbanFilters } from '@/composables/useKanbanFilters.js'
@@ -180,18 +177,18 @@ import UniversalDropdown from '../Dropdown/UniversalDropdown.vue'
 import DropdownSearch from '../Dropdown/DropdownSearch.vue'
 import DropdownList from '../Dropdown/DropdownList.vue'
 
-const { 
-  selectedRepo, 
-  columns, 
+const {
+  selectedRepo,
+  columns,
   issuesByColumn,
   repoData,
-  groups, 
-  onDragEnd, 
-  onMoveLeft, 
-  onMoveRight, 
-  addColumn, 
-  deleteColumn, 
-  editColumn 
+  groups,
+  onDragEnd,
+  onMoveLeft,
+  onMoveRight,
+  addColumn,
+  deleteColumn,
+  editColumn,
 } = useKanban()
 
 const {
@@ -199,15 +196,14 @@ const {
   selectedMilestones,
   filteredDropdownMilestones,
   toggleMilestoneFilter,
-  
+
   labelSearch,
   selectedLabels,
   filteredDropdownLabels,
   toggleLabelFilter,
-  
-  filteredIssuesByColumn
-} = useKanbanFilters(repoData, issuesByColumn)
 
+  filteredIssuesByColumn,
+} = useKanbanFilters(repoData, issuesByColumn)
 
 const router = useRouter()
 const route = useRoute()
@@ -218,7 +214,6 @@ defineProps({
 
 const emit = defineEmits(['add-issue'])
 
-// --- NAVIGATION ---
 function openIssue(issue) {
   router.push({
     name: 'issue-details',
@@ -227,9 +222,9 @@ function openIssue(issue) {
 }
 
 // --- ZARZĄDZANIE KOLUMNAMI  ---
-const activeColumn = ref(null) 
+const activeColumn = ref(null)
 
-// Add Column
+// dodaj kolumnę
 const showModalAddColumn = ref(false)
 const newColumnName = ref('')
 
@@ -247,7 +242,7 @@ function confirmAddColumn() {
   closeAddColumnModal()
 }
 
-// Rename Column
+// Zmień nazwę kolumny
 const showModalRename = ref(false)
 const renameColumnName = ref('')
 
@@ -268,7 +263,7 @@ function confirmRename() {
   closeRenameModal()
 }
 
-// Delete Column
+// Usuń kolumnę
 const showModalDelete = ref(false)
 
 function openDeleteModal(column) {
@@ -290,50 +285,71 @@ function handleAddIssue(column) {
   emit('add-issue', column)
 }
 
+// --- AUTO-SCROLL ---
 const boardRef = ref(null)
-let isDragging = false
 
-function handlePointerMove(clientX) {
-  if (!isDragging || !boardRef.value) return
+const scrollState = {
+  direction: 0,
+  interval: null,
+}
 
-  const board = boardRef.value
-  const rect = board.getBoundingClientRect()
+const updateScrollInterval = () => {
+  if (scrollState.direction !== 0 && !scrollState.interval) {
+    scrollState.interval = setInterval(() => {
+      if (boardRef.value) {
+        const speed = 20
+        boardRef.value.scrollLeft += scrollState.direction * speed
+      }
+    }, 16)
+  } else if (scrollState.direction === 0 && scrollState.interval) {
+    clearInterval(scrollState.interval)
+    scrollState.interval = null
+  }
+}
 
-  // poza prawą krawędzią
-  if (clientX > rect.right) {
-    const distance = clientX - rect.right
-    board.scrollLeft += Math.min(distance * 0.3, 45)
+const handleBoardDragStart = () => {}
+
+const stopAutoScroll = () => {
+  scrollState.direction = 0
+  updateScrollInterval()
+}
+
+const handleBoardDragEnd = () => {
+  stopAutoScroll()
+}
+
+const handleDragAutoScroll = (e) => {
+  if (!boardRef.value) return
+
+  e.preventDefault()
+
+  const { clientX } = e
+  const { innerWidth } = window
+  const threshold = 150
+
+  if (clientX > innerWidth - threshold) {
+    scrollState.direction = 1
+  } else if (clientX < threshold) {
+    scrollState.direction = -1
+  } else {
+    scrollState.direction = 0
   }
 
-  // poza lewą krawędzią
-  if (clientX < rect.left) {
-    const distance = rect.left - clientX
-    board.scrollLeft -= Math.min(distance * 0.3, 45)
-  }
+  updateScrollInterval()
 }
 
-// DESKTOP
-function handleMouseMove(e) {
-  handlePointerMove(e.clientX)
-}
+onMounted(() => {
+  window.addEventListener('dragover', handleDragAutoScroll, true)
+  window.addEventListener('dragend', stopAutoScroll, true)
+  window.addEventListener('drop', stopAutoScroll, true)
+})
 
-// MOBILE
-function handleTouchMove(e) {
-  if (!e.touches?.length) return
-  handlePointerMove(e.touches[0].clientX)
-}
-
-function handleBoardDragStart() {
-  isDragging = true
-  window.addEventListener('mousemove', handleMouseMove)
-  window.addEventListener('touchmove', handleTouchMove, { passive: true })
-}
-
-function handleBoardDragEnd() {
-  isDragging = false
-  window.removeEventListener('mousemove', handleMouseMove)
-  window.removeEventListener('touchmove', handleTouchMove)
-}
+onUnmounted(() => {
+  window.removeEventListener('dragover', handleDragAutoScroll, true)
+  window.removeEventListener('dragend', stopAutoScroll, true)
+  window.removeEventListener('drop', stopAutoScroll, true)
+  stopAutoScroll()
+})
 </script>
 
 <style>
