@@ -44,11 +44,7 @@
                     Members: {{ org.members.length }}
                   </small>
                   <div class="d-flex gap-2">
-                    <i
-                      class="bi bi-person-plus action-icon text-primary"
-                      title="Add Member"
-                      @click.stop="$emit('openAddMember', org._id)"
-                    ></i>
+
 
                     <div class="d-flex gap-2">
                       <i
