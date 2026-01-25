@@ -95,8 +95,8 @@ defineEmits([
   padding: 8px 10px; color: #ccc; cursor: pointer; border-radius: 4px; font-size: 0.9rem;
   display: flex; justify-content: space-between; align-items: center;
 }
-.dropdown-item-custom:hover { background: #0d6efd; color: white; }
-.dropdown-item-custom.text-danger:hover { background: #dc3545; color: white; }
+.dropdown-item-custom:hover { background: #aa50e7; color: white; }
+.dropdown-item-custom.text-danger:hover { background: #dc3545; color: white !important; }
 
 .group-picker-menu {
   background: #1e1e1e; border: 1px solid #444; padding: 10px 0; border-radius: 6px;
@@ -107,5 +107,5 @@ defineEmits([
 .list-group-item { 
   background: transparent; border: none; cursor: pointer; padding: 6px 12px; font-size: 0.9rem;
 }
-.list-group-item:hover { background: #0d6efd !important; color: white !important; }
+.list-group-item:hover { background: #aa50e7 !important; color: white !important; }
 </style>

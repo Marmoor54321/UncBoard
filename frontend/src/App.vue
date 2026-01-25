@@ -1,6 +1,6 @@
 <template>
   <div class="container-fluid vh-100 d-flex flex-column p-0" style="background-color: #1d1e20">
-    <Header />
+    <Header :user="user" @login="loginWithGithub"/>
     
     <div class="flex-grow-1 d-flex overflow-hidden">
       
@@ -70,7 +70,7 @@ const showAddIssue = ref(false)
 const targetColumn = ref(null)
 
 // --- COMPOSABLES ---
-const { user, loadUser } = useAuth()
+const { user, loadUser, loginWithGithub } = useAuth()
 const { loadGroups } = useGroups(user)
 const {
   repos, 

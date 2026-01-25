@@ -6,14 +6,12 @@
     aria-labelledby="sidebarOffcanvasLabel"
   >
     <div class="sidebar-header p-3 pb-0">
-      <SidebarProfile :user="user" @login="loginWithGithub" />
-
-      <div class="mt-3 mb-2" v-if="user">
+      <div class="mt-3 mb-2 " v-if="user">
         <input
           v-model="globalSearch"
           type="text"
-          class="form-control bg-dark text-white border-secondary"
-          placeholder="Search groups & repos..."
+          class="form-control bg-dark text-white" style="border-color: #aa50e7;"
+          placeholder="Search groups & repos..." 
         />
       </div>
     </div>
@@ -23,6 +21,7 @@
         :expanded-orgs="expandedOrgs"
         :repo-map="repoMap"
         :selected-repo="selectedRepo"
+        :search-query="globalSearch"
         @open-create-org="modals.createOrg = true"
         @open-add-member="
           (id) => {
@@ -124,7 +123,6 @@ import OrgChat from '../OrgChat.vue' // <--- IMPORT
 
 import SidebarModals from './SidebarModals.vue'
 import SidebarContextMenus from './SidebarContextMenus.vue'
-import SidebarProfile from './SidebarProfile.vue'
 import SidebarGroups from './SidebarGroups.vue'
 import SidebarRepositories from './SidebarRepositories.vue'
 import SidebarOrgModals from './SidebarOrgModals.vue'
@@ -181,7 +179,6 @@ watch(
   },
   { immediate: true },
 )
-
 // --- HANDLERS ---
 function handleSelectRepo(repo) {
   selectRepo(repo)
@@ -348,6 +345,7 @@ function openPickerFromMenu(event) {
     zIndex: 10000,
     top: rect.top + 'px',
     bottom: 'auto',
+    
   }
   if (spaceBelow < estimatedPickerHeight) {
     newStyle.top = 'auto'
@@ -424,5 +422,12 @@ onBeforeUnmount(() => document.removeEventListener('click', handleClickOutside))
   min-height: 0;
   flex: 1;
   transition: flex 0.3s ease;
+}
+.form-control:focus {
+    box-shadow: none;
+}
+.form-control::placeholder {
+    color: rgba(255, 255, 255, 0.7); /* Biały z lekką przezroczystością (wygląda najlepiej) */
+    opacity: 1; /* Wymagane dla Firefoxa, który domyślnie obniża krycie */
 }
 </style>
