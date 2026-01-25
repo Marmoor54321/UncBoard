@@ -51,12 +51,12 @@
 
                     <div class="d-flex gap-2">
                       <i
-                        class="bi bi-chat-dots-fill action-icon text-success"
+                        class="bi bi-chat-dots-fill action-icon" style="color: #aa50e7;"
                         title="Open Chat"
                         @click.stop="$emit('openChat', org)"
                       ></i>
                       <i
-                        class="bi bi-people action-icon text-primary"
+                        class="bi bi-people action-icon " style="color: #aa50e7;"
                         title="Manage Members"
                         @click.stop="$emit('openManageMembers', org)"
                       ></i>
