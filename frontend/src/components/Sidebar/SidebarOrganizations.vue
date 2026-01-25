@@ -48,6 +48,11 @@
 
                     <div class="d-flex gap-2">
                       <i
+                        class="bi bi-chat-dots-fill action-icon text-success"
+                        title="Open Chat"
+                        @click.stop="$emit('openChat', org)"
+                      ></i>
+                      <i
                         class="bi bi-people action-icon text-primary"
                         title="Manage Members"
                         @click.stop="$emit('openManageMembers', org)"
@@ -110,6 +115,7 @@ const emit = defineEmits([
   'toggleMenu',
   'toggleExpand',
   'openManageMembers',
+  'openChat',
 ])
 
 const isSectionOpen = ref(true)

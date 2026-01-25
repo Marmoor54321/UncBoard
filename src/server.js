@@ -19,7 +19,11 @@ const app = express();
 
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
-  cors: { origin: "http://localhost:5173" } // Dostosuj to do swojego frontendu
+  cors: {
+    origin: "http://localhost:5173",
+    methods: ["GET", "POST"],
+    credentials: true // <--- TO JEST KLUCZOWE
+  }
 });
 
 io.on("connection", (socket) => {

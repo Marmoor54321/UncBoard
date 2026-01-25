@@ -36,6 +36,7 @@
         @toggle-expand="toggleOrgExpand"
         @toggle-menu="toggleMenu"
         @open-manage-members="openManageMembers"
+        @open-chat="handleOpenChat"
       />
 
       <SidebarGroups
@@ -104,6 +105,15 @@
       @picker-select="onPickerSelect"
     />
   </aside>
+  <transition name="pop-up">
+    <OrgChat 
+      v-if="activeChatOrg && user" 
+      :org-id="activeChatOrg._id" 
+      :org-name="activeChatOrg.name"
+      :user="user"
+      @close="activeChatOrg = null"
+    />
+  </transition>
 </template>
 
 <script setup>
@@ -113,6 +123,7 @@ import { useAuth } from '@/composables/useAuth.js'
 import { useGroups } from '@/composables/useGroups.js'
 import { useKanban } from '@/composables/useKanban.js'
 import { useOrganizations } from '@/composables/useOrganizations.js'
+import OrgChat from '../OrgChat.vue' // <--- IMPORT
 
 import SidebarModals from './SidebarModals.vue'
 import SidebarContextMenus from './SidebarContextMenus.vue'
@@ -125,7 +136,7 @@ import SidebarOrganizations from './SidebarOrganizations.vue'
 const router = useRouter()
 const { user, loginWithGithub } = useAuth()
 const { repos, selectedRepo, selectRepo } = useKanban()
-
+const activeChatOrg = ref(null) // <--- NOWY STAN
 // --- COMPOSABLES ---
 const {
   groupsList,
@@ -178,6 +189,9 @@ watch(
 function handleSelectRepo(repo) {
   selectRepo(repo)
   router.push({ name: 'repo-board', params: { owner: repo.owner.login, repo: repo.name } })
+}
+function handleOpenChat(org) {
+  activeChatOrg.value = org;
 }
 
 // Grupy
