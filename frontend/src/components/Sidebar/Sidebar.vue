@@ -17,22 +17,27 @@
         />
       </div>
     </div>
-<div class="sidebar-content p-3 pt-0" v-if="user">
-    <div v-if="user">
+    <div class="sidebar-content p-3 pt-0" v-if="user">
       <SidebarOrganizations
+        class="flex-section"
         :orgs-list="orgsList"
         :expanded-orgs="expandedOrgs"
         :repo-map="repoMap"
         :selected-repo="selectedRepo"
         @open-create-org="modals.createOrg = true"
-        @open-add-member="(id) => { modals.addMember = true; modals.orgId = id }"
+        @open-add-member="
+          (id) => {
+            modals.addMember = true
+            modals.orgId = id
+          }
+        "
         @open-delete-org="openDeleteOrgModal"
         @select-repo="handleSelectRepo"
         @toggle-expand="toggleOrgExpand"
         @toggle-menu="toggleMenu"
         @open-manage-members="openManageMembers"
       />
-      
+
       <SidebarGroups
         class="flex-section"
         :groups-list="groupsList"
@@ -61,7 +66,6 @@
         @toggle-menu="toggleMenu"
       />
     </div>
-  </div>
     <SidebarModals
       :show-create="modals.createGroup"
       :show-delete="modals.deleteGroup"
@@ -73,7 +77,7 @@
     <SidebarOrgModals
       :show-create="modals.createOrg"
       :show-add-member="modals.addMember"
-      :show-delete="modals.deleteOrg" 
+      :show-delete="modals.deleteOrg"
       :show-manage-members="modals.manageMembers"
       :org="selectedOrgForMembers"
       @close-create="modals.createOrg = false"
@@ -97,7 +101,7 @@
       @close-picker="closePicker"
       @keep-picker-open="keepPickerOpen"
       @delete-from-context="onDeleteFromContext"
-      @picker-select="onPickerSelect" 
+      @picker-select="onPickerSelect"
     />
   </aside>
 </template>
@@ -123,26 +127,36 @@ const { user, loginWithGithub } = useAuth()
 const { repos, selectedRepo, selectRepo } = useKanban()
 
 // --- COMPOSABLES ---
-const { 
-  groupsList, 
-  handleAddGroup, 
-  handleDeleteGroup, 
-  handleAddRepoToGroup, 
-  handleDeleteRepoFromGroup 
+const {
+  groupsList,
+  handleAddGroup,
+  handleDeleteGroup,
+  handleAddRepoToGroup,
+  handleDeleteRepoFromGroup,
 } = useGroups(user)
 
-const { 
-  orgsList, loadOrganizations, createOrganization, deleteOrganization, 
-  addRepoToOrganization, removeRepoFromOrganization, addMemberToOrganization , 
-  removeMemberFromOrganization
+const {
+  orgsList,
+  loadOrganizations,
+  createOrganization,
+  deleteOrganization,
+  addRepoToOrganization,
+  removeRepoFromOrganization,
+  addMemberToOrganization,
+  removeMemberFromOrganization,
 } = useOrganizations(user)
 
 // --- STATE ---
 const repoMap = computed(() => Object.fromEntries(repos.value.map((r) => [r.id, r])))
-const modals = reactive({ 
-  createGroup: false, deleteGroup: false, groupId: null,
-  createOrg: false, addMember: false, orgId: null, deleteOrg: false,
-  manageMembers: false
+const modals = reactive({
+  createGroup: false,
+  deleteGroup: false,
+  groupId: null,
+  createOrg: false,
+  addMember: false,
+  orgId: null,
+  deleteOrg: false,
+  manageMembers: false,
 })
 const expandedGroups = reactive({})
 const expandedOrgs = reactive({})
@@ -150,11 +164,15 @@ const selectedOrgForMembers = ref(null)
 const globalSearch = ref('')
 
 // Init
-watch(user, async (newUser) => {
-  if (newUser) {
-    await loadOrganizations()
-  }
-}, { immediate: true })
+watch(
+  user,
+  async (newUser) => {
+    if (newUser) {
+      await loadOrganizations()
+    }
+  },
+  { immediate: true },
+)
 
 // --- HANDLERS ---
 function handleSelectRepo(repo) {
@@ -163,14 +181,30 @@ function handleSelectRepo(repo) {
 }
 
 // Grupy
-function toggleGroupExpand(groupId) { expandedGroups[groupId] = !expandedGroups[groupId] }
-function handleCreateGroup(name) { handleAddGroup({ name, created_by: user.value._id }); modals.createGroup = false }
-function closeModalDeleteGroup() { modals.deleteGroup = false; modals.groupId = null }
-function onConfirmDeleteGroup() { if (modals.groupId) handleDeleteGroup({ groupId: modals.groupId }); closeModalDeleteGroup() }
+function toggleGroupExpand(groupId) {
+  expandedGroups[groupId] = !expandedGroups[groupId]
+}
+function handleCreateGroup(name) {
+  handleAddGroup({ name, created_by: user.value._id })
+  modals.createGroup = false
+}
+function closeModalDeleteGroup() {
+  modals.deleteGroup = false
+  modals.groupId = null
+}
+function onConfirmDeleteGroup() {
+  if (modals.groupId) handleDeleteGroup({ groupId: modals.groupId })
+  closeModalDeleteGroup()
+}
 
 // Organizacje
-function toggleOrgExpand(orgId) { expandedOrgs[orgId] = !expandedOrgs[orgId] }
-function handleCreateOrg(data) { createOrganization(data); modals.createOrg = false }
+function toggleOrgExpand(orgId) {
+  expandedOrgs[orgId] = !expandedOrgs[orgId]
+}
+function handleCreateOrg(data) {
+  createOrganization(data)
+  modals.createOrg = false
+}
 // function handleAddMember(data) {
 //   if(modals.orgId) addMemberToOrganization({ orgId: modals.orgId, userLogin: data.login, role: data.role })
 //   modals.addMember = false
@@ -178,19 +212,19 @@ function handleCreateOrg(data) { createOrganization(data); modals.createOrg = fa
 
 // Handlery dla organizacji
 function openDeleteOrgModal(id) {
-  modals.orgId = id;
-  modals.deleteOrg = true;
+  modals.orgId = id
+  modals.deleteOrg = true
 }
 
 function closeModalDeleteOrg() {
-  modals.deleteOrg = false;
-  modals.orgId = null;
+  modals.deleteOrg = false
+  modals.orgId = null
 }
 
 async function onConfirmDeleteOrg() {
   if (modals.orgId) {
-    await deleteOrganization(modals.orgId);
-    closeModalDeleteOrg();
+    await deleteOrganization(modals.orgId)
+    closeModalDeleteOrg()
   }
 }
 
@@ -202,21 +236,21 @@ function openManageMembers(org) {
 }
 
 async function handleAddMember(data) {
-  await addMemberToOrganization({ 
-    orgId: modals.orgId, 
-    userLogin: data.login, 
-    role: data.role 
+  await addMemberToOrganization({
+    orgId: modals.orgId,
+    userLogin: data.login,
+    role: data.role,
   })
   // Odświeżamy lokalny obiekt organizacji, żeby lista w modalu się zaktualizowała
   // Zakładając, że loadOrganizations aktualizuje orgsList
-  const updatedOrg = orgsList.value.find(o => o._id === modals.orgId)
+  const updatedOrg = orgsList.value.find((o) => o._id === modals.orgId)
   if (updatedOrg) selectedOrgForMembers.value = updatedOrg
 }
 
 async function handleRemoveMember({ orgId, userId }) {
-  if (confirm("Remove this member?")) {
+  if (confirm('Remove this member?')) {
     await removeMemberFromOrganization({ orgId, userId })
-    const updatedOrg = orgsList.value.find(o => o._id === orgId)
+    const updatedOrg = orgsList.value.find((o) => o._id === orgId)
     if (updatedOrg) selectedOrgForMembers.value = updatedOrg
   }
 }
@@ -228,18 +262,21 @@ const menuStyle = ref({})
 const pickerStyle = ref({})
 
 // Context State: Trzymamy informacje co dokładnie kliknięto
-const menuContext = reactive({ 
+const menuContext = reactive({
   type: null, // 'repo', 'group', 'org'
   containerId: null, // ID grupy lub organizacji (jeśli dotyczy)
-  repoId: null // ID klikniętego repozytorium
+  repoId: null, // ID klikniętego repozytorium
 })
 
 function toggleMenu(id, event) {
-  if (activeMenu.value === id) { closeMenu(); return }
-  
+  if (activeMenu.value === id) {
+    closeMenu()
+    return
+  }
+
   // Format ID: 'prefix-containerId-repoId' lub 'repo-repoId'
   const parts = id.split('-')
-  
+
   if (id.startsWith('repo-')) {
     // Kliknięto w głównej liście repozytoriów
     menuContext.type = 'repo'
@@ -265,7 +302,13 @@ function toggleMenu(id, event) {
   const estimatedMenuHeight = 120
   const spaceBelow = windowHeight - rect.bottom
 
-  let newStyle = { position: 'fixed', left: rect.right + 12 + 'px', zIndex: 9999, top: rect.top + 'px', bottom: 'auto' }
+  let newStyle = {
+    position: 'fixed',
+    left: rect.right + 12 + 'px',
+    zIndex: 9999,
+    top: rect.top + 'px',
+    bottom: 'auto',
+  }
   if (spaceBelow < estimatedMenuHeight) {
     newStyle.top = 'auto'
     newStyle.bottom = windowHeight - rect.top - 30 + 'px'
@@ -273,12 +316,14 @@ function toggleMenu(id, event) {
   menuStyle.value = newStyle
 }
 
-function closeMenu() { activeMenu.value = null; activePicker.value = null }
+function closeMenu() {
+  activeMenu.value = null
+  activePicker.value = null
+}
 
 function openPickerFromMenu(event) {
   if (!event || !event.target) return
   activePicker.value = 'picker'
-
 
   // Pozycjonowanie Pickera
   const rect = event.target.getBoundingClientRect()
@@ -286,7 +331,13 @@ function openPickerFromMenu(event) {
   const estimatedPickerHeight = 250
   const spaceBelow = windowHeight - rect.top
 
-  let newStyle = { position: 'fixed', left: (rect.right + 4) + 'px', zIndex: 10000, top: rect.top + 'px', bottom: 'auto' }
+  let newStyle = {
+    position: 'fixed',
+    left: rect.right + 4 + 'px',
+    zIndex: 10000,
+    top: rect.top + 'px',
+    bottom: 'auto',
+  }
   if (spaceBelow < estimatedPickerHeight) {
     newStyle.top = 'auto'
     newStyle.bottom = windowHeight - rect.bottom + 'px'
@@ -316,7 +367,7 @@ async function onPickerSelect({ id, type }) {
 // AKCJA: Usuwanie z obecnego kontekstu (z grupy lub z org)
 function onDeleteFromContext() {
   const { type, containerId, repoId } = menuContext
-  
+
   if (type === 'group') {
     handleDeleteRepoFromGroup({ repoId, groupId: containerId })
   } else if (type === 'org') {
@@ -326,7 +377,9 @@ function onDeleteFromContext() {
 }
 
 // Zamykanie przy kliknięciu poza
-function handleClickOutside(e) { if (!e.target.closest('.popup')) closeMenu() }
+function handleClickOutside(e) {
+  if (!e.target.closest('.popup')) closeMenu()
+}
 onMounted(() => document.addEventListener('click', handleClickOutside))
 onBeforeUnmount(() => document.removeEventListener('click', handleClickOutside))
 </script>
