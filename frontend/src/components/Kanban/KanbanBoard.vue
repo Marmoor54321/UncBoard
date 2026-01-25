@@ -96,7 +96,7 @@
       </div>
     </div>
 
-    <div class="kanban-board pb-3">
+    <div class="kanban-board pb-3" ref="boardRef">
       <KanbanColumn
         v-for="column in columns"
         :key="column._id || column.id"
@@ -104,7 +104,8 @@
         :issues-by-column="filteredIssuesByColumn"
         :scroll-container="scrollContainer"
         :groups="groups"
-        :on-drag-end="onDragEnd"
+        :on-drag-start="handleBoardDragStart"
+        :on-drag-end="handleBoardDragEnd"
         :open-issue="openIssue"
         :on-move-left="onMoveLeft"
         :on-move-right="onMoveRight"
@@ -287,6 +288,51 @@ function confirmDelete() {
 
 function handleAddIssue(column) {
   emit('add-issue', column)
+}
+
+const boardRef = ref(null)
+let isDragging = false
+
+function handlePointerMove(clientX) {
+  if (!isDragging || !boardRef.value) return
+
+  const board = boardRef.value
+  const rect = board.getBoundingClientRect()
+
+  // poza prawą krawędzią
+  if (clientX > rect.right) {
+    const distance = clientX - rect.right
+    board.scrollLeft += Math.min(distance * 0.3, 45)
+  }
+
+  // poza lewą krawędzią
+  if (clientX < rect.left) {
+    const distance = rect.left - clientX
+    board.scrollLeft -= Math.min(distance * 0.3, 45)
+  }
+}
+
+// DESKTOP
+function handleMouseMove(e) {
+  handlePointerMove(e.clientX)
+}
+
+// MOBILE
+function handleTouchMove(e) {
+  if (!e.touches?.length) return
+  handlePointerMove(e.touches[0].clientX)
+}
+
+function handleBoardDragStart() {
+  isDragging = true
+  window.addEventListener('mousemove', handleMouseMove)
+  window.addEventListener('touchmove', handleTouchMove, { passive: true })
+}
+
+function handleBoardDragEnd() {
+  isDragging = false
+  window.removeEventListener('mousemove', handleMouseMove)
+  window.removeEventListener('touchmove', handleTouchMove)
 }
 </script>
 
