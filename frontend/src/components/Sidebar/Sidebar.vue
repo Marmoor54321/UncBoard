@@ -6,7 +6,7 @@
     aria-labelledby="sidebarOffcanvasLabel"
   >
     <div class="sidebar-header p-3 pb-0">
-      <SidebarProfile :user="user" @login="loginWithGithub" />
+      
 
       <div class="mt-3 mb-2" v-if="user">
         <input
@@ -124,7 +124,6 @@ import OrgChat from '../OrgChat.vue' // <--- IMPORT
 
 import SidebarModals from './SidebarModals.vue'
 import SidebarContextMenus from './SidebarContextMenus.vue'
-import SidebarProfile from './SidebarProfile.vue'
 import SidebarGroups from './SidebarGroups.vue'
 import SidebarRepositories from './SidebarRepositories.vue'
 import SidebarOrgModals from './SidebarOrgModals.vue'
