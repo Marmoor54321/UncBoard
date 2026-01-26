@@ -35,7 +35,7 @@
       @mouseleave="$emit('closePicker')"
       @click.stop
     >
-      <h6 class="text-muted text-uppercase mb-2 mt-1 px-2" style="font-size: 0.7rem;">Organizations</h6>
+      <h6 class="text-white text-uppercase mb-2 mt-1 px-2" style="font-size: 0.7rem;">Organizations</h6>
       <ul class="list-group mb-2">
         <li
           v-for="org in orgsList"
@@ -48,7 +48,7 @@
         <li v-if="!orgsList || orgsList.length === 0" class="text-white-50 px-2 small">No organizations</li>
       </ul>
 
-      <h6 class="text-muted text-uppercase mb-2 px-2" style="font-size: 0.7rem;">Groups</h6>
+      <h6 class="text-white text-uppercase mb-2 px-2" style="font-size: 0.7rem;">Groups</h6>
       <ul class="list-group">
         <li
           v-for="g in groupsList"

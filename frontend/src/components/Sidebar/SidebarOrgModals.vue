@@ -76,7 +76,7 @@
                 <img :src="m.user.avatar_url" class="avatar-sm" alt="avatar" />
                 <div>
                   <div class="text-white small">{{ m.user.login }}</div>
-                  <div class="text-muted" style="font-size: 0.7rem;">{{ m.role }}</div>
+                  <div class="text-white" style="font-size: 0.7rem;">{{ m.role }}</div>
                 </div>
               </div>
               <i v-if="m.role !== 'owner'" 

@@ -15,7 +15,7 @@
         <span class="spinner-border spinner-border-sm"></span> Loading history...
       </div>
       
-      <div v-else-if="messages.length === 0" class="text-center text-muted mt-4 small">
+      <div v-else-if="messages.length === 0" class="text-center text-white mt-4 small">
         No messages yet. Say hello! 👋
       </div>
 
